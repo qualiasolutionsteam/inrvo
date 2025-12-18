@@ -560,6 +560,14 @@ const App: React.FC = () => {
                         >
                           <ICONS.Sparkle className="w-4 h-4 md:w-6 md:h-6" />
                         </button>
+                        {/* Music Button */}
+                        <button
+                          onClick={() => setShowMusicModal(true)}
+                          className={`p-2.5 md:p-4 min-h-[40px] min-w-[40px] md:min-h-[44px] md:min-w-[44px] rounded-xl md:rounded-2xl transition-all btn-press focus-ring flex items-center justify-center ${selectedBackgroundTrack.id !== 'none' ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-white/5 hover:bg-white/10 text-slate-400 hover:text-emerald-400'}`}
+                          title={`Background: ${selectedBackgroundTrack.name}`}
+                        >
+                          <ICONS.Music className="w-4 h-4 md:w-6 md:h-6" />
+                        </button>
                         {/* Mic Button */}
                         <button
                           onMouseDown={startRecording}
