@@ -1018,6 +1018,134 @@ const App: React.FC = () => {
           </div>
         )}
 
+        {/* MODAL: Music Selector */}
+        {showMusicModal && (
+          <div className="fixed inset-0 z-[80] bg-[#020617]/95 backdrop-blur-3xl flex flex-col p-6 animate-in fade-in zoom-in duration-500 overflow-y-auto">
+            <Starfield />
+
+            {/* Back Button */}
+            <button
+              onClick={() => setShowMusicModal(false)}
+              className="fixed top-6 left-6 md:top-8 md:left-8 text-slate-600 hover:text-white transition-all flex items-center gap-3 group btn-press focus-ring rounded-full z-10"
+            >
+              <div className="w-12 h-12 min-w-[44px] min-h-[44px] rounded-full border border-white/5 flex items-center justify-center group-hover:bg-white/10 group-hover:scale-110 transition-all">
+                <ICONS.ArrowBack className="w-5 h-5" />
+              </div>
+              <span className="hidden md:inline text-[11px] font-bold uppercase tracking-[0.3em]">Back</span>
+            </button>
+
+            {/* Modal Content */}
+            <div className="flex-1 flex flex-col items-center justify-center pt-16 md:pt-0 relative z-10">
+              <h2 className="text-3xl md:text-5xl font-extralight text-center mb-3 tracking-tight">
+                <span className="bg-gradient-to-r from-emerald-300 via-cyan-200 to-teal-300 bg-clip-text text-transparent">Background Music</span>
+              </h2>
+              <p className="text-slate-500 text-center mb-12 max-w-md">Choose ambient sounds to enhance your meditation experience</p>
+
+              {/* Music Categories */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl">
+                {/* Nature Sounds */}
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 px-2">Nature</h3>
+                  {BACKGROUND_TRACKS.filter(t => t.category === 'nature').map(track => (
+                    <GlassCard
+                      key={track.id}
+                      onClick={() => {
+                        setSelectedBackgroundTrack(track);
+                        setShowMusicModal(false);
+                      }}
+                      className={`!p-4 !rounded-xl cursor-pointer border transition-all ${
+                        selectedBackgroundTrack.id === track.id
+                          ? 'border-emerald-500/50 bg-emerald-500/10'
+                          : 'border-transparent hover:border-emerald-500/30'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          selectedBackgroundTrack.id === track.id ? 'bg-emerald-500/30' : 'bg-white/5'
+                        }`}>
+                          <ICONS.Music className="w-5 h-5 text-emerald-400" />
+                        </div>
+                        <div className="flex-1">
+                          <h5 className="text-sm font-bold text-white">{track.name}</h5>
+                          <p className="text-xs text-slate-400">{track.description}</p>
+                        </div>
+                        {selectedBackgroundTrack.id === track.id && (
+                          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        )}
+                      </div>
+                    </GlassCard>
+                  ))}
+                </div>
+
+                {/* Ambient & Binaural */}
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 px-2">Ambient & Binaural</h3>
+                  {BACKGROUND_TRACKS.filter(t => t.category === 'ambient' || t.category === 'binaural').map(track => (
+                    <GlassCard
+                      key={track.id}
+                      onClick={() => {
+                        setSelectedBackgroundTrack(track);
+                        setShowMusicModal(false);
+                      }}
+                      className={`!p-4 !rounded-xl cursor-pointer border transition-all ${
+                        selectedBackgroundTrack.id === track.id
+                          ? 'border-cyan-500/50 bg-cyan-500/10'
+                          : 'border-transparent hover:border-cyan-500/30'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          selectedBackgroundTrack.id === track.id ? 'bg-cyan-500/30' : 'bg-white/5'
+                        }`}>
+                          <ICONS.Music className="w-5 h-5 text-cyan-400" />
+                        </div>
+                        <div className="flex-1">
+                          <h5 className="text-sm font-bold text-white">{track.name}</h5>
+                          <p className="text-xs text-slate-400">{track.description}</p>
+                        </div>
+                        {selectedBackgroundTrack.id === track.id && (
+                          <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                        )}
+                      </div>
+                    </GlassCard>
+                  ))}
+
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 px-2 pt-4">Instrumental</h3>
+                  {BACKGROUND_TRACKS.filter(t => t.category === 'instrumental').map(track => (
+                    <GlassCard
+                      key={track.id}
+                      onClick={() => {
+                        setSelectedBackgroundTrack(track);
+                        setShowMusicModal(false);
+                      }}
+                      className={`!p-4 !rounded-xl cursor-pointer border transition-all ${
+                        selectedBackgroundTrack.id === track.id
+                          ? 'border-purple-500/50 bg-purple-500/10'
+                          : 'border-transparent hover:border-purple-500/30'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          selectedBackgroundTrack.id === track.id ? 'bg-purple-500/30' : 'bg-white/5'
+                        }`}>
+                          <ICONS.Music className="w-5 h-5 text-purple-400" />
+                        </div>
+                        <div className="flex-1">
+                          <h5 className="text-sm font-bold text-white">{track.name}</h5>
+                          <p className="text-xs text-slate-400">{track.description}</p>
+                        </div>
+                        {selectedBackgroundTrack.id === track.id && (
+                          <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+                        )}
+                      </div>
+                    </GlassCard>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Auth Modal */}
         <AuthModal
           isOpen={showAuthModal}
