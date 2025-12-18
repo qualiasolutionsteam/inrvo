@@ -47,6 +47,8 @@ The app uses a single `App.tsx` component (~960 lines) managing views via the `V
 - Voice clones: `createVoiceClone`, `getUserVoiceClones` (stores base64 audio samples)
 - Audio generations: `saveAudioGeneration`, `getUserAudioGenerations`
 
+Database schema in `supabase-schema.sql` - run in Supabase SQL Editor to set up tables with RLS policies.
+
 ### Component Structure
 ```
 App.tsx              # Main app, all view rendering, state management
@@ -76,7 +78,7 @@ All state in App.tsx using React hooks. Key state groups:
 
 ## Tech Stack
 
-- **React 19.2** with TypeScript 5.8, Vite 6
+- **React 19** with TypeScript 5.8, Vite 6
 - **Google Generative AI** (@google/genai) - Gemini 3 Pro/Flash, Gemini 2.5 TTS
 - **Supabase** - Auth and database for voice profiles/clones
 - **D3.js** - Audio visualization
@@ -86,7 +88,7 @@ All state in App.tsx using React hooks. Key state groups:
 
 ## Styling
 
-Global styles in `index.html` `<style>` block (not external CSS). Key patterns:
+Global styles in `index.html` `<style>` block and `index.css`. Key patterns:
 - CSS variables for colors: `--bg-deep: #020617`, `--accent-primary: #6366f1`
 - Glass-morphism: `.glass`, `.glass-elevated` classes
 - Animation classes: `.animate-shine`, `.animate-twinkle`, `.animate-glitch`, `.animate-pulsar`
@@ -99,7 +101,7 @@ Global styles in `index.html` `<style>` block (not external CSS). Key patterns:
 - **Add voice profile**: Edit `VOICE_PROFILES` in `constants.tsx` (Gemini voices: Zephyr, Kore, Puck, Fenrir)
 - **Modify AI prompts**: Edit prompt strings in `geminiService.ts`
 - **Add new view**: Add to `View` enum in `types.ts`, add render logic in App.tsx
-- **Add database table**: Update types in `lib/supabase.ts`, add CRUD functions
+- **Add database table**: Update types in `lib/supabase.ts`, add CRUD functions, update `supabase-schema.sql`
 
 ## Notes
 
