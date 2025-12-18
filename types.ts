@@ -26,10 +26,11 @@ export interface ScriptTemplate {
 export interface VoiceProfile {
   id: string;
   name: string;
-  provider: string;
+  provider?: string;
   voiceName: string;
   description: string;
   isCloned?: boolean;
+  elevenlabsVoiceId?: string;
 }
 
 export interface BackgroundMusic {

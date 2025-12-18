@@ -42,6 +42,10 @@ export interface VoiceProfile {
   quality?: VoiceQuality;
   quality_score?: number;
   elevenlabs_voice_id?: string;
+  provider?: string;
+  cloning_status?: string;
+  sample_duration?: number;
+  credits_used?: number;
   created_at: string;
   updated_at: string;
 }
@@ -136,31 +140,59 @@ export const getCurrentUserProfile = async (): Promise<User | null> => {
 };
 
 // Voice Profile operations
-// Note: We use 'accent' field to store the preferred Gemini voice name (Zephyr, Kore, Puck, Fenrir)
 export const createVoiceProfile = async (
   name: string,
   description?: string,
   language: string = 'en-US',
-  geminiVoice: string = 'Kore' // Default Gemini voice
+  geminiVoice?: string, // Gemini voice name (optional for cloned voices)
+  elevenlabsVoiceId?: string // ElevenLabs voice ID (for cloned voices)
 ): Promise<VoiceProfile | null> => {
   const user = await getCurrentUser();
   if (!user) throw new Error('User not authenticated');
 
-  const { data, error } = await supabase
-    .from('voice_profiles')
-    .insert({
-      user_id: user.id,
-      name,
-      description,
-      language,
-      accent: geminiVoice, // Store Gemini voice name in accent field
-      status: 'READY', // Mark as ready since we're using Gemini voices
-    })
-    .select()
-    .single();
+  const profileData: any = {
+    user_id: user.id,
+    name,
+    description,
+    language,
+    provider: elevenlabsVoiceId ? 'ElevenLabs' : 'Gemini',
+    status: 'READY',
+  };
 
-  if (error) throw error;
-  return data;
+  // Set Gemini voice for non-cloned voices
+  if (geminiVoice && !elevenlabsVoiceId) {
+    profileData.accent = geminiVoice;
+  }
+
+  // Set ElevenLabs voice ID for cloned voices
+  if (elevenlabsVoiceId) {
+    profileData.elevenlabs_voice_id = elevenlabsVoiceId;
+    profileData.cloning_status = 'READY';
+    profileData.accent = null; // Clear Gemini voice for clones
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('voice_profiles')
+      .insert(profileData)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error: any) {
+    // Handle duplicate key constraint specifically
+    if (error.code === '23505') {
+      if (error.message?.includes('voice_profiles_user_id_name_key')) {
+        throw new Error(`A voice profile named "${name}" already exists. Please choose a different name.`);
+      }
+      // Handle any other unique constraint violations
+      if (error.message?.includes('duplicate key')) {
+        throw new Error(`A voice profile with this name already exists. Please choose a different name.`);
+      }
+    }
+    throw error;
+  }
 };
 
 export const getUserVoiceProfiles = async (): Promise<VoiceProfile[]> => {
@@ -300,11 +332,27 @@ export const createVoiceClone = async (
 
     if (error) {
       console.error('Supabase error creating voice clone:', error);
+      // Handle duplicate key constraint specifically
+      if (error.code === '23505') {
+        if (error.message?.includes('unique_user_voice_name')) {
+          throw new Error(`A voice clone named "${name}" already exists. Please choose a different name.`);
+        }
+        // Handle any other unique constraint violations
+        if (error.message?.includes('duplicate key')) {
+          throw new Error(`A voice clone with this name already exists. Please choose a different name.`);
+        }
+      }
       throw new Error(error.message || 'Failed to save voice clone. Please check if the voice_clones table exists.');
     }
     return data;
   } catch (err: any) {
     console.error('Error in createVoiceClone:', err);
+    // Ensure duplicate key errors are properly propagated
+    if (err.code === '23505' && err.message?.includes('duplicate key')) {
+      if (err.message?.includes('unique_user_voice_name') || err.message?.includes('voice_clones')) {
+        throw new Error(`A voice clone named "${name}" already exists. Please choose a different name.`);
+      }
+    }
     throw err;
   }
 };

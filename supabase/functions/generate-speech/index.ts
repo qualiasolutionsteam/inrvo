@@ -1,0 +1,241 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+interface GenerateSpeechRequest {
+  text: string;
+  voiceId: string;
+  userId: string;
+  voiceSettings?: {
+    stability?: number;
+    similarity_boost?: number;
+    style?: number;
+    use_speaker_boost?: boolean;
+  };
+}
+
+interface GenerateSpeechResponse {
+  success: boolean;
+  audioBase64?: string;
+  creditsUsed?: number;
+  error?: string;
+}
+
+serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  try {
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Parse request body
+    const { text, voiceId, userId, voiceSettings }: GenerateSpeechRequest = await req.json();
+
+    // Validate input
+    if (!text || !voiceId || !userId) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get voice profile to verify ownership
+    const { data: voiceProfile, error: profileError } = await supabase
+      .from('voice_profiles')
+      .select('elevenlabs_voice_id, user_id, provider')
+      .eq('id', voiceId)
+      .eq('user_id', userId)
+      .single();
+
+    if (profileError || !voiceProfile) {
+      return new Response(
+        JSON.stringify({ error: 'Voice profile not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Calculate TTS cost (280 credits per 1K characters)
+    const creditsNeeded = Math.ceil((text.length / 1000) * 280);
+
+    // Check user credits
+    const { data: userCredits } = await supabase
+      .from('user_credits')
+      .select('credits_remaining')
+      .eq('user_id', userId)
+      .single();
+
+    if (!userCredits || userCredits.credits_remaining < creditsNeeded) {
+      return new Response(
+        JSON.stringify({ error: `Insufficient credits. Need ${creditsNeeded} credits.` }),
+        { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    let audioBase64: string;
+
+    // Route to appropriate TTS provider
+    if (voiceProfile.provider === 'ElevenLabs' && voiceProfile.elevenlabs_voice_id) {
+      // Use ElevenLabs for cloned voices
+      const elevenlabsApiKey = Deno.env.get('ELEVENLABS_API_KEY');
+      if (!elevenlabsApiKey) {
+        return new Response(
+          JSON.stringify({ error: 'ElevenLabs API key not configured' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const requestData = {
+        text,
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: {
+          stability: voiceSettings?.stability ?? 0.5,
+          similarity_boost: voiceSettings?.similarity_boost ?? 0.8,
+          style: voiceSettings?.style ?? 0.0,
+          use_speaker_boost: voiceSettings?.use_speaker_boost ?? true,
+        },
+      };
+
+      const response = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${voiceProfile.elevenlabs_voice_id}`,
+        {
+          method: 'POST',
+          headers: {
+            'xi-api-key': elevenlabsApiKey,
+            'Content-Type': 'application/json',
+            'Accept': 'audio/mpeg',
+          },
+          body: JSON.stringify(requestData),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`TTS generation failed: ${error.detail || error.message}`);
+      }
+
+      const audioBlob = await response.blob();
+      audioBase64 = await blobToBase64(audioBlob);
+    } else {
+      // Use Gemini for prebuilt voices (fall back)
+      const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
+      if (!geminiApiKey) {
+        return new Response(
+          JSON.stringify({ error: 'Gemini API key not configured' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Get Gemini voice name from accent field
+      const { data: fullProfile } = await supabase
+        .from('voice_profiles')
+        .select('accent')
+        .eq('id', voiceId)
+        .single();
+
+      const voiceName = fullProfile?.accent || 'Kore';
+
+      // Call Gemini TTS
+      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': geminiApiKey,
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text }] }],
+          generationConfig: {
+            responseModalities: ['AUDIO'],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName },
+              },
+            },
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`Gemini TTS failed: ${error.message}`);
+      }
+
+      const data = await response.json();
+      audioBase64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    }
+
+    if (!audioBase64) {
+      throw new Error('No audio data received');
+    }
+
+    // Deduct credits
+    await supabase.rpc('deduct_credits', {
+      p_user_id: userId,
+      p_amount: creditsNeeded,
+    });
+
+    // Track usage
+    await supabase
+      .from('voice_cloning_usage')
+      .insert({
+        user_id: userId,
+        voice_profile_id: voiceId,
+        credits_consumed: creditsNeeded,
+        operation_type: 'TTS_GENERATE',
+        metadata: {
+          text_length: text.length,
+          processed_in_edge: true,
+        },
+      });
+
+    const response: GenerateSpeechResponse = {
+      success: true,
+      audioBase64,
+      creditsUsed: creditsNeeded,
+    };
+
+    return new Response(
+      JSON.stringify(response),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Error generating speech:', error);
+
+    const response: GenerateSpeechResponse = {
+      success: false,
+      error: error.message || 'Unknown error occurred',
+    };
+
+    return new Response(
+      JSON.stringify(response),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});
+
+// Helper function to convert blob to base64
+async function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        const base64 = reader.result.split(',')[1];
+        resolve(base64);
+      } else {
+        reject(new Error('Failed to convert blob to base64'));
+      }
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}

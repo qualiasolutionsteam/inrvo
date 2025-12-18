@@ -202,6 +202,43 @@
         transform: translateZ(0);
         backface-visibility: hidden;
       }
+      
+      /* Background images for desktop and mobile */
+      .bg-image-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -2;
+        overflow: hidden;
+      }
+      
+      .bg-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+      
+      .bg-image-desktop {
+        display: block;
+      }
+      
+      .bg-image-mobile {
+        display: none;
+      }
+      
+      @media (max-width: 768px) {
+        .bg-image-desktop {
+          display: none;
+        }
+        .bg-image-mobile {
+          display: block;
+        }
+      }
       .star {
         position: absolute;
         border-radius: 50%;

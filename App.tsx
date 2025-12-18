@@ -10,6 +10,9 @@ import AuthModal from './components/AuthModal';
 import VoiceManager from './components/VoiceManager';
 import { AIVoiceInput } from './components/ui/ai-voice-input';
 import { geminiService, decodeAudioBuffer, blobToBase64 } from './geminiService';
+import { voiceService } from './src/lib/voiceService';
+import { elevenlabsService, base64ToBlob } from './src/lib/elevenlabs';
+import { creditService } from './src/lib/credits';
 import { supabase, getCurrentUser, signOut, createVoiceProfile, getUserVoiceProfiles, VoiceProfile as DBVoiceProfile, createVoiceClone } from './lib/supabase';
 
 const App: React.FC = () => {
@@ -43,6 +46,9 @@ const App: React.FC = () => {
   const [isSavingVoice, setIsSavingVoice] = useState(false);
   const [voiceSaved, setVoiceSaved] = useState(false);
   const [savedVoiceId, setSavedVoiceId] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [isCheckingName, setIsCheckingName] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false); // Prevents double-clicks
 
   const [isRecording, setIsRecording] = useState(false);
   const [recordingProgress, setRecordingProgress] = useState(0);
@@ -94,14 +100,14 @@ const App: React.FC = () => {
       setSavedVoices(voices);
 
       // Add saved voices to available voices
-      // The 'accent' field stores the preferred Gemini voice name
       const clonedVoiceProfiles = voices.map(v => ({
         id: v.id,
         name: v.name,
-        provider: 'Custom' as const,
+        provider: v.provider || (v.elevenlabs_voice_id ? 'ElevenLabs' : 'Gemini'),
         voiceName: v.accent || 'Kore', // Use saved Gemini voice or default to Kore
         description: v.description || 'Your personalized voice profile',
-        isCloned: true
+        isCloned: !!v.elevenlabs_voice_id,
+        elevenlabsVoiceId: v.elevenlabs_voice_id
       }));
 
       setAvailableVoices([...clonedVoiceProfiles, ...VOICE_PROFILES]);
@@ -116,6 +122,50 @@ const App: React.FC = () => {
     setSavedVoices([]);
     setAvailableVoices(VOICE_PROFILES);
     setSelectedVoice(VOICE_PROFILES[1]);
+  };
+
+  // Validate profile name in real-time
+  const validateProfileName = async (name: string) => {
+    if (!name.trim()) {
+      setNameError(null);
+      return;
+    }
+
+    setIsCheckingName(true);
+    setNameError(null);
+
+    try {
+      const existingProfiles = await getUserVoiceProfiles();
+      const existingNames = existingProfiles.map(p => p.name.toLowerCase());
+
+      if (existingNames.includes(name.trim().toLowerCase())) {
+        setNameError('A voice profile with this name already exists');
+      } else {
+        setNameError(null);
+      }
+    } catch (error) {
+      console.error('Error checking profile name:', error);
+    } finally {
+      setIsCheckingName(false);
+    }
+  };
+
+  // Debounced version of validateProfileName
+  const validateProfileNameTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNewProfileName(value);
+
+    // Clear previous timeout
+    if (validateProfileNameTimeoutRef.current) {
+      clearTimeout(validateProfileNameTimeoutRef.current);
+    }
+
+    // Set new timeout for debounced validation (reduced from 500 to 300ms for better UX)
+    validateProfileNameTimeoutRef.current = setTimeout(() => {
+      validateProfileName(value);
+    }, 300);
   };
 
   // Home Transcription Logic
@@ -217,43 +267,137 @@ const App: React.FC = () => {
     }
 
     // Generate a default name if not provided
-    const profileName = newProfileName.trim() || `My Voice ${new Date().toLocaleDateString()}`;
-    
+    let profileName = newProfileName.trim();
+
+    if (!profileName) {
+      // Create a unique default name with timestamp and random suffix
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      const dateStr = now.toLocaleDateString();
+      // Add milliseconds and random number to ensure uniqueness
+      const ms = now.getMilliseconds().toString().padStart(3, '0');
+      const randomSuffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      profileName = `My Voice ${dateStr} ${timeStr}.${ms}.${randomSuffix}`;
+    }
+
+    // Check for existing names and add suffix if needed
+    const existingProfiles = await getUserVoiceProfiles();
+    const existingNames = new Set(existingProfiles.map(p => p.name.toLowerCase()));
+    let finalName = profileName;
+    let counter = 1;
+
+    while (existingNames.has(finalName.toLowerCase())) {
+      // Try different formats for uniqueness
+      if (counter === 1) {
+        finalName = `${profileName} (copy)`;
+      } else if (counter === 2) {
+        finalName = `${profileName} (2)`;
+      } else {
+        finalName = `${profileName} (${counter})`;
+      }
+      counter++;
+
+      // Prevent infinite loop - use UUID as last resort
+      if (counter > 100) {
+        const uuid = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        finalName = `${profileName}-${uuid}`;
+        break;
+      }
+    }
+
     setIsSavingVoice(true);
     setMicError(null);
     setVoiceSaved(false);
 
     try {
-      // Create voice clone
-      let voiceClone = null;
-      try {
-        voiceClone = await createVoiceClone(
-          profileName,
-          audioData,
-          'Cloned voice profile',
-          {}
-        );
-      } catch (cloneError: any) {
-        console.warn('Voice clone creation failed:', cloneError);
+      // Check if user can clone voice (credit and limit check)
+      const { can: canClone, reason } = await creditService.canClone(user.id);
+      if (!canClone) {
+        setMicError(reason || 'Cannot clone voice at this time');
+        setIsSavingVoice(false);
+        return;
       }
 
-      // Create voice profile entry
-      const savedVoice = await createVoiceProfile(
-        profileName,
-        'Cloned voice profile',
-        'en-US',
-        'Kore' // Default voice for TTS (Gemini TTS doesn't support custom voices yet)
-      );
+      // Get cost for user information
+      const costConfig = creditService.getCostConfig();
+
+      // Convert base64 to blob for ElevenLabs
+      const audioBlob = base64ToBlob(audioData, 'audio/webm');
+
+      // Clone voice with ElevenLabs
+      let elevenlabsVoiceId: string | null = null;
+      try {
+        elevenlabsVoiceId = await elevenlabsService.cloneVoice(audioBlob, {
+          name: finalName,
+          description: 'Voice clone created with INrVO'
+        });
+
+        // Deduct credits for successful cloning
+        await creditService.deductCredits(
+          costConfig.VOICE_CLONE,
+          'CLONE_CREATE',
+          undefined,
+          user.id
+        );
+      } catch (cloneError: any) {
+        console.error('ElevenLabs voice clone failed:', cloneError);
+        setMicError(`Voice cloning failed: ${cloneError.message}`);
+        return;
+      }
+
+      // Create voice profile entry with ElevenLabs ID
+      // Handle potential race conditions with duplicate names
+      let savedVoice = null;
+      let retryCount = 0;
+      const maxRetries = 5;
+      let currentName = finalName;
+
+      while (!savedVoice && retryCount < maxRetries) {
+        try {
+          savedVoice = await createVoiceProfile(
+            currentName,
+            'Cloned voice profile',
+            'en-US',
+            undefined, // No Gemini voice for clones
+            elevenlabsVoiceId // Store ElevenLabs voice ID
+          );
+        } catch (error: any) {
+          if (error.message?.includes('already exists') && retryCount < maxRetries - 1) {
+            // Generate a new unique name and retry
+            const uuid = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+            currentName = `${profileName}-${uuid}`;
+            retryCount++;
+            continue;
+          }
+          throw error;
+        }
+      }
 
       if (savedVoice) {
+        // Also save the audio sample to voice_clones table for backup
+        try {
+          await createVoiceClone(
+            savedVoice.name, // Use the actual saved name
+            audioData,
+            'Voice sample for cloned voice',
+            { elevenlabsVoiceId }
+          );
+        } catch (e) {
+          console.warn('Failed to save voice sample:', e);
+        }
+
         // Update the profile name if it was auto-generated
         if (!newProfileName.trim()) {
-          setNewProfileName(profileName);
+          setNewProfileName(savedVoice.name);
         }
-        
+
         setSavedVoiceId(savedVoice.id);
         setVoiceSaved(true);
-        
+
         // Reload voices to include the new one
         await loadUserVoices();
 
@@ -261,10 +405,11 @@ const App: React.FC = () => {
         const newVoice: VoiceProfile = {
           id: savedVoice.id,
           name: savedVoice.name,
-          provider: 'Custom',
-          voiceName: 'Kore', // Will use cloned voice when available
-          description: savedVoice.description || 'Your personalized cloned voice profile',
-          isCloned: true
+          provider: 'ElevenLabs',
+          voiceName: savedVoice.name, // Use actual saved name
+          description: savedVoice.description || 'Your personalized cloned voice',
+          isCloned: true,
+          elevenlabsVoiceId: elevenlabsVoiceId
         };
         setSelectedVoice(newVoice);
       }
@@ -278,6 +423,11 @@ const App: React.FC = () => {
 
   // Create Voice Profile (now just closes modal if voice is already saved)
   const handleCreateVoiceProfile = async () => {
+    // Prevent double-clicks
+    if (isProcessing || isSavingVoice) {
+      return;
+    }
+
     // If voice is already saved, just close the modal
     if (voiceSaved && savedVoiceId) {
       setNewProfileName('');
@@ -290,7 +440,14 @@ const App: React.FC = () => {
 
     // If recording exists but not saved yet, trigger save
     if (recordedAudio && !voiceSaved) {
+      // Check for name conflicts before saving
+      if (newProfileName.trim() && nameError) {
+        setMicError('Please choose a different name or leave empty for auto-generation');
+        return;
+      }
+      setIsProcessing(true);
       await autoSaveVoiceRecording(recordedAudio);
+      setIsProcessing(false);
       return;
     }
 
@@ -319,14 +476,14 @@ const App: React.FC = () => {
       setMicError('Please enter some text to generate a meditation');
       return;
     }
-    
+
     setIsGenerating(true);
     setMicError(null);
-    
+
     try {
       // Generate enhanced meditation from short prompt
       const enhanced = await geminiService.enhanceScript(script);
-      
+
       if (!enhanced || !enhanced.trim()) {
         throw new Error('Failed to generate meditation script. Please try again.');
       }
@@ -336,17 +493,37 @@ const App: React.FC = () => {
         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       }
 
-      // Generate speech with selected voice
-      const audioBase64 = await geminiService.generateSpeech(enhanced, selectedVoice.voiceName);
-      
-      if (!audioBase64 || audioBase64.trim() === '') {
+      // Check for credits if this is a paid user
+      if (selectedVoice.isCloned) {
+        const ttSCost = creditService.calculateTTSCost(enhanced);
+        const credits = await creditService.getCredits(user?.id);
+
+        if (credits < ttSCost) {
+          setMicError(`Insufficient credits for TTS generation. Need ${ttSCost} credits.`);
+          setIsGenerating(false);
+          return;
+        }
+      }
+
+      // Generate speech with unified voice service (handles both Gemini and ElevenLabs)
+      const { audioBuffer, base64 } = await voiceService.generateSpeech(
+        enhanced,
+        selectedVoice,
+        audioContextRef.current
+      );
+
+      if (!base64 || base64.trim() === '') {
         throw new Error('Failed to generate audio. Please check your API key and try again.');
       }
-      
-      const buffer = await decodeAudioBuffer(audioBase64, audioContextRef.current);
-      
-      if (!buffer) {
-        throw new Error('Failed to decode audio. Please try again.');
+
+      // Deduct credits for TTS generation if cloned voice
+      if (selectedVoice.isCloned) {
+        await creditService.deductCredits(
+          creditService.calculateTTSCost(enhanced),
+          'TTS_GENERATE',
+          selectedVoice.id,
+          user?.id
+        );
       }
 
       // Stop any existing playback
@@ -360,7 +537,7 @@ const App: React.FC = () => {
 
       // Start new playback
       const source = audioContextRef.current.createBufferSource();
-      source.buffer = buffer;
+      source.buffer = audioBuffer;
       source.connect(audioContextRef.current.destination);
       source.start();
       audioSourceRef.current = source;
@@ -395,16 +572,37 @@ const App: React.FC = () => {
         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       }
 
-      const audioBase64 = await geminiService.generateSpeech(script, selectedVoice.voiceName);
-      
-      if (!audioBase64 || audioBase64.trim() === '') {
+      // Check for credits if this is a cloned voice
+      if (selectedVoice.isCloned) {
+        const ttSCost = creditService.calculateTTSCost(script);
+        const credits = await creditService.getCredits(user?.id);
+
+        if (credits < ttSCost) {
+          setMicError(`Insufficient credits for TTS generation. Need ${ttSCost} credits.`);
+          setIsGenerating(false);
+          return;
+        }
+      }
+
+      // Generate speech with unified voice service
+      const { audioBuffer, base64 } = await voiceService.generateSpeech(
+        script,
+        selectedVoice,
+        audioContextRef.current
+      );
+
+      if (!base64 || base64.trim() === '') {
         throw new Error('Failed to generate audio. Please check your API key and try again.');
       }
-      
-      const buffer = await decodeAudioBuffer(audioBase64, audioContextRef.current);
-      
-      if (!buffer) {
-        throw new Error('Failed to decode audio. Please try again.');
+
+      // Deduct credits for TTS generation if cloned voice
+      if (selectedVoice.isCloned) {
+        await creditService.deductCredits(
+          creditService.calculateTTSCost(script),
+          'TTS_GENERATE',
+          selectedVoice.id,
+          user?.id
+        );
       }
 
       if (audioSourceRef.current) {
@@ -416,7 +614,7 @@ const App: React.FC = () => {
       }
 
       const source = audioContextRef.current.createBufferSource();
-      source.buffer = buffer;
+      source.buffer = audioBuffer;
       source.connect(audioContextRef.current.destination);
       source.start();
       audioSourceRef.current = source;
@@ -446,6 +644,11 @@ const App: React.FC = () => {
       {isLoading && <LoadingScreen onComplete={() => setIsLoading(false)} />}
 
       <div className={`relative min-h-[100dvh] w-full flex flex-col overflow-hidden transition-opacity duration-700 ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
+        {/* Background Images */}
+        <div className="bg-image-container">
+          <img src="/desktop--background.jpeg" alt="Desktop background" className="bg-image bg-image-desktop" />
+          <img src="/mobile-backgorund.jpeg" alt="Mobile background" className="bg-image bg-image-mobile" />
+        </div>
         <Starfield />
 
         {/* Simple Navigation - Mobile Optimized */}
@@ -711,6 +914,14 @@ const App: React.FC = () => {
                 setVoiceSaved(false);
                 setSavedVoiceId(null);
                 setIsSavingVoice(false);
+                setIsProcessing(false);
+                setNewProfileName('');
+                setNameError(null);
+                setIsCheckingName(false);
+                if (validateProfileNameTimeoutRef.current) {
+                  clearTimeout(validateProfileNameTimeoutRef.current);
+                  validateProfileNameTimeoutRef.current = null;
+                }
                 if (recordingIntervalRef.current) {
                   clearInterval(recordingIntervalRef.current);
                   recordingIntervalRef.current = null;
@@ -750,14 +961,34 @@ const App: React.FC = () => {
                   <label className="block text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-400">
                     Profile Name
                   </label>
-                  <input
-                    type="text"
-                    value={newProfileName}
-                    onChange={(e) => setNewProfileName(e.target.value)}
-                    placeholder="e.g., Morning Meditation Voice"
-                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"
-                    disabled={isGenerating || isRecordingClone}
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={newProfileName}
+                      onChange={handleNameChange}
+                      placeholder="e.g., Morning Meditation Voice"
+                      className={`w-full px-4 py-3 rounded-xl bg-white/5 border text-white text-sm placeholder:text-slate-600 focus:outline-none focus:bg-white/10 transition-all ${
+                        nameError ? 'border-rose-500/50 focus:border-rose-500' : 'border-white/10 focus:border-indigo-500'
+                      }`}
+                      disabled={isGenerating || isRecordingClone}
+                    />
+                    {isCheckingName && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-500/30 border-t-slate-500"></div>
+                      </div>
+                    )}
+                  </div>
+                  {nameError && (
+                    <p className="text-[10px] text-rose-400 font-medium flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {nameError}
+                    </p>
+                  )}
+                  <p className="text-[9px] text-slate-600">
+                    Leave empty to auto-generate a unique name, or create your own
+                  </p>
                 </div>
 
                 {/* Voice Cloning Section */}
@@ -822,6 +1053,8 @@ const App: React.FC = () => {
                             setRecordingProgressClone(0);
                             setVoiceSaved(false);
                             setSavedVoiceId(null);
+                            setNewProfileName('');
+                            setNameError(null);
                           }}
                           className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-400 text-xs font-bold uppercase tracking-widest transition-all"
                         >
@@ -845,6 +1078,9 @@ const App: React.FC = () => {
                           onClick={() => {
                             setRecordedAudio(null);
                             setRecordingProgressClone(0);
+                            setVoiceSaved(false);
+                            setSavedVoiceId(null);
+                            setNameError(null);
                           }}
                           className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-400 text-xs font-bold uppercase tracking-widest transition-all"
                         >
@@ -867,15 +1103,17 @@ const App: React.FC = () => {
                     </svg>
                     Done
                   </button>
-                ) : isSavingVoice ? (
+                ) : isSavingVoice || isProcessing ? (
                   <div className="flex flex-col items-center gap-4 py-4">
                     <div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-500/20 border-t-indigo-500"></div>
-                    <span className="text-[12px] font-bold uppercase tracking-[0.5em] text-indigo-400">Saving...</span>
+                    <span className="text-[12px] font-bold uppercase tracking-[0.5em] text-indigo-400">
+                      {isSavingVoice ? 'Saving...' : 'Processing...'}
+                    </span>
                   </div>
                 ) : (
                   <button
                     onClick={handleCreateVoiceProfile}
-                    disabled={!recordedAudio}
+                    disabled={!recordedAudio || isCheckingName}
                     className="group px-12 py-4 rounded-full bg-white text-slate-950 font-bold text-base hover:scale-105 active:scale-95 transition-all shadow-[0_20px_60px_-15px_rgba(255,255,255,0.3)] flex items-center justify-center gap-3 mx-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   >
                     <span className="w-2 h-2 rounded-full bg-indigo-500 group-hover:animate-ping"></span>
