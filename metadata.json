@@ -1,0 +1,8 @@
+
+{
+  "name": "INrVO - Digital Zen Wellness",
+  "description": "A high-fidelity wellness platform for personalized meditations and immersive storytelling powered by Gemini AI.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
