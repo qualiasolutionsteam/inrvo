@@ -1,12 +1,19 @@
 import React from 'react';
 import { ScriptTemplate, VoiceProfile } from './types';
 
+export interface TemplateSubgroup {
+  id: string;
+  name: string;
+  description: string;
+  templates: ScriptTemplate[];
+}
+
 export interface TemplateCategory {
   id: string;
   name: string;
   description: string;
   icon: 'sparkle' | 'story';
-  templates: ScriptTemplate[];
+  subgroups: TemplateSubgroup[];
 }
 
 export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
