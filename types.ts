@@ -31,3 +31,12 @@ export interface VoiceProfile {
   description: string;
   isCloned?: boolean;
 }
+
+export interface BackgroundMusic {
+  id: string;
+  name: string;
+  description: string;
+  url: string;
+  category: 'ambient' | 'nature' | 'binaural' | 'instrumental';
+  duration: number; // in seconds, 0 for looping
+}
