@@ -26,10 +26,18 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ## Architecture
 
 ### View System
-The app uses a single `App.tsx` component (~960 lines) managing views via the `View` enum in `types.ts`:
-- **HOME** - Main input page with text/voice input, template selection, voice selector
+The app uses a single `App.tsx` component (~1200 lines) managing views via the `View` enum in `types.ts`:
+- **HOME** - Main input page with text/voice input, template browser, voice selector, music selector
 - **PLAYER** - Immersive audio playback with D3 radial visualizer
 - (WRITER, STUDIO, MIXER, CLONE views defined but currently routed through HOME/modals)
+
+### Modal System
+App.tsx manages several modal states for UI overlays:
+- `showTemplatesModal` - 3-level hierarchical template browser (category → subgroup → template)
+- `showMusicModal` - Background track selector with categorized tracks
+- `showCloneModal` - Voice cloning recording interface
+- `showAuthModal` - Sign in/up authentication
+- `showVoiceManager` - Saved voice profiles management
 
 ### AI Integration Layer
 `geminiService.ts` wraps Google Generative AI (@google/genai):
@@ -51,7 +59,7 @@ Database schema in `supabase-schema.sql` - run in Supabase SQL Editor to set up 
 
 ### Component Structure
 ```
-App.tsx              # Main app, all view rendering, state management
+App.tsx              # Main app, all view rendering, state management (~1200 lines)
 components/
   Visualizer.tsx     # D3 radial audio visualizer
   Starfield.tsx      # Procedural star background (250 stars, 5 animation types)
@@ -60,8 +68,8 @@ components/
   AuthModal.tsx      # Sign in/up modal
   VoiceManager.tsx   # Saved voice profiles management
   ui/ai-voice-input  # Voice recording component with visualizer
-constants.tsx        # TEMPLATE_CATEGORIES, VOICE_PROFILES, ICONS (SVG components)
-types.ts             # View enum, interfaces (SoundLayer, ScriptTemplate, VoiceProfile)
+constants.tsx        # TEMPLATE_CATEGORIES, VOICE_PROFILES, BACKGROUND_TRACKS, ICONS
+types.ts             # View enum, interfaces (SoundLayer, ScriptTemplate, VoiceProfile, BackgroundMusic)
 lib/
   supabase.ts        # Supabase client and data operations
   utils.ts           # Utility functions (cn for classnames)
@@ -72,6 +80,9 @@ All state in App.tsx using React hooks. Key state groups:
 - View: `currentView`, `isLoading`
 - Script: `script`, `isGenerating`
 - Voice: `selectedVoice`, `availableVoices`
+- Modals: `showTemplatesModal`, `showMusicModal`, `showCloneModal`, `showAuthModal`, `showVoiceManager`
+- Template selection: `selectedCategory`, `selectedSubgroup` (for 3-level navigation)
+- Background music: `selectedBackgroundTrack`
 - Recording: `isRecording`, `isRecordingClone`, `recordedAudio`, `recordingProgress`
 - Auth: `user`, `showAuthModal`, `savedVoices`
 - Audio: `audioContextRef`, `audioSourceRef`, `isPlaying`
@@ -97,10 +108,14 @@ Global styles in `index.html` `<style>` block and `index.css`. Key patterns:
 
 ## Extending the App
 
-- **Add meditation template**: Edit `TEMPLATE_CATEGORIES` array in `constants.tsx`
+- **Add meditation template**: Edit `TEMPLATE_CATEGORIES` in `constants.tsx`. Structure is hierarchical:
+  - `TemplateCategory` → `TemplateSubgroup[]` → `ScriptTemplate[]`
+  - Example: Meditation (category) → Happiness (subgroup) → Self-Love (template)
+- **Add background track**: Edit `BACKGROUND_TRACKS` in `constants.tsx` (categories: ambient, nature, binaural, instrumental)
 - **Add voice profile**: Edit `VOICE_PROFILES` in `constants.tsx` (Gemini voices: Zephyr, Kore, Puck, Fenrir)
 - **Modify AI prompts**: Edit prompt strings in `geminiService.ts`
 - **Add new view**: Add to `View` enum in `types.ts`, add render logic in App.tsx
+- **Add new modal**: Add state `showXModal` in App.tsx, render conditional JSX
 - **Add database table**: Update types in `lib/supabase.ts`, add CRUD functions, update `supabase-schema.sql`
 
 ## Notes
