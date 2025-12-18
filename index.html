@@ -7,7 +7,11 @@
     <title>INrVO | Digital Zen</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- Optimized font loading: only load weights actually used, use display=swap for fast text rendering -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+      <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    </noscript>
     <style>
       /* ========== Design Tokens ========== */
       :root {
@@ -54,16 +58,27 @@
       /* ========== Glass Morphism ========== */
       .glass {
         background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.08);
       }
       .glass-elevated {
         background: rgba(255, 255, 255, 0.04);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
         border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 25px 50px -12px rgba(99, 102, 241, 0.08);
+      }
+      /* Reduce blur on mobile for better performance */
+      @media (max-width: 768px) {
+        .glass {
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+        }
+        .glass-elevated {
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+        }
       }
 
       /* ========== Gradient Effects ========== */
@@ -183,11 +198,17 @@
         z-index: -1;
         background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
         overflow: hidden;
+        /* GPU acceleration for container */
+        transform: translateZ(0);
+        backface-visibility: hidden;
       }
       .star {
         position: absolute;
         border-radius: 50%;
         pointer-events: none;
+        /* GPU acceleration for smoother animations */
+        transform: translateZ(0);
+        backface-visibility: hidden;
       }
 
       /* Slow Breathing Glow */
@@ -336,6 +357,32 @@
       @media (max-width: 768px) {
         .starfield-scanlines::after {
           display: none;
+        }
+        /* Simplify animations on mobile for better performance */
+        .animate-glitch,
+        .animate-artifact {
+          animation: shine var(--duration) infinite ease-in-out !important;
+        }
+        /* Reduce glow effects on mobile */
+        .animate-pulsar {
+          box-shadow: none !important;
+        }
+      }
+
+      /* Respect reduced motion preference */
+      @media (prefers-reduced-motion: reduce) {
+        .star,
+        .animate-shine,
+        .animate-twinkle,
+        .animate-glitch,
+        .animate-artifact,
+        .animate-pulsar,
+        .neural-wave,
+        .expanding-ring {
+          animation: none !important;
+        }
+        .starfield-scanlines::after {
+          animation: none !important;
         }
       }
 

@@ -18,6 +18,22 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
-      }
+      },
+      build: {
+        // Code splitting configuration for smaller chunks
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              // Split vendor chunks for better caching
+              'react-vendor': ['react', 'react-dom'],
+              'd3-vendor': ['d3'],
+              'supabase-vendor': ['@supabase/supabase-js'],
+              'genai-vendor': ['@google/genai'],
+            },
+          },
+        },
+        // Target modern browsers for smaller bundles
+        target: 'es2020',
+      },
     };
 });

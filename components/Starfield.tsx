@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, memo } from 'react';
 
 type StarType = 'normal' | 'glitcher' | 'artifact' | 'pulsar';
 
@@ -24,12 +24,43 @@ interface NeuralPulse {
   y: number;
 }
 
+// Memoized star component to prevent unnecessary re-renders
+const Star = memo<{ star: Star }>(({ star }) => (
+  <div
+    className={`star ${star.animClass}`}
+    style={{
+      top: star.top,
+      left: star.left,
+      width: star.size,
+      height: star.size,
+      backgroundColor: star.color,
+      '--duration': star.duration,
+      '--glow-color': star.glowColor,
+      '--glow-radius': star.glowRadius,
+      '--glow-spread': star.glowSpread,
+      '--base-opacity': star.baseOpacity,
+      animationDelay: star.delay,
+      opacity: star.baseOpacity,
+      // Only use will-change for special stars, reduces GPU memory
+      willChange: star.type !== 'normal' ? 'transform, opacity' : 'auto',
+      // Use transform3d for GPU acceleration
+      transform: 'translateZ(0)',
+    } as React.CSSProperties}
+  />
+));
+
+Star.displayName = 'Star';
+
 const Starfield: React.FC = () => {
   const [pulses, setPulses] = useState<NeuralPulse[]>([]);
 
-  // Detect mobile for performance optimization
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const starCount = isMobile ? 180 : 250;
+  // Detect mobile for performance optimization - memoized
+  const isMobile = useMemo(() =>
+    typeof window !== 'undefined' && window.innerWidth < 768,
+  []);
+
+  // Reduce star count significantly on mobile for better performance
+  const starCount = isMobile ? 100 : 200;
 
   const stars = useMemo(() => {
     return Array.from({ length: starCount }).map((_, i): Star => {
@@ -139,27 +170,9 @@ const Starfield: React.FC = () => {
 
   return (
     <div className={`stars-container ${!isMobile ? 'starfield-scanlines' : ''}`}>
-      {/* Stars */}
+      {/* Stars - using memoized Star component */}
       {stars.map((star) => (
-        <div
-          key={star.id}
-          className={`star ${star.animClass}`}
-          style={{
-            top: star.top,
-            left: star.left,
-            width: star.size,
-            height: star.size,
-            backgroundColor: star.color,
-            '--duration': star.duration,
-            '--glow-color': star.glowColor,
-            '--glow-radius': star.glowRadius,
-            '--glow-spread': star.glowSpread,
-            '--base-opacity': star.baseOpacity,
-            animationDelay: star.delay,
-            opacity: star.baseOpacity,
-            willChange: star.type !== 'normal' ? 'transform, opacity, filter' : 'auto'
-          } as React.CSSProperties}
-        />
+        <Star key={star.id} star={star} />
       ))}
 
       {/* Neural pulse waves */}
@@ -187,4 +200,4 @@ const Starfield: React.FC = () => {
   );
 };
 
-export default Starfield;
+export default memo(Starfield);

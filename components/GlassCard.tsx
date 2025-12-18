@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 
 type GlassCardVariant = 'default' | 'elevated' | 'bordered';
 
@@ -11,7 +11,7 @@ interface GlassCardProps {
   variant?: GlassCardVariant;
 }
 
-const GlassCard: React.FC<GlassCardProps> = ({
+const GlassCard: React.FC<GlassCardProps> = memo(({
   children,
   className = "",
   onClick,
@@ -39,6 +39,8 @@ const GlassCard: React.FC<GlassCardProps> = ({
       {children}
     </div>
   );
-};
+});
+
+GlassCard.displayName = 'GlassCard';
 
 export default GlassCard;

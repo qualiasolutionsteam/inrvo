@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, memo, useMemo } from 'react';
 import * as d3 from 'd3';
 
 interface VisualizerProps {
@@ -6,7 +6,7 @@ interface VisualizerProps {
   intensity?: number; // 0 to 1
 }
 
-const Visualizer: React.FC<VisualizerProps> = ({ isActive, intensity = 0.5 }) => {
+const Visualizer: React.FC<VisualizerProps> = memo(({ isActive, intensity = 0.5 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState(400);
@@ -141,6 +141,8 @@ const Visualizer: React.FC<VisualizerProps> = ({ isActive, intensity = 0.5 }) =>
       </svg>
     </div>
   );
-};
+});
+
+Visualizer.displayName = 'Visualizer';
 
 export default Visualizer;
