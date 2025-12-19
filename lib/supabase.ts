@@ -79,6 +79,20 @@ export interface AudioGeneration {
   created_at: string;
 }
 
+export interface MeditationHistory {
+  id: string;
+  user_id: string;
+  prompt: string;
+  enhanced_script?: string;
+  voice_id?: string;
+  voice_name?: string;
+  background_track_id?: string;
+  background_track_name?: string;
+  duration_seconds?: number;
+  created_at: string;
+  updated_at: string;
+}
+
 // Auth helpers
 export const signUp = async (email: string, password: string, firstName?: string, lastName?: string) => {
   if (!supabase) throw new Error('Supabase not configured');
@@ -377,6 +391,76 @@ export const getUserVoiceClones = async (): Promise<VoiceClone[]> => {
 
   if (error) throw error;
   return data || [];
+};
+
+// Meditation History operations
+export const saveMeditationHistory = async (
+  prompt: string,
+  enhancedScript?: string,
+  voiceId?: string,
+  voiceName?: string,
+  backgroundTrackId?: string,
+  backgroundTrackName?: string,
+  durationSeconds?: number
+): Promise<MeditationHistory | null> => {
+  const user = await getCurrentUser();
+  if (!user || !supabase) return null;
+
+  const { data, error } = await supabase
+    .from('meditation_history')
+    .insert({
+      user_id: user.id,
+      prompt,
+      enhanced_script: enhancedScript,
+      voice_id: voiceId,
+      voice_name: voiceName,
+      background_track_id: backgroundTrackId,
+      background_track_name: backgroundTrackName,
+      duration_seconds: durationSeconds,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error saving meditation history:', error);
+    return null;
+  }
+  return data;
+};
+
+export const getMeditationHistory = async (limit = 50): Promise<MeditationHistory[]> => {
+  const user = await getCurrentUser();
+  if (!user || !supabase) return [];
+
+  const { data, error } = await supabase
+    .from('meditation_history')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('Error fetching meditation history:', error);
+    return [];
+  }
+  return data || [];
+};
+
+export const deleteMeditationHistory = async (id: string): Promise<boolean> => {
+  const user = await getCurrentUser();
+  if (!user || !supabase) return false;
+
+  const { error } = await supabase
+    .from('meditation_history')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.error('Error deleting meditation history:', error);
+    return false;
+  }
+  return true;
 };
 
 // Auth state listener
