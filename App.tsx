@@ -947,14 +947,14 @@ const App: React.FC = () => {
                       <div className="relative flex-shrink-0">
                           <button
                             onClick={() => setShowPromptMenu(!showPromptMenu)}
-                            className={`p-2 rounded-full transition-all flex items-center justify-center border ${
+                            className={`p-1.5 md:p-2 rounded-full transition-all flex items-center justify-center border ${
                               showPromptMenu
                                 ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/50'
                                 : 'text-slate-400 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/5'
                             }`}
                             title="Open menu"
                           >
-                            <ICONS.Plus className={`w-5 h-5 transition-transform duration-200 ${showPromptMenu ? 'rotate-45' : ''}`} />
+                            <ICONS.Plus className={`w-4 h-4 md:w-5 md:h-5 transition-transform duration-200 ${showPromptMenu ? 'rotate-45' : ''}`} />
                           </button>
 
                           {/* Popup Menu */}
@@ -1082,14 +1082,14 @@ const App: React.FC = () => {
                         onClick={handleGenerateAndPlay}
                         disabled={isGenerating || !script.trim()}
                         className={`
-                          flex-shrink-0 p-2 rounded-full transition-all flex items-center justify-center border
+                          flex-shrink-0 p-1.5 md:p-2 rounded-full transition-all flex items-center justify-center border
                           ${isGenerating ? 'bg-indigo-500/50 border-indigo-500/50 cursor-not-allowed text-white/70' : script.trim() ? 'bg-indigo-500 border-indigo-400 hover:bg-indigo-400 active:scale-95 text-white' : 'text-slate-400 border-white/20'}
                         `}
                       >
                         {isGenerating ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
+                          <div className="animate-spin rounded-full h-3.5 w-3.5 md:h-4 md:w-4 border-2 border-white/30 border-t-white"></div>
                         ) : (
-                          <ICONS.Send className="w-4 h-4" />
+                          <ICONS.Send className="w-3.5 h-3.5 md:w-4 md:h-4" />
                         )}
                       </button>
                     </div>
