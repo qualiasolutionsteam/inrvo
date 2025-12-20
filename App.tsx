@@ -941,7 +941,7 @@ const App: React.FC = () => {
                     </div>
                   )}
 
-                  <div className="glass glass-prompt rounded-2xl md:rounded-[32px] p-1.5 md:p-2 shadow-2xl shadow-indigo-900/20 border border-white/10">
+                  <div className="glass glass-prompt rounded-2xl md:rounded-[32px] p-1.5 md:p-2 shadow-2xl shadow-indigo-900/20 border border-white/30">
                     <div className="flex items-center gap-2 md:gap-3 px-1 md:px-2">
                       {/* Plus Menu Button */}
                       <div className="relative flex-shrink-0">
@@ -949,8 +949,8 @@ const App: React.FC = () => {
                             onClick={() => setShowPromptMenu(!showPromptMenu)}
                             className={`p-1.5 md:p-2 rounded-full transition-all flex items-center justify-center border ${
                               showPromptMenu
-                                ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/50'
-                                : 'text-slate-400 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/5'
+                                ? 'bg-indigo-500/20 text-indigo-400 border-indigo-400/60'
+                                : 'text-slate-300 hover:text-white border-white/40 hover:border-white/60 hover:bg-white/5'
                             }`}
                             title="Open menu"
                           >
@@ -1083,7 +1083,7 @@ const App: React.FC = () => {
                         disabled={isGenerating || !script.trim()}
                         className={`
                           flex-shrink-0 p-1.5 md:p-2 rounded-full transition-all flex items-center justify-center border
-                          ${isGenerating ? 'bg-indigo-500/50 border-indigo-500/50 cursor-not-allowed text-white/70' : script.trim() ? 'bg-indigo-500 border-indigo-400 hover:bg-indigo-400 active:scale-95 text-white' : 'text-slate-400 border-white/20'}
+                          ${isGenerating ? 'bg-indigo-500/50 border-indigo-400/60 cursor-not-allowed text-white/70' : script.trim() ? 'bg-indigo-500 border-indigo-300 hover:bg-indigo-400 active:scale-95 text-white' : 'text-slate-300 border-white/40'}
                         `}
                       >
                         {isGenerating ? (
