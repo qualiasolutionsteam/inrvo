@@ -92,6 +92,19 @@ const App: React.FC = () => {
   const [savedVoices, setSavedVoices] = useState<DBVoiceProfile[]>([]);
   const [currentClonedVoice, setCurrentClonedVoice] = useState<DBVoiceProfile | null>(null);
 
+  // Voice clone recording states
+  const [isRecordingClone, setIsRecordingClone] = useState(false);
+  const [recordingProgressClone, setRecordingProgressClone] = useState(0);
+  const [recordedAudio, setRecordedAudio] = useState<string | null>(null);
+  const [isSavingVoice, setIsSavingVoice] = useState(false);
+  const [voiceSaved, setVoiceSaved] = useState(false);
+  const [savedVoiceId, setSavedVoiceId] = useState<string | null>(null);
+  const [newProfileName, setNewProfileName] = useState('');
+  const [nameError, setNameError] = useState<string | null>(null);
+
+  const cloneMediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const cloneChunksRef = useRef<Blob[]>([]);
+
   // Check auth state on mount
   useEffect(() => {
     checkUser();
@@ -883,8 +896,8 @@ const App: React.FC = () => {
                               />
 
                               {/* Menu Container */}
-                              <div className="absolute bottom-full left-0 mb-3 z-50 glass rounded-2xl p-2 border border-white/10 shadow-xl shadow-black/20 animate-in fade-in slide-in-from-bottom-2">
-                                <div className="grid grid-cols-2 gap-2">
+                              <div className="absolute bottom-full left-0 mb-3 z-50 glass rounded-2xl p-2 border border-white/10 shadow-xl shadow-black/20 animate-in fade-in slide-in-from-bottom-2 min-w-[160px]">
+                                <div className="grid grid-cols-2 gap-2 w-full">
                                   {/* Clone Voice */}
                                   <button
                                     onClick={() => {

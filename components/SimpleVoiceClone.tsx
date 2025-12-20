@@ -3,6 +3,7 @@ import GlassCard from './GlassCard';
 import { VoiceProfile } from '../types';
 import { AIVoiceInput } from './ui/ai-voice-input';
 import { supabase, createVoiceProfile, getCurrentUser } from '../lib/supabase';
+import { blobToBase64 } from '../geminiService';
 
 interface SimpleVoiceCloneProps {
   onClose: () => void;
@@ -21,10 +22,54 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
   const [profileName, setProfileName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const handleRecordingComplete = useCallback(async (audioBase64: string) => {
-    setRecordedAudio(audioBase64);
-    setIsRecording(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      chunksRef.current = [];
+
+      recorder.ondataavailable = (e) => chunksRef.current.push(e.data);
+      recorder.onstop = async () => {
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const base64 = await blobToBase64(blob);
+        setRecordedAudio(base64);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      recorder.start();
+      setIsRecording(true);
+
+      // Auto-stop after 30 seconds
+      setTimeout(() => {
+        if (mediaRecorderRef.current?.state === 'recording') {
+          stopRecording();
+        }
+      }, 30000);
+    } catch (e: any) {
+      setError(e.message || 'Microphone access denied');
+    }
   }, []);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current?.state === 'recording') {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  }, []);
+
+  const handleToggleRecording = useCallback((recording: boolean) => {
+    if (recording) {
+      startRecording();
+    } else {
+      stopRecording();
+    }
+  }, [startRecording, stopRecording]);
 
   const handleSaveVoice = async () => {
     if (!recordedAudio || !currentUserId) {
@@ -124,14 +169,7 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
                 <div className="flex justify-center">
                   <AIVoiceInput
                     isRecording={isRecording}
-                    onToggle={(recording) => {
-                      if (recording) {
-                        setIsRecording(true);
-                      } else {
-                        setIsRecording(false);
-                      }
-                    }}
-                    onComplete={handleRecordingComplete}
+                    onToggle={handleToggleRecording}
                     visualizerBars={24}
                     className="[&_button]:!bg-white/10 [&_button]:!hover:bg-white/20"
                   />
