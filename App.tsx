@@ -171,6 +171,11 @@ const App: React.FC = () => {
   // Inline player state
   const [isInlineMode, setIsInlineMode] = useState(false);
   const [enhancedScript, setEnhancedScript] = useState('');
+
+  // Script edit preview state (after generation, before playing)
+  const [showScriptPreview, setShowScriptPreview] = useState(false);
+  const [editableScript, setEditableScript] = useState('');
+  const [originalPrompt, setOriginalPrompt] = useState('');
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentWordIndex, setCurrentWordIndex] = useState(-1);
@@ -1027,6 +1032,7 @@ const App: React.FC = () => {
     setCurrentView(View.PLAYER);
   }, []);
 
+  // Step 1: Generate script and show editable preview
   const handleGenerateAndPlay = async () => {
     if (!script.trim()) {
       setMicError('Please enter some text to generate a meditation');
@@ -1040,20 +1046,15 @@ const App: React.FC = () => {
       return;
     }
 
-    const originalPrompt = script; // Store original prompt before we modify script state
+    setOriginalPrompt(script); // Store original prompt
     setIsGenerating(true);
     setGenerationStage('script');
     setMicError(null);
 
     try {
-      // Initialize audio context early (parallel with other checks)
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
-
       // Check credits FIRST (fail fast before expensive operations)
       if (selectedVoice.isCloned) {
-        const estimatedCost = creditService.calculateTTSCost(script, 150); // Estimate for 150 words
+        const estimatedCost = creditService.calculateTTSCost(script, 150);
         const credits = await creditService.getCredits(user?.id);
         if (credits < estimatedCost) {
           setMicError(`Insufficient credits for TTS generation. Need ${estimatedCost} credits.`);
@@ -1070,92 +1071,110 @@ const App: React.FC = () => {
             .map(tag => tag.label)
         : undefined;
 
-      // Generate enhanced meditation from short prompt (using fast model)
+      // Generate enhanced meditation from short prompt
       const enhanced = await geminiService.enhanceScript(script, audioTagLabels);
 
       if (!enhanced || !enhanced.trim()) {
         throw new Error('Failed to generate meditation script. Please try again.');
       }
 
-      // Stage 2: Voice generation
-      setGenerationStage('voice');
+      // Show editable preview instead of auto-playing
+      setEditableScript(enhanced);
+      setShowScriptPreview(true);
+      setIsGenerating(false);
+      setGenerationStage('idle');
 
-      // Generate speech with unified voice service (handles both Gemini and ElevenLabs)
+    } catch (error: any) {
+      console.error('Failed to generate script:', error);
+      setMicError(error?.message || 'Failed to generate meditation. Please try again.');
+      setIsGenerating(false);
+      setGenerationStage('idle');
+    }
+  };
+
+  // Step 2: Play the edited script after user confirms
+  const handlePlayEditedScript = async () => {
+    if (!editableScript.trim() || !selectedVoice) return;
+
+    setShowScriptPreview(false);
+    setIsGenerating(true);
+    setGenerationStage('voice');
+    setMicError(null);
+
+    try {
+      // Initialize audio context
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+
+      // Generate speech with the edited script
       const { audioBuffer, base64 } = await voiceService.generateSpeech(
-        enhanced,
+        editableScript,
         selectedVoice,
         audioContextRef.current
       );
 
       if (!base64 || base64.trim() === '') {
-        throw new Error('Failed to generate audio. Please check your API key and try again.');
+        throw new Error('Failed to generate audio. Please try again.');
       }
 
-      // Stage 3: Ready to play
       setGenerationStage('ready');
 
       // Stop any existing playback
       if (audioSourceRef.current) {
         try {
           audioSourceRef.current.stop();
-        } catch (e) {
-          // Ignore errors when stopping
-        }
+        } catch (e) {}
       }
 
-      // Cancel any existing animation frame
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
 
-      // Store the audio buffer for pause/resume
+      // Store the audio buffer
       audioBufferRef.current = audioBuffer;
-
-      // Set duration and reset playback state
       setDuration(audioBuffer.duration);
       setCurrentTime(0);
       setCurrentWordIndex(0);
       pauseOffsetRef.current = 0;
 
-      // Start new playback IMMEDIATELY (don't wait for timing map)
+      // Start playback
       const source = audioContextRef.current.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(audioContextRef.current.destination);
       source.start();
       audioSourceRef.current = source;
-
-      // Track playback start time
       playbackStartTimeRef.current = audioContextRef.current.currentTime;
 
-      // Update state - switch to inline mode
-      setScript(enhanced);
-      setEnhancedScript(enhanced);
+      // Update state
+      setScript(editableScript);
+      setEnhancedScript(editableScript);
       setIsPlaying(true);
       setIsInlineMode(true);
       setIsGenerating(false);
       setGenerationStage('idle');
 
-      // Build timing map synchronously for immediate text sync
-      const map = buildTimingMap(enhanced, audioBuffer.duration);
+      // Build timing map
+      const map = buildTimingMap(editableScript, audioBuffer.duration);
       setTimingMap(map);
 
-      // Start background music if selected
+      // Start background music
       startBackgroundMusic(selectedBackgroundTrack);
 
-      // Deduct credits fire-and-forget (don't block playback)
+      // Deduct credits
       if (selectedVoice.isCloned) {
         creditService.deductCredits(
-          creditService.calculateTTSCost(enhanced),
+          creditService.calculateTTSCost(editableScript),
           'TTS_GENERATE',
           selectedVoice.id,
           user?.id
         ).catch(err => console.warn('Failed to deduct credits:', err));
       }
 
-      // Auto-save to meditation history (fire and forget)
+      // Save to history
       saveMeditationHistory(
-        originalPrompt, // original prompt
-        enhanced, // enhanced script
+        originalPrompt,
+        editableScript,
         selectedVoice.id,
         selectedVoice.name,
         selectedBackgroundTrack?.id,
@@ -1171,12 +1190,16 @@ const App: React.FC = () => {
         }
       };
     } catch (error: any) {
-      console.error('Failed to generate and play meditation:', error);
-      setMicError(error?.message || 'Failed to generate meditation. Please check your API key and try again.');
-      // Reset generating state on error
+      console.error('Failed to play edited script:', error);
+      setMicError(error?.message || 'Failed to generate audio. Please try again.');
       setIsGenerating(false);
       setGenerationStage('idle');
     }
+  };
+
+  // Insert audio tag at cursor position in editable script
+  const insertAudioTag = (tag: string) => {
+    setEditableScript(prev => prev + ` ${tag} `);
   };
 
   const handleSelectTemplate = (prompt: string) => {
@@ -2096,6 +2119,94 @@ const App: React.FC = () => {
                     className="flex-1 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white font-medium transition-all hover:shadow-lg hover:shadow-violet-500/25"
                   >
                     Done
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* MODAL: Script Preview & Edit */}
+        {showScriptPreview && (
+          <>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              {/* Backdrop */}
+              <div
+                className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+                onClick={() => setShowScriptPreview(false)}
+              />
+
+              {/* Modal Content */}
+              <div className="relative z-10 w-full max-w-2xl glass rounded-3xl border border-white/10 shadow-2xl shadow-black/50 max-h-[85vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 md:p-6 border-b border-white/10">
+                  <div>
+                    <h2 className="text-xl md:text-2xl font-bold text-white">Edit Your Meditation</h2>
+                    <p className="text-xs md:text-sm text-slate-400 mt-1">
+                      Review and customize before playing
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowScriptPreview(false)}
+                    className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all"
+                  >
+                    <ICONS.Close className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Script Editor */}
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+                  <textarea
+                    value={editableScript}
+                    onChange={(e) => setEditableScript(e.target.value)}
+                    className="w-full h-64 md:h-80 p-4 rounded-2xl bg-white/5 border border-white/10 text-slate-200 text-base md:text-lg leading-relaxed font-serif resize-none focus:outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    placeholder="Your meditation script..."
+                  />
+
+                  {/* Audio Tags Quick Insert */}
+                  <div className="space-y-3">
+                    <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Quick Insert Audio Tags</p>
+                    <div className="flex flex-wrap gap-2">
+                      {AUDIO_TAG_CATEGORIES.flatMap(cat => cat.tags).slice(0, 8).map(tag => (
+                        <button
+                          key={tag.id}
+                          onClick={() => insertAudioTag(tag.label)}
+                          className="px-3 py-1.5 rounded-lg bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 text-xs font-medium transition-colors"
+                        >
+                          + {tag.label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      Tip: Audio tags like [pause] or [deep breath] add pacing to your meditation
+                    </p>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="p-4 md:p-6 border-t border-white/10 flex gap-3">
+                  <button
+                    onClick={() => setShowScriptPreview(false)}
+                    className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-medium transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handlePlayEditedScript}
+                    disabled={!editableScript.trim() || isGenerating}
+                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium transition-all hover:shadow-lg hover:shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <ICONS.Play className="w-4 h-4" />
+                        Play Meditation
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
