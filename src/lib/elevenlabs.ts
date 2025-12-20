@@ -9,6 +9,32 @@ import {
   elevenLabsGetVoiceStatus,
 } from './edgeFunctions';
 
+// Voice status cache to reduce API calls (5-minute TTL)
+const voiceStatusCache = new Map<string, { status: string; timestamp: number }>();
+const VOICE_STATUS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getCachedVoiceStatus(voiceId: string): string | null {
+  const cached = voiceStatusCache.get(voiceId);
+  if (cached && Date.now() - cached.timestamp < VOICE_STATUS_CACHE_TTL) {
+    return cached.status;
+  }
+  return null;
+}
+
+function setCachedVoiceStatus(voiceId: string, status: string): void {
+  voiceStatusCache.set(voiceId, { status, timestamp: Date.now() });
+}
+
+// Clear stale cache entries periodically (every 10 minutes)
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of voiceStatusCache.entries()) {
+    if (now - value.timestamp > VOICE_STATUS_CACHE_TTL * 2) {
+      voiceStatusCache.delete(key);
+    }
+  }
+}, 10 * 60 * 1000);
+
 export interface VoiceCloningOptions {
   name: string;
   description?: string;
@@ -115,13 +141,30 @@ export const elevenlabsService = {
   },
 
   /**
-   * Gets the status of a voice
+   * Gets the status of a voice with caching (5-minute TTL)
    * Uses Edge Functions for secure API key handling
    * @param voiceId - Voice ID to check
    * @returns Promise<string> - Status ('ready' if voice exists, 'deleted' if not)
    */
   async getVoiceStatus(voiceId: string): Promise<string> {
-    return elevenLabsGetVoiceStatus(voiceId);
+    // Check cache first
+    const cached = getCachedVoiceStatus(voiceId);
+    if (cached !== null) {
+      return cached;
+    }
+
+    // Fetch from API and cache result
+    const status = await elevenLabsGetVoiceStatus(voiceId);
+    setCachedVoiceStatus(voiceId, status);
+    return status;
+  },
+
+  /**
+   * Invalidates the voice status cache for a specific voice
+   * Call this after cloning or deleting a voice
+   */
+  invalidateVoiceCache(voiceId: string): void {
+    voiceStatusCache.delete(voiceId);
   },
 
   /**
@@ -130,7 +173,9 @@ export const elevenlabsService = {
    * @param voiceId - Voice ID to delete
    */
   async deleteVoice(voiceId: string): Promise<void> {
-    return elevenLabsDeleteVoice(voiceId);
+    await elevenLabsDeleteVoice(voiceId);
+    // Invalidate cache after deletion
+    this.invalidateVoiceCache(voiceId);
   },
 };
 

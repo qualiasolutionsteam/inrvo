@@ -11,6 +11,15 @@ const Visualizer: React.FC<VisualizerProps> = memo(({ isActive, intensity = 0.5 
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState(400);
 
+  // Cache D3 selections to avoid re-querying the DOM
+  const d3SelectionsRef = useRef<{
+    path: d3.Selection<SVGPathElement, any, null, undefined> | null;
+    path2: d3.Selection<SVGPathElement, any, null, undefined> | null;
+    g: d3.Selection<SVGGElement, unknown, null, undefined> | null;
+    initialized: boolean;
+    lastSize: number;
+  }>({ path: null, path2: null, g: null, initialized: false, lastSize: 0 });
+
   // Responsive sizing
   const updateSize = useCallback(() => {
     const vw = window.innerWidth;
@@ -48,6 +57,24 @@ const Visualizer: React.FC<VisualizerProps> = memo(({ isActive, intensity = 0.5 
     };
   }, [updateSize]);
 
+  // Memoize line generator and points to avoid recreation
+  const { line, points, radius, numPoints } = useMemo(() => {
+    const np = size < 300 ? 80 : 120;
+    const angleStep = (Math.PI * 2) / np;
+    const r = size * 0.25;
+
+    return {
+      numPoints: np,
+      radius: r,
+      points: d3.range(np).map(i => ({ angle: i * angleStep, r })),
+      line: d3.lineRadial<{ angle: number; r: number }>()
+        .angle(d => d.angle)
+        .radius(d => d.r)
+        .curve(d3.curveBasisClosed)
+    };
+  }, [size]);
+
+  // Initialize SVG structure only once, or when size changes significantly
   useEffect(() => {
     if (!svgRef.current) return;
 
@@ -55,41 +82,41 @@ const Visualizer: React.FC<VisualizerProps> = memo(({ isActive, intensity = 0.5 
       .attr('viewBox', `0 0 ${size} ${size}`)
       .style('overflow', 'visible');
 
-    svg.selectAll('*').remove();
+    // Only rebuild DOM structure if size changed or not initialized
+    const selections = d3SelectionsRef.current;
+    if (!selections.initialized || selections.lastSize !== size) {
+      svg.selectAll('g').remove();
 
-    const g = svg.append('g')
-      .attr('transform', `translate(${size / 2}, ${size / 2})`);
+      const g = svg.append('g')
+        .attr('transform', `translate(${size / 2}, ${size / 2})`);
 
-    // Scale number of points based on size for performance
-    const numPoints = size < 300 ? 80 : 120;
-    const angleStep = (Math.PI * 2) / numPoints;
-    const radius = size * 0.25; // 25% of container size
+      const path = g.append('path')
+        .datum(points)
+        .attr('d', line)
+        .attr('fill', 'none')
+        .attr('stroke', 'url(#auraGradient)')
+        .attr('stroke-width', size < 300 ? 1.5 : 2)
+        .attr('filter', 'blur(1px)');
 
-    const points = d3.range(numPoints).map(i => ({
-      angle: i * angleStep,
-      r: radius
-    }));
+      const path2 = g.append('path')
+        .datum(points)
+        .attr('d', line)
+        .attr('fill', 'url(#centerGradient)')
+        .attr('stroke', 'none')
+        .attr('opacity', 0.4);
 
-    const line = d3.lineRadial<{ angle: number; r: number }>()
-      .angle(d => d.angle)
-      .radius(d => d.r)
-      .curve(d3.curveBasisClosed);
+      selections.g = g;
+      selections.path = path;
+      selections.path2 = path2;
+      selections.initialized = true;
+      selections.lastSize = size;
+    }
+  }, [size, points, line]);
 
-    const path = g.append('path')
-      .datum(points)
-      .attr('d', line)
-      .attr('fill', 'none')
-      .attr('stroke', 'url(#auraGradient)')
-      .attr('stroke-width', size < 300 ? 1.5 : 2)
-      .attr('filter', 'blur(1px)');
-
-    // Inner glow
-    const path2 = g.append('path')
-      .datum(points)
-      .attr('d', line)
-      .attr('fill', 'url(#centerGradient)')
-      .attr('stroke', 'none')
-      .attr('opacity', 0.4);
+  // Animation loop - separate from DOM structure initialization
+  useEffect(() => {
+    const selections = d3SelectionsRef.current;
+    if (!selections.path || !selections.path2) return;
 
     let t = 0;
     let animId: number;
@@ -110,15 +137,16 @@ const Visualizer: React.FC<VisualizerProps> = memo(({ isActive, intensity = 0.5 
         };
       });
 
-      path.attr('d', line(newPoints));
-      path2.attr('d', line(newPoints));
+      // Update paths using cached selections (no DOM queries)
+      selections.path!.attr('d', line(newPoints));
+      selections.path2!.attr('d', line(newPoints));
 
       animId = requestAnimationFrame(animate);
     };
 
     animId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animId);
-  }, [isActive, size]);
+  }, [isActive, size, points, radius, line]);
 
   return (
     <div
