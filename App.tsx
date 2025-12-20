@@ -912,9 +912,9 @@ const App: React.FC = () => {
               {/* Tagline - centered in remaining space */}
               <div className="flex-1 flex flex-col items-center justify-center px-4 pb-[200px] md:pb-[240px]">
                 <p className="text-2xl md:text-4xl font-light tracking-wide text-white/70 text-center">
-                  Instant meditation, <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-indigo-500 font-semibold">personalized voice</span>
+                  From thought to <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-indigo-500 font-semibold">tranquility</span>
                 </p>
-                <p className="text-base md:text-2xl text-slate-500 mt-1 md:mt-2 hidden sm:block text-center">Write a short idea, generate a meditation, and listen with your chosen voice</p>
+                <p className="text-base md:text-2xl text-slate-500 mt-1 md:mt-2 hidden sm:block text-center">Describe your moment. AI crafts a meditation just for you.</p>
               </div>
 
               {/* Prompt Box - Fixed at bottom */}
