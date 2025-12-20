@@ -3,6 +3,14 @@ import { elevenlabsService } from './elevenlabs';
 import { geminiService, decodeAudioBuffer } from '../../geminiService';
 
 /**
+ * Strip audio tags from text before sending to TTS
+ * TTS services speak these literally which causes timing sync issues
+ */
+function stripAudioTags(text: string): string {
+  return text.replace(/\[[^\]]+\]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+/**
  * Unified voice service that routes between Gemini and ElevenLabs
  */
 export const voiceService = {
@@ -18,10 +26,13 @@ export const voiceService = {
     voice: VoiceProfile,
     audioContext?: AudioContext
   ): Promise<{ audioBuffer: AudioBuffer; base64: string }> {
+    // Strip audio tags before sending to TTS - they would be spoken literally
+    const cleanText = stripAudioTags(text);
+
     // Check if this is a cloned voice with ElevenLabs ID
     if (voice.isCloned && voice.elevenlabsVoiceId) {
       // Use ElevenLabs for cloned voices
-      const base64 = await elevenlabsService.generateSpeech(text, voice.elevenlabsVoiceId);
+      const base64 = await elevenlabsService.generateSpeech(cleanText, voice.elevenlabsVoiceId);
 
       // Decode to AudioBuffer if needed
       if (audioContext) {
@@ -32,7 +43,7 @@ export const voiceService = {
       return { audioBuffer: null as any, base64 };
     } else {
       // Fall back to Gemini for prebuilt voices
-      const base64 = await geminiService.generateSpeech(text, voice.voiceName);
+      const base64 = await geminiService.generateSpeech(cleanText, voice.voiceName);
 
       // Decode to AudioBuffer if needed
       if (audioContext) {

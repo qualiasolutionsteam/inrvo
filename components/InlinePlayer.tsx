@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import { ICONS } from '../constants';
 import MiniVisualizer from './MiniVisualizer';
 
@@ -16,7 +16,7 @@ interface InlinePlayerProps {
   onBackgroundVolumeChange: (volume: number) => void;
 }
 
-const InlinePlayer: React.FC<InlinePlayerProps> = ({
+const InlinePlayer: React.FC<InlinePlayerProps> = memo(({
   isPlaying,
   onPlayPause,
   onStop,
@@ -51,22 +51,23 @@ const InlinePlayer: React.FC<InlinePlayerProps> = ({
         {/* Mini visualizer */}
         <MiniVisualizer isActive={isPlaying} size={36} />
 
-        {/* Play/Pause button */}
+        {/* Play/Pause button - larger touch target on mobile */}
         <button
           onClick={onPlayPause}
           className={`
-            w-11 h-11 md:w-12 md:h-12 rounded-full flex items-center justify-center
+            w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center
             transition-all duration-300 btn-press focus-ring flex-shrink-0
             ${isPlaying
               ? 'bg-white text-slate-900 shadow-white/20'
               : 'bg-indigo-500 text-white shadow-indigo-500/30'}
-            shadow-lg hover:scale-105
+            shadow-lg hover:scale-105 active:scale-95
           `}
+          aria-label={isPlaying ? 'Pause' : 'Play'}
         >
           {isPlaying ? (
-            <ICONS.Pause className="w-5 h-5" />
+            <ICONS.Pause className="w-6 h-6" />
           ) : (
-            <ICONS.Player className="w-5 h-5 ml-0.5" />
+            <ICONS.Player className="w-6 h-6 ml-0.5" />
           )}
         </button>
 
@@ -151,6 +152,9 @@ const InlinePlayer: React.FC<InlinePlayerProps> = ({
       </div>
     </div>
   );
-};
+});
+
+// Display name for React DevTools
+InlinePlayer.displayName = 'InlinePlayer';
 
 export default InlinePlayer;

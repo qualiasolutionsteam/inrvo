@@ -1,23 +1,27 @@
 import { TextSegment, ScriptTimingMap } from '../../types';
 
 // Audio tag pause durations in seconds
+// NOTE: Set to 0 because TTS services (ElevenLabs/Gemini) don't actually create pauses
+// They either speak the tag literally or skip it - no actual audio pause is added
+// If TTS is updated to support SSML breaks, these values should be restored
 const AUDIO_TAG_DURATIONS: Record<string, number> = {
-  '[short pause]': 1.5,
-  '[long pause]': 4.0,
-  '[silence]': 3.0,
-  '[inhale]': 2.0,
-  '[exhale]': 2.5,
-  '[deep breath]': 4.0,
+  '[short pause]': 0,
+  '[long pause]': 0,
+  '[silence]': 0,
+  '[inhale]': 0,
+  '[exhale]': 0,
+  '[deep breath]': 0,
   '[whisper]': 0,
   '[soft voice]': 0,
-  '[gentle giggle]': 1.5,
-  '[sigh]': 2.0,
-  '[hum]': 3.0,
-  '[soft hum]': 2.5,
+  '[gentle giggle]': 0,
+  '[sigh]': 0,
+  '[hum]': 0,
+  '[soft hum]': 0,
 };
 
 /**
  * Get the pause duration for an audio tag
+ * Currently returns 0 as TTS services don't create actual pauses
  */
 function getAudioTagDuration(tag: string): number {
   const normalizedTag = tag.toLowerCase().trim();

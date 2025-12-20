@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { View, VoiceProfile, ScriptTimingMap, CloningStatus, CreditInfo } from './types';
 import { TEMPLATE_CATEGORIES, VOICE_PROFILES, ICONS, BACKGROUND_TRACKS, BackgroundTrack, AUDIO_TAG_CATEGORIES } from './constants';
+import { useModals } from './src/contexts/ModalContext';
 import GlassCard from './components/GlassCard';
 import Visualizer from './components/Visualizer';
 import Starfield from './components/Starfield';
@@ -33,6 +34,25 @@ const TAGLINES = [
 ];
 
 const App: React.FC = () => {
+  // Use centralized modal context
+  const {
+    showCloneModal, setShowCloneModal,
+    showTemplatesModal, setShowTemplatesModal,
+    showMusicModal, setShowMusicModal,
+    showAudioTagsModal, setShowAudioTagsModal,
+    showBurgerMenu, setShowBurgerMenu,
+    showHowItWorks, setShowHowItWorks,
+    showLibrary, setShowLibrary,
+    showPricing, setShowPricing,
+    showAboutUs, setShowAboutUs,
+    showTerms, setShowTerms,
+    showPrivacy, setShowPrivacy,
+    showPromptMenu, setShowPromptMenu,
+    showAuthModal, setShowAuthModal,
+    showVoiceManager, setShowVoiceManager,
+    closeAllModals,
+  } = useModals();
+
   const [isLoading, setIsLoading] = useState(true);
   const [currentView, setCurrentView] = useState<View>(View.HOME);
   const [tagline] = useState(() => TAGLINES[Math.floor(Math.random() * TAGLINES.length)]);
@@ -42,8 +62,7 @@ const App: React.FC = () => {
   const [availableVoices, setAvailableVoices] = useState<VoiceProfile[]>(VOICE_PROFILES);
   const [selectedVoice, setSelectedVoice] = useState<VoiceProfile>(VOICE_PROFILES[1]);
 
-  // Modal states
-  const [showCloneModal, setShowCloneModal] = useState(false);
+  // Cloning states
   const [cloningStatus, setCloningStatus] = useState<CloningStatus>({ state: 'idle' });
   const [creditInfo, setCreditInfo] = useState<CreditInfo>({
     canClone: false,
@@ -51,14 +70,11 @@ const App: React.FC = () => {
     clonesRemaining: 0,
     cloneCost: 5000,
   });
-  const [showTemplatesModal, setShowTemplatesModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubgroup, setSelectedSubgroup] = useState<string | null>(null);
-  const [showMusicModal, setShowMusicModal] = useState(false);
   const [selectedBackgroundTrack, setSelectedBackgroundTrack] = useState<BackgroundTrack>(BACKGROUND_TRACKS[0]);
 
   // Audio tags states
-  const [showAudioTagsModal, setShowAudioTagsModal] = useState(false);
   const [selectedAudioTags, setSelectedAudioTags] = useState<string[]>([]);
   const [audioTagsEnabled, setAudioTagsEnabled] = useState(false);
   const [favoriteAudioTags, setFavoriteAudioTags] = useState<string[]>([]);
@@ -131,18 +147,6 @@ const App: React.FC = () => {
     'classical': { label: 'Classical', color: 'text-rose-400', bgColor: 'bg-rose-500/10' },
   } as Record<string, { label: string; color: string; bgColor: string }>), []);
 
-  // Burger menu states
-  const [showBurgerMenu, setShowBurgerMenu] = useState(false);
-  const [showHowItWorks, setShowHowItWorks] = useState(false);
-  const [showLibrary, setShowLibrary] = useState(false);
-  const [showPricing, setShowPricing] = useState(false);
-  const [showAboutUs, setShowAboutUs] = useState(false);
-  const [showTerms, setShowTerms] = useState(false);
-  const [showPrivacy, setShowPrivacy] = useState(false);
-
-  // Prompt menu state
-  const [showPromptMenu, setShowPromptMenu] = useState(false);
-
   // Library state
   const [libraryTab, setLibraryTab] = useState<'history' | 'saved'>('history');
   const [meditationHistory, setMeditationHistory] = useState<MeditationHistory[]>([]);
@@ -181,8 +185,6 @@ const App: React.FC = () => {
 
   // Auth states
   const [user, setUser] = useState<any>(null);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showVoiceManager, setShowVoiceManager] = useState(false);
   const [savedVoices, setSavedVoices] = useState<DBVoiceProfile[]>([]);
   const [currentClonedVoice, setCurrentClonedVoice] = useState<DBVoiceProfile | null>(null);
 
@@ -1119,11 +1121,9 @@ const App: React.FC = () => {
       setIsGenerating(false);
       setGenerationStage('idle');
 
-      // Build timing map ASYNC (don't block playback)
-      requestAnimationFrame(() => {
-        const map = buildTimingMap(enhanced, audioBuffer.duration);
-        setTimingMap(map);
-      });
+      // Build timing map synchronously for immediate text sync
+      const map = buildTimingMap(enhanced, audioBuffer.duration);
+      setTimingMap(map);
 
       // Start background music if selected
       startBackgroundMusic(selectedBackgroundTrack);
@@ -1252,7 +1252,7 @@ const App: React.FC = () => {
     <>
       {isLoading && <LoadingScreen onComplete={() => setIsLoading(false)} />}
 
-      <div className={`relative h-[100dvh] w-full flex flex-col overflow-hidden transition-opacity duration-700 ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`relative h-[100dvh] w-full flex flex-col transition-opacity duration-700 ${isLoading ? 'opacity-0' : 'opacity-100'} ${isInlineMode ? 'overflow-y-auto' : 'overflow-hidden'}`}>
         <Starfield />
 
         {/* Simple Navigation - Mobile Optimized */}

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useMemo, memo, useState, useCallback } from 'react';
 
 interface ScriptReaderProps {
   script: string;
@@ -6,28 +6,50 @@ interface ScriptReaderProps {
   isPlaying: boolean;
 }
 
-const ScriptReader: React.FC<ScriptReaderProps> = ({
+const ScriptReader: React.FC<ScriptReaderProps> = memo(({
   script,
   currentWordIndex,
   isPlaying,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const currentWordRef = useRef<HTMLSpanElement>(null);
+  const [userScrolled, setUserScrolled] = useState(false);
+  const userScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Parse script into paragraphs
   const paragraphs = useMemo(() => {
     return script.split(/\n\n+/).filter(p => p.trim());
   }, [script]);
 
-  // Auto-scroll to keep current word in view
+  // Track user scroll - disable auto-scroll for 3 seconds after user scrolls
+  const handleScroll = useCallback(() => {
+    setUserScrolled(true);
+    if (userScrollTimeoutRef.current) {
+      clearTimeout(userScrollTimeoutRef.current);
+    }
+    userScrollTimeoutRef.current = setTimeout(() => {
+      setUserScrolled(false);
+    }, 3000);
+  }, []);
+
+  // Cleanup timeout on unmount
   useEffect(() => {
-    if (currentWordRef.current && isPlaying) {
+    return () => {
+      if (userScrollTimeoutRef.current) {
+        clearTimeout(userScrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Auto-scroll to keep current word in view (only if user hasn't recently scrolled)
+  useEffect(() => {
+    if (currentWordRef.current && isPlaying && !userScrolled) {
       currentWordRef.current.scrollIntoView({
         behavior: 'smooth',
         block: 'center',
       });
     }
-  }, [currentWordIndex, isPlaying]);
+  }, [currentWordIndex, isPlaying, userScrolled]);
 
   // Track global word index across paragraphs
   let globalWordIndex = 0;
@@ -40,7 +62,9 @@ const ScriptReader: React.FC<ScriptReaderProps> = ({
   return (
     <div
       ref={containerRef}
-      className="flex-1 overflow-y-auto px-4 md:px-8 py-6 md:py-10 relative script-reader"
+      onScroll={handleScroll}
+      onTouchMove={handleScroll}
+      className="flex-1 overflow-y-auto px-4 md:px-8 py-6 md:py-10 relative script-reader touch-pan-y"
     >
       {/* Top gradient mask */}
       <div className="fixed top-[60px] md:top-[80px] left-0 right-0 h-16 bg-gradient-to-b from-[#020617] via-[#020617]/80 to-transparent pointer-events-none z-10" />
@@ -102,6 +126,9 @@ const ScriptReader: React.FC<ScriptReaderProps> = ({
       <div className="fixed bottom-[calc(140px+env(safe-area-inset-bottom,0px))] md:bottom-[calc(160px+env(safe-area-inset-bottom,0px))] left-0 right-0 h-20 bg-gradient-to-t from-[#020617] via-[#020617]/80 to-transparent pointer-events-none z-10" />
     </div>
   );
-};
+});
+
+// Display name for React DevTools
+ScriptReader.displayName = 'ScriptReader';
 
 export default ScriptReader;
