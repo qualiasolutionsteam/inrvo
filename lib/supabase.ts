@@ -89,18 +89,29 @@ export interface MeditationHistory {
   background_track_id?: string;
   background_track_name?: string;
   duration_seconds?: number;
+  audio_tags_used?: string[];
   created_at: string;
   updated_at: string;
+}
+
+export interface AudioTagPreference {
+  enabled: boolean;
+  favorite_tags: string[];
 }
 
 // Auth helpers
 export const signUp = async (email: string, password: string, firstName?: string, lastName?: string) => {
   if (!supabase) throw new Error('Supabase not configured');
+
+  // Combine names for the trigger and also keep separate fields
+  const fullName = [firstName, lastName].filter(Boolean).join(' ') || undefined;
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: {
+        full_name: fullName,
         first_name: firstName,
         last_name: lastName,
       }
@@ -401,7 +412,8 @@ export const saveMeditationHistory = async (
   voiceName?: string,
   backgroundTrackId?: string,
   backgroundTrackName?: string,
-  durationSeconds?: number
+  durationSeconds?: number,
+  audioTagsUsed?: string[]
 ): Promise<MeditationHistory | null> => {
   const user = await getCurrentUser();
   if (!user || !supabase) return null;
@@ -417,6 +429,7 @@ export const saveMeditationHistory = async (
       background_track_id: backgroundTrackId,
       background_track_name: backgroundTrackName,
       duration_seconds: durationSeconds,
+      audio_tags_used: audioTagsUsed || [],
     })
     .select()
     .single();
@@ -461,6 +474,56 @@ export const deleteMeditationHistory = async (id: string): Promise<boolean> => {
     return false;
   }
   return true;
+};
+
+// Audio Tag Preference operations
+export const getAudioTagPreferences = async (): Promise<AudioTagPreference> => {
+  const user = await getCurrentUser();
+  if (!user || !supabase) return { enabled: false, favorite_tags: [] };
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('audio_tag_preferences')
+    .eq('id', user.id)
+    .single();
+
+  if (error || !data?.audio_tag_preferences) {
+    return { enabled: false, favorite_tags: [] };
+  }
+  return data.audio_tag_preferences as AudioTagPreference;
+};
+
+export const updateAudioTagPreferences = async (
+  preferences: Partial<AudioTagPreference>
+): Promise<void> => {
+  const user = await getCurrentUser();
+  if (!user || !supabase) throw new Error('User not authenticated or Supabase not configured');
+
+  // Get current preferences first
+  const current = await getAudioTagPreferences();
+  const updated = { ...current, ...preferences };
+
+  const { error } = await supabase
+    .from('users')
+    .update({
+      audio_tag_preferences: updated,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', user.id);
+
+  if (error) throw error;
+};
+
+export const toggleFavoriteAudioTag = async (tagId: string): Promise<string[]> => {
+  const prefs = await getAudioTagPreferences();
+  const favorites = prefs.favorite_tags || [];
+
+  const updated = favorites.includes(tagId)
+    ? favorites.filter(id => id !== tagId)
+    : [...favorites, tagId];
+
+  await updateAudioTagPreferences({ favorite_tags: updated });
+  return updated;
 };
 
 // Auth state listener
