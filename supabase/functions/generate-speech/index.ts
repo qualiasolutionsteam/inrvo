@@ -135,7 +135,7 @@ serve(async (req) => {
       },
     };
 
-    const response = await fetch(
+    const ttsResponse = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceProfile.elevenlabs_voice_id}`,
       {
         method: 'POST',
@@ -148,12 +148,12 @@ serve(async (req) => {
       }
     );
 
-    if (!response.ok) {
-      const error = await response.json();
+    if (!ttsResponse.ok) {
+      const error = await ttsResponse.json();
       throw new Error(`TTS generation failed: ${error.detail || error.message}`);
     }
 
-    const audioBlob = await response.blob();
+    const audioBlob = await ttsResponse.blob();
     const audioBase64 = await blobToBase64(audioBlob);
 
     if (!audioBase64) {
@@ -180,27 +180,27 @@ serve(async (req) => {
         },
       });
 
-    const response: GenerateSpeechResponse = {
+    const result: GenerateSpeechResponse = {
       success: true,
       audioBase64,
       creditsUsed: creditsNeeded,
     };
 
     return new Response(
-      JSON.stringify(response),
+      JSON.stringify(result),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('Error generating speech:', error);
 
-    const response: GenerateSpeechResponse = {
+    const errorResult: GenerateSpeechResponse = {
       success: false,
       error: error.message || 'Unknown error occurred',
     };
 
     return new Response(
-      JSON.stringify(response),
+      JSON.stringify(errorResult),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
