@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { View, VoiceProfile } from './types';
-import { TEMPLATE_CATEGORIES, VOICE_PROFILES, ICONS, BACKGROUND_TRACKS, BackgroundTrack } from './constants';
+import { TEMPLATE_CATEGORIES, VOICE_PROFILES, ICONS, BACKGROUND_TRACKS, BackgroundTrack, AUDIO_TAG_CATEGORIES } from './constants';
 import GlassCard from './components/GlassCard';
 import Visualizer from './components/Visualizer';
 import Starfield from './components/Starfield';
@@ -15,7 +15,7 @@ import { geminiService, decodeAudioBuffer, blobToBase64 } from './geminiService'
 import { voiceService } from './src/lib/voiceService';
 import { elevenlabsService, base64ToBlob } from './src/lib/elevenlabs';
 import { creditService } from './src/lib/credits';
-import { supabase, getCurrentUser, signOut, createVoiceProfile, getUserVoiceProfiles, VoiceProfile as DBVoiceProfile, createVoiceClone, saveMeditationHistory, getMeditationHistory, deleteMeditationHistory, MeditationHistory } from './lib/supabase';
+import { supabase, getCurrentUser, signOut, createVoiceProfile, getUserVoiceProfiles, VoiceProfile as DBVoiceProfile, createVoiceClone, saveMeditationHistory, getMeditationHistory, deleteMeditationHistory, MeditationHistory, getAudioTagPreferences, updateAudioTagPreferences, AudioTagPreference } from './lib/supabase';
 
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -32,6 +32,12 @@ const App: React.FC = () => {
   const [selectedSubgroup, setSelectedSubgroup] = useState<string | null>(null);
   const [showMusicModal, setShowMusicModal] = useState(false);
   const [selectedBackgroundTrack, setSelectedBackgroundTrack] = useState<BackgroundTrack>(BACKGROUND_TRACKS[0]);
+
+  // Audio tags states
+  const [showAudioTagsModal, setShowAudioTagsModal] = useState(false);
+  const [selectedAudioTags, setSelectedAudioTags] = useState<string[]>([]);
+  const [audioTagsEnabled, setAudioTagsEnabled] = useState(false);
+  const [favoriteAudioTags, setFavoriteAudioTags] = useState<string[]>([]);
 
   // Group tracks by category for music modal
   const tracksByCategory = BACKGROUND_TRACKS.reduce((acc, track) => {
@@ -105,6 +111,17 @@ const App: React.FC = () => {
   const cloneMediaRecorderRef = useRef<MediaRecorder | null>(null);
   const cloneChunksRef = useRef<Blob[]>([]);
 
+  // Load audio tag preferences
+  const loadAudioTagPrefs = async () => {
+    try {
+      const prefs = await getAudioTagPreferences();
+      setAudioTagsEnabled(prefs.enabled);
+      setFavoriteAudioTags(prefs.favorite_tags || []);
+    } catch (err) {
+      console.warn('Failed to load audio tag preferences:', err);
+    }
+  };
+
   // Check auth state on mount
   useEffect(() => {
     checkUser();
@@ -112,6 +129,7 @@ const App: React.FC = () => {
       setUser(session?.user ?? null);
       if (session?.user) {
         loadUserVoices();
+        loadAudioTagPrefs();
       }
     });
 
