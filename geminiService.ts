@@ -124,18 +124,83 @@ Output only the meditation script, no titles or labels.`,
 };
 
 /**
+ * Creates a WAV file header for raw PCM data.
+ * This allows us to use the browser's native, non-blocking decodeAudioData.
+ */
+function createWavHeader(pcmLength: number, sampleRate: number = 24000, channels: number = 1, bitsPerSample: number = 16): ArrayBuffer {
+  const byteRate = sampleRate * channels * bitsPerSample / 8;
+  const blockAlign = channels * bitsPerSample / 8;
+  const dataSize = pcmLength;
+  const headerSize = 44;
+  const buffer = new ArrayBuffer(headerSize);
+  const view = new DataView(buffer);
+
+  // RIFF header
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, 36 + dataSize, true); // File size - 8
+  writeString(view, 8, 'WAVE');
+
+  // fmt subchunk
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true); // Subchunk1 size (16 for PCM)
+  view.setUint16(20, 1, true); // Audio format (1 = PCM)
+  view.setUint16(22, channels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, byteRate, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, bitsPerSample, true);
+
+  // data subchunk
+  writeString(view, 36, 'data');
+  view.setUint32(40, dataSize, true);
+
+  return buffer;
+}
+
+function writeString(view: DataView, offset: number, string: string): void {
+  for (let i = 0; i < string.length; i++) {
+    view.setUint8(offset + i, string.charCodeAt(i));
+  }
+}
+
+/**
  * Decodes base64 PCM data into an AudioBuffer for playback.
+ * Uses native browser decodeAudioData for GPU-accelerated decoding.
  */
 export async function decodeAudioBuffer(base64: string, ctx: AudioContext): Promise<AudioBuffer> {
+  // Convert base64 to binary using atob (avoids CSP issues with data: URLs)
+  const binaryString = atob(base64);
+  const pcmData = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    pcmData[i] = binaryString.charCodeAt(i);
+  }
+
+  // Create WAV header for the PCM data
+  const wavHeader = createWavHeader(pcmData.byteLength, 24000, 1, 16);
+
+  // Combine header and PCM data into a valid WAV file
+  const wavBuffer = new Uint8Array(wavHeader.byteLength + pcmData.byteLength);
+  wavBuffer.set(new Uint8Array(wavHeader), 0);
+  wavBuffer.set(pcmData, wavHeader.byteLength);
+
+  // Use native browser decoder (GPU-accelerated)
+  return ctx.decodeAudioData(wavBuffer.buffer);
+}
+
+/**
+ * Legacy synchronous decoder (kept for fallback if needed).
+ * @deprecated Use decodeAudioBuffer instead for better performance.
+ */
+export function decodeAudioBufferSync(base64: string, ctx: AudioContext): AudioBuffer {
   const binaryString = atob(base64);
   const bytes = new Uint8Array(binaryString.length);
   for (let i = 0; i < binaryString.length; i++) {
     bytes[i] = binaryString.charCodeAt(i);
   }
-  
+
   const dataInt16 = new Int16Array(bytes.buffer);
   const frameCount = dataInt16.length;
-  const buffer = ctx.createBuffer(1, frameCount, 24000); // API uses 24kHz
+  const buffer = ctx.createBuffer(1, frameCount, 24000);
   const channelData = buffer.getChannelData(0);
   for (let i = 0; i < frameCount; i++) {
     channelData[i] = dataInt16[i] / 32768.0;
