@@ -121,10 +121,15 @@ BEGIN
     NEW.id,
     NEW.email,
     NEW.raw_user_meta_data->>'full_name'
-  );
+  )
+  ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Trigger to create profile on user signup (skip if exists)
--- Note: If this fails, the trigger already exists which is fine
+-- Trigger to create profile on user signup
+-- Drop existing trigger if it exists, then create
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
