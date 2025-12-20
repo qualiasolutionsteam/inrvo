@@ -205,6 +205,7 @@ const App: React.FC = () => {
 
   const cloneMediaRecorderRef = useRef<MediaRecorder | null>(null);
   const cloneChunksRef = useRef<Blob[]>([]);
+  const scriptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Load audio tag preferences
   const loadAudioTagPrefs = async () => {
@@ -1273,7 +1274,24 @@ const App: React.FC = () => {
 
   // Insert audio tag at cursor position in editable script
   const insertAudioTag = (tag: string) => {
-    setEditableScript(prev => prev + ` ${tag} `);
+    const textarea = scriptTextareaRef.current;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = editableScript;
+      const before = text.substring(0, start);
+      const after = text.substring(end);
+      const newText = before + ` ${tag} ` + after;
+      setEditableScript(newText);
+      // Restore cursor position after the inserted tag
+      setTimeout(() => {
+        textarea.focus();
+        const newPos = start + tag.length + 2;
+        textarea.setSelectionRange(newPos, newPos);
+      }, 0);
+    } else {
+      setEditableScript(prev => prev + ` ${tag} `);
+    }
   };
 
   const handleSelectTemplate = (prompt: string) => {
@@ -2154,84 +2172,94 @@ const App: React.FC = () => {
         {/* MODAL: Script Preview & Edit */}
         {showScriptPreview && (
           <>
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4">
               {/* Backdrop */}
               <div
-                className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-                onClick={() => setShowScriptPreview(false)}
+                className="absolute inset-0 bg-black/80 backdrop-blur-md"
+                onClick={() => !isGenerating && setShowScriptPreview(false)}
               />
 
               {/* Modal Content */}
-              <div className="relative z-10 w-full max-w-2xl glass rounded-3xl border border-white/10 shadow-2xl shadow-black/50 max-h-[85vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 md:p-6 border-b border-white/10">
-                  <div>
-                    <h2 className="text-xl md:text-2xl font-bold text-white">Edit Your Meditation</h2>
-                    <p className="text-xs md:text-sm text-slate-400 mt-1">
-                      Review and customize before playing
-                    </p>
+              <div className="relative z-10 w-full max-w-2xl glass rounded-2xl md:rounded-3xl border border-white/10 shadow-2xl shadow-indigo-900/20 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-300">
+                {/* Header - Minimal */}
+                <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
+                      <ICONS.Sparkle className="w-4 h-4 text-indigo-400" />
+                    </div>
+                    <span className="text-sm md:text-base font-medium text-white">Preview</span>
                   </div>
                   <button
-                    onClick={() => setShowScriptPreview(false)}
-                    className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all"
+                    onClick={() => !isGenerating && setShowScriptPreview(false)}
+                    disabled={isGenerating}
+                    className="p-2 rounded-lg hover:bg-white/10 text-slate-500 hover:text-white transition-all disabled:opacity-50"
                   >
-                    <ICONS.Close className="w-5 h-5" />
+                    <ICONS.Close className="w-4 h-4" />
                   </button>
                 </div>
 
+                {/* Loading Overlay */}
+                {isGenerating && (
+                  <div className="absolute inset-0 z-20 bg-black/60 backdrop-blur-sm rounded-2xl md:rounded-3xl flex flex-col items-center justify-center gap-4">
+                    <div className="relative">
+                      <div className="w-16 h-16 rounded-full border-2 border-indigo-500/20 border-t-indigo-500 animate-spin"></div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <ICONS.Waveform className="w-6 h-6 text-indigo-400 animate-pulse" />
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-white font-medium">Generating Voice</p>
+                      <p className="text-sm text-slate-400 mt-1">Creating your meditation...</p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Script Editor */}
-                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+                <div className="flex-1 overflow-y-auto px-4 pb-4 md:px-6 md:pb-6">
+                  {/* Audio Tags - Inline above textarea */}
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {AUDIO_TAG_CATEGORIES.flatMap(cat => cat.tags).slice(0, 6).map(tag => (
+                      <button
+                        key={tag.id}
+                        onClick={() => insertAudioTag(tag.label)}
+                        disabled={isGenerating}
+                        className="px-2.5 py-1 rounded-full bg-white/5 hover:bg-violet-500/20 text-slate-400 hover:text-violet-300 text-[10px] md:text-xs font-medium transition-all border border-white/5 hover:border-violet-500/30 disabled:opacity-50"
+                      >
+                        {tag.label}
+                      </button>
+                    ))}
+                  </div>
+
                   <textarea
+                    ref={scriptTextareaRef}
                     value={editableScript}
                     onChange={(e) => setEditableScript(e.target.value)}
-                    className="w-full h-64 md:h-80 p-4 rounded-2xl bg-white/5 border border-white/10 text-slate-200 text-base md:text-lg leading-relaxed font-serif resize-none focus:outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    disabled={isGenerating}
+                    className="w-full h-56 md:h-72 p-4 rounded-xl bg-white/[0.03] border border-white/10 text-slate-200 text-sm md:text-base leading-relaxed font-serif resize-none focus:outline-none focus:border-indigo-500/40 focus:bg-white/[0.05] transition-all placeholder:text-slate-600 disabled:opacity-50"
                     placeholder="Your meditation script..."
                   />
 
-                  {/* Audio Tags Quick Insert */}
-                  <div className="space-y-3">
-                    <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Quick Insert Audio Tags</p>
-                    <div className="flex flex-wrap gap-2">
-                      {AUDIO_TAG_CATEGORIES.flatMap(cat => cat.tags).slice(0, 8).map(tag => (
-                        <button
-                          key={tag.id}
-                          onClick={() => insertAudioTag(tag.label)}
-                          className="px-3 py-1.5 rounded-lg bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 text-xs font-medium transition-colors"
-                        >
-                          + {tag.label}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-xs text-slate-500">
-                      Tip: Audio tags like [pause] or [deep breath] add pacing to your meditation
-                    </p>
-                  </div>
+                  <p className="text-[10px] md:text-xs text-slate-600 mt-2 text-center">
+                    Click where you want to insert, then tap a tag above
+                  </p>
                 </div>
 
-                {/* Footer */}
-                <div className="p-4 md:p-6 border-t border-white/10 flex gap-3">
+                {/* Footer - Compact */}
+                <div className="px-4 py-3 md:px-6 md:py-4 border-t border-white/5 flex gap-2">
                   <button
                     onClick={() => setShowScriptPreview(false)}
-                    className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-medium transition-all"
+                    disabled={isGenerating}
+                    className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 text-sm font-medium transition-all disabled:opacity-50"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handlePlayEditedScript}
                     disabled={!editableScript.trim() || isGenerating}
-                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium transition-all hover:shadow-lg hover:shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-medium transition-all hover:shadow-lg hover:shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    {isGenerating ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <ICONS.Player className="w-4 h-4" />
-                        Play Meditation
-                      </>
-                    )}
+                    <ICONS.Player className="w-4 h-4" />
+                    Play
                   </button>
                 </div>
               </div>
