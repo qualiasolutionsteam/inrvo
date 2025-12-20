@@ -8,6 +8,7 @@ interface VoiceManagerProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectVoice: (voice: VoiceProfile) => void;
+  onCloneVoice: () => void;
   currentVoiceId?: string;
 }
 
@@ -15,6 +16,7 @@ const VoiceManager: React.FC<VoiceManagerProps> = ({
   isOpen,
   onClose,
   onSelectVoice,
+  onCloneVoice,
   currentVoiceId
 }) => {
   const [voices, setVoices] = useState<VoiceProfile[]>([]);
@@ -97,11 +99,23 @@ const VoiceManager: React.FC<VoiceManagerProps> = ({
             Voice Library
           </div>
           <h3 className="text-3xl md:text-4xl font-serif font-bold text-white tracking-tight">
-            Your Saved Voices
+            Your Voices
           </h3>
           <p className="text-slate-500 text-sm md:text-base max-w-lg mx-auto">
-            Manage your cloned voices and select which one to use
+            Select a voice or clone a new one
           </p>
+
+          {/* Clone Voice Button */}
+          <button
+            onClick={() => {
+              onClose();
+              onCloneVoice();
+            }}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium hover:shadow-lg hover:shadow-indigo-500/25 transition-all hover:scale-105"
+          >
+            <ICONS.Waveform className="w-5 h-5" />
+            Clone New Voice
+          </button>
         </div>
 
         {loading ? (
@@ -112,7 +126,17 @@ const VoiceManager: React.FC<VoiceManagerProps> = ({
           <GlassCard className="text-center py-16">
             <ICONS.Waveform className="w-12 h-12 mx-auto mb-4 text-slate-600" />
             <p className="text-slate-400 mb-2">No saved voices yet</p>
-            <p className="text-sm text-slate-600">Clone your voice to get started</p>
+            <p className="text-sm text-slate-600 mb-6">Clone your voice to get started</p>
+            <button
+              onClick={() => {
+                onClose();
+                onCloneVoice();
+              }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium hover:shadow-lg hover:shadow-indigo-500/25 transition-all"
+            >
+              <ICONS.Waveform className="w-4 h-4" />
+              Clone Your Voice
+            </button>
           </GlassCard>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">

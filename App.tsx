@@ -1489,20 +1489,6 @@ const App: React.FC = () => {
                                     <span className="text-[10px] font-medium">Voice</span>
                                   </button>
 
-                                  {/* Clone Voice */}
-                                  <button
-                                    onClick={() => {
-                                      openCloneModal();
-                                      setMicError(null);
-                                      setShowPromptMenu(false);
-                                    }}
-                                    className="p-3 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-indigo-400 transition-all btn-press focus-ring flex flex-col items-center gap-1.5"
-                                    title="Clone your voice"
-                                  >
-                                    <ICONS.Waveform className="w-5 h-5" />
-                                    <span className="text-[10px] font-medium">Clone</span>
-                                  </button>
-
                                   {/* Templates */}
                                   <button
                                     onClick={() => {
@@ -1551,31 +1537,6 @@ const App: React.FC = () => {
                                     <ICONS.Tags className="w-5 h-5" />
                                     <span className="text-[10px] font-medium">Tags</span>
                                   </button>
-
-                                  {/* Microphone */}
-                                  <button
-                                    onMouseDown={(e) => {
-                                      e.preventDefault();
-                                      startRecording();
-                                      setShowPromptMenu(false);
-                                    }}
-                                    onMouseUp={stopRecording}
-                                    onTouchStart={(e) => {
-                                      e.preventDefault();
-                                      startRecording();
-                                      setShowPromptMenu(false);
-                                    }}
-                                    onTouchEnd={stopRecording}
-                                    className={`p-3 rounded-xl transition-all btn-press focus-ring flex flex-col items-center gap-1.5 ${
-                                      isRecording
-                                        ? 'bg-rose-500 text-white scale-105 shadow-rose-500/40'
-                                        : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
-                                    }`}
-                                    title="Hold to speak"
-                                  >
-                                    <ICONS.Microphone className="w-5 h-5" />
-                                    <span className="text-[10px] font-medium">Speak</span>
-                                  </button>
                                 </div>
                               </div>
                             </>
@@ -1596,6 +1557,26 @@ const App: React.FC = () => {
                           }
                         }}
                       />
+
+                      {/* Microphone Button */}
+                      <button
+                        onClick={() => {
+                          if (isRecording) {
+                            stopRecording();
+                          } else {
+                            startRecording();
+                          }
+                        }}
+                        className={`
+                          flex-shrink-0 p-1.5 md:p-2 rounded-full transition-all flex items-center justify-center
+                          ${isRecording
+                            ? 'bg-rose-500/90 text-white animate-pulse'
+                            : 'text-slate-400/60 hover:text-slate-300 hover:bg-white/5'}
+                        `}
+                        title={isRecording ? 'Stop recording' : 'Voice input'}
+                      >
+                        <ICONS.Microphone className="w-4 h-4 md:w-5 md:h-5" />
+                      </button>
 
                       {/* Send Button */}
                       <button
@@ -2208,6 +2189,10 @@ const App: React.FC = () => {
             };
             setSelectedVoice(voiceProfile);
             setShowVoiceManager(false);
+          }}
+          onCloneVoice={() => {
+            openCloneModal();
+            setMicError(null);
           }}
           currentVoiceId={selectedVoice?.id}
         />
