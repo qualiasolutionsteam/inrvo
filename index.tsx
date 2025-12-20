@@ -3,6 +3,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
+import { ModalProvider } from './src/contexts/ModalContext';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -12,6 +14,10 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <App />
+    <ErrorBoundary>
+      <ModalProvider>
+        <App />
+      </ModalProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );

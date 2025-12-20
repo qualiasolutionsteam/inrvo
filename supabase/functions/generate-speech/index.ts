@@ -1,11 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+const ALLOWED_ORIGINS = [
+  'https://inrvo.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
+
+const getCorsHeaders = (origin: string | null) => ({
+  'Access-Control-Allow-Origin': origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+});
 
 interface GenerateSpeechRequest {
   text: string;
@@ -27,6 +33,9 @@ interface GenerateSpeechResponse {
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -38,8 +47,26 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Parse request body
-    const { text, voiceId, userId, voiceSettings }: GenerateSpeechRequest = await req.json();
+    // Validate user from JWT token (not from request body)
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Parse request body - use verified user.id instead of userId from body
+    const { text, voiceId, voiceSettings }: Omit<GenerateSpeechRequest, 'userId'> = await req.json();
+    const userId = user.id; // Use verified user ID from JWT
 
     // Validate input
     if (!text || !voiceId || !userId) {
