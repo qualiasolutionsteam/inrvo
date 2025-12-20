@@ -249,9 +249,12 @@ export const creditService = {
 
   /**
    * Calculate TTS cost based on text length
+   * @param text - The text to calculate cost for
+   * @param estimatedWords - Optional: estimate cost for X words (for pre-generation checks)
    */
-  calculateTTSCost(text: string): number {
-    const charCount = text.length;
+  calculateTTSCost(text: string, estimatedWords?: number): number {
+    // If estimating for a word count, use avg 5 chars/word
+    const charCount = estimatedWords ? estimatedWords * 5 : text.length;
     return Math.ceil((charCount / 1000) * COST_CONFIG.TTS_1K_CHARS);
   },
 };

@@ -38,6 +38,7 @@ const App: React.FC = () => {
   const [tagline] = useState(() => TAGLINES[Math.floor(Math.random() * TAGLINES.length)]);
   const [script, setScript] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStage, setGenerationStage] = useState<'idle' | 'script' | 'voice' | 'ready'>('idle');
   const [availableVoices, setAvailableVoices] = useState<VoiceProfile[]>(VOICE_PROFILES);
   const [selectedVoice, setSelectedVoice] = useState<VoiceProfile>(VOICE_PROFILES[1]);
 
@@ -978,10 +979,29 @@ const App: React.FC = () => {
       return;
     }
 
+    const originalPrompt = script; // Store original prompt before we modify script state
     setIsGenerating(true);
+    setGenerationStage('script');
     setMicError(null);
 
     try {
+      // Initialize audio context early (parallel with other checks)
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+
+      // Check credits FIRST (fail fast before expensive operations)
+      if (selectedVoice.isCloned) {
+        const estimatedCost = creditService.calculateTTSCost(script, 150); // Estimate for 150 words
+        const credits = await creditService.getCredits(user?.id);
+        if (credits < estimatedCost) {
+          setMicError(`Insufficient credits for TTS generation. Need ${estimatedCost} credits.`);
+          setIsGenerating(false);
+          setGenerationStage('idle');
+          return;
+        }
+      }
+
       // Get audio tag labels from selected tag IDs (only if audio tags are enabled)
       const audioTagLabels = audioTagsEnabled && selectedAudioTags.length > 0
         ? AUDIO_TAG_CATEGORIES.flatMap(cat => cat.tags)
@@ -989,29 +1009,15 @@ const App: React.FC = () => {
             .map(tag => tag.label)
         : undefined;
 
-      // Generate enhanced meditation from short prompt (with optional audio tags)
+      // Generate enhanced meditation from short prompt (using fast model)
       const enhanced = await geminiService.enhanceScript(script, audioTagLabels);
 
       if (!enhanced || !enhanced.trim()) {
         throw new Error('Failed to generate meditation script. Please try again.');
       }
 
-      // Initialize audio context if needed
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
-
-      // Check for credits if this is a paid user
-      if (selectedVoice.isCloned) {
-        const ttSCost = creditService.calculateTTSCost(enhanced);
-        const credits = await creditService.getCredits(user?.id);
-
-        if (credits < ttSCost) {
-          setMicError(`Insufficient credits for TTS generation. Need ${ttSCost} credits.`);
-          setIsGenerating(false);
-          return;
-        }
-      }
+      // Stage 2: Voice generation
+      setGenerationStage('voice');
 
       // Generate speech with unified voice service (handles both Gemini and ElevenLabs)
       const { audioBuffer, base64 } = await voiceService.generateSpeech(
@@ -1024,15 +1030,8 @@ const App: React.FC = () => {
         throw new Error('Failed to generate audio. Please check your API key and try again.');
       }
 
-      // Deduct credits for TTS generation if cloned voice
-      if (selectedVoice.isCloned) {
-        await creditService.deductCredits(
-          creditService.calculateTTSCost(enhanced),
-          'TTS_GENERATE',
-          selectedVoice.id,
-          user?.id
-        );
-      }
+      // Stage 3: Ready to play
+      setGenerationStage('ready');
 
       // Stop any existing playback
       if (audioSourceRef.current) {
@@ -1051,15 +1050,13 @@ const App: React.FC = () => {
       // Store the audio buffer for pause/resume
       audioBufferRef.current = audioBuffer;
 
-      // Build timing map for text sync
-      const map = buildTimingMap(enhanced, audioBuffer.duration);
-      setTimingMap(map);
+      // Set duration and reset playback state
       setDuration(audioBuffer.duration);
       setCurrentTime(0);
       setCurrentWordIndex(0);
       pauseOffsetRef.current = 0;
 
-      // Start new playback
+      // Start new playback IMMEDIATELY (don't wait for timing map)
       const source = audioContextRef.current.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(audioContextRef.current.destination);
@@ -1069,19 +1066,36 @@ const App: React.FC = () => {
       // Track playback start time
       playbackStartTimeRef.current = audioContextRef.current.currentTime;
 
-      // Update state - switch to inline mode instead of PLAYER view
+      // Update state - switch to inline mode
       setScript(enhanced);
       setEnhancedScript(enhanced);
       setIsPlaying(true);
       setIsInlineMode(true);
       setIsGenerating(false);
+      setGenerationStage('idle');
+
+      // Build timing map ASYNC (don't block playback)
+      requestAnimationFrame(() => {
+        const map = buildTimingMap(enhanced, audioBuffer.duration);
+        setTimingMap(map);
+      });
 
       // Start background music if selected
       startBackgroundMusic(selectedBackgroundTrack);
 
-      // Auto-save to meditation history (fire and forget, don't block playback)
+      // Deduct credits fire-and-forget (don't block playback)
+      if (selectedVoice.isCloned) {
+        creditService.deductCredits(
+          creditService.calculateTTSCost(enhanced),
+          'TTS_GENERATE',
+          selectedVoice.id,
+          user?.id
+        ).catch(err => console.warn('Failed to deduct credits:', err));
+      }
+
+      // Auto-save to meditation history (fire and forget)
       saveMeditationHistory(
-        script, // original prompt
+        originalPrompt, // original prompt
         enhanced, // enhanced script
         selectedVoice.id,
         selectedVoice.name,
@@ -1102,6 +1116,7 @@ const App: React.FC = () => {
       setMicError(error?.message || 'Failed to generate meditation. Please check your API key and try again.');
       // Reset generating state on error
       setIsGenerating(false);
+      setGenerationStage('idle');
     }
   };
 
@@ -1515,7 +1530,13 @@ const App: React.FC = () => {
                         {(isRecording || isGenerating) && (
                           <>
                             <span className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full flex-shrink-0 ${isRecording ? 'bg-rose-500 animate-ping' : 'bg-indigo-500 animate-pulse'}`}></span>
-                            <span className="text-slate-400 truncate">{isRecording ? 'Capturing...' : 'Generating...'}</span>
+                            <span className="text-slate-400 truncate">
+                              {isRecording ? 'Capturing...' :
+                               generationStage === 'script' ? 'Crafting meditation...' :
+                               generationStage === 'voice' ? 'Generating voice...' :
+                               generationStage === 'ready' ? 'Starting...' :
+                               'Generating...'}
+                            </span>
                           </>
                         )}
                       </div>

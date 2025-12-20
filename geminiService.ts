@@ -6,10 +6,10 @@ const getAI = () => new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KE
 
 export const geminiService = {
   /**
-   * Complex reasoning for script generation using Thinking Mode.
-   * Uses gemini-3-pro-preview with the maximum thinking budget.
+   * Fast script generation using gemini-2.0-flash (no thinking mode).
+   * Generates concise 100-150 word meditations for quick playback.
    * @param thought - The user's meditation idea/prompt
-   * @param audioTags - Optional array of audio tag labels to incorporate (e.g., "[long pause]", "[deep breath]")
+   * @param audioTags - Optional array of audio tag labels to incorporate
    */
   async enhanceScript(thought: string, audioTags?: string[]): Promise<string> {
     try {
@@ -22,23 +22,22 @@ export const geminiService = {
       let audioTagsInstruction = '';
       if (audioTags && audioTags.length > 0) {
         audioTagsInstruction = `
-        5. Audio Tags: Naturally incorporate these audio cues throughout the script where appropriate: ${audioTags.join(', ')}.
-           - Place them inline within the text where they should occur (e.g., "Take a deep breath in... [long pause] ...and slowly release.")
-           - Use them to enhance the pacing and immersive quality of the meditation.
-           - Don't overuse them - place them at natural transition points and moments of emphasis.`;
+Include these audio cues naturally: ${audioTags.join(', ')}.
+Place them inline where they should occur (e.g., "Take a breath in... [pause] ...and release.").`;
       }
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
-        contents: `Transform this short, messy thought into a beautiful, immersive, and structured guided meditation script or story outline: "${thought}".
-        Requirements:
-        1. Length: 300-500 words.
-        2. Tone: Professional, soothing, and high-fidelity.
-        3. Structure: Include an introduction, a guided journey/visualization, and a gentle closing.
-        4. Creativity: Use evocative and sensory language.${audioTagsInstruction}`,
-        config: {
-          thinkingConfig: { thinkingBudget: 32768 }
-        },
+        model: 'gemini-2.0-flash',
+        contents: `Create a short, soothing guided meditation (100-150 words) from this idea: "${thought}"
+
+Requirements:
+- Brief calming introduction (1-2 sentences)
+- Core visualization or breathing exercise (main body)
+- Gentle closing (1 sentence)
+- Professional, peaceful tone
+- Evocative sensory language${audioTagsInstruction ? '\n' + audioTagsInstruction : ''}
+
+Output only the meditation script, no titles or labels.`,
       });
 
       const text = response.text;
