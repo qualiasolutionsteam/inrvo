@@ -1613,37 +1613,6 @@ const App: React.FC = () => {
                         )}
                       </button>
                     </div>
-
-                    {/* Status bar */}
-                    <div className="px-3 md:px-6 py-2 md:py-3 flex justify-between items-center text-[9px] md:text-[11px] uppercase tracking-wider md:tracking-widest font-bold text-slate-500 border-t border-white/5 bg-white/[0.01]">
-                      <div className="flex items-center gap-2 md:gap-3">
-                        {(isRecording || isGenerating) && (
-                          <>
-                            <span className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full flex-shrink-0 ${isRecording ? 'bg-rose-500 animate-ping' : 'bg-indigo-500 animate-pulse'}`}></span>
-                            <span className="text-slate-400 truncate">
-                              {isRecording ? 'Capturing...' :
-                               generationStage === 'script' ? 'Crafting meditation...' :
-                               generationStage === 'voice' ? 'Generating voice...' :
-                               generationStage === 'ready' ? 'Starting...' :
-                               'Generating...'}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                      {/* Audio Tags Indicator */}
-                      {audioTagsEnabled && selectedAudioTags.length > 0 && (
-                        <button
-                          onClick={() => {
-                            setSuggestedAudioTags(getSuggestedTags(script));
-                            setShowAudioTagsModal(true);
-                          }}
-                          className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors normal-case tracking-normal"
-                        >
-                          <ICONS.Tags className="w-3 h-3" />
-                          <span className="text-[9px] md:text-[10px]">{selectedAudioTags.length} tags</span>
-                        </button>
-                      )}
-                    </div>
                   </div>
                     </>
                   )}
