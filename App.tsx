@@ -960,6 +960,23 @@ const App: React.FC = () => {
                                     <span className="text-[10px] font-medium">Music</span>
                                   </button>
 
+                                  {/* Audio Tags */}
+                                  <button
+                                    onClick={() => {
+                                      setShowAudioTagsModal(true);
+                                      setShowPromptMenu(false);
+                                    }}
+                                    className={`p-3 rounded-xl transition-all btn-press focus-ring flex flex-col items-center gap-1.5 ${
+                                      selectedAudioTags.length > 0
+                                        ? 'bg-violet-500/20 text-violet-400 hover:bg-violet-500/30'
+                                        : 'bg-white/5 hover:bg-white/10 text-slate-400 hover:text-violet-400'
+                                    }`}
+                                    title={selectedAudioTags.length > 0 ? `${selectedAudioTags.length} tags selected` : 'Add audio tags'}
+                                  >
+                                    <ICONS.Tags className="w-5 h-5" />
+                                    <span className="text-[10px] font-medium">Tags</span>
+                                  </button>
+
                                   {/* Microphone */}
                                   <button
                                     onMouseDown={(e) => {
