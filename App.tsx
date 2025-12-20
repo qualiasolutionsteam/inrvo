@@ -325,7 +325,7 @@ const App: React.FC = () => {
   };
 
 
-  // Home Transcription Logic
+  // Home Transcription Logic - auto-transcribe and auto-submit
   const startRecording = async () => {
     setMicError(null);
     try {
@@ -339,13 +339,25 @@ const App: React.FC = () => {
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
         const base64 = await blobToBase64(blob);
         setIsGenerating(true);
+        setGenerationStage('script');
         try {
           const text = await geminiService.transcribeAudio(base64);
-          if (text) setScript(prev => prev ? `${prev} ${text}` : text);
+          if (text) {
+            // Set the script and auto-submit
+            setScript(text);
+            // Use a small delay to ensure state is updated before generating
+            setTimeout(() => {
+              // Trigger the generation flow directly
+              autoGenerateFromVoice(text);
+            }, 100);
+          } else {
+            setIsGenerating(false);
+            setGenerationStage('idle');
+          }
         } catch (e) {
           console.error("Transcription failed", e);
-        } finally {
           setIsGenerating(false);
+          setGenerationStage('idle');
         }
         stream.getTracks().forEach(track => track.stop());
       };
@@ -1031,6 +1043,68 @@ const App: React.FC = () => {
   const handleExpandToPlayer = useCallback(() => {
     setCurrentView(View.PLAYER);
   }, []);
+
+  // Auto-generate from voice input (called after transcription)
+  const autoGenerateFromVoice = async (transcribedText: string) => {
+    if (!transcribedText.trim()) {
+      setMicError('No speech detected. Please try again.');
+      setIsGenerating(false);
+      setGenerationStage('idle');
+      return;
+    }
+
+    // Require a cloned voice to generate
+    if (!selectedVoice) {
+      setMicError('Please clone a voice first to generate meditations');
+      setShowCloneModal(true);
+      setIsGenerating(false);
+      setGenerationStage('idle');
+      return;
+    }
+
+    setOriginalPrompt(transcribedText);
+    setMicError(null);
+
+    try {
+      // Check credits FIRST
+      if (selectedVoice.isCloned) {
+        const estimatedCost = creditService.calculateTTSCost(transcribedText, 150);
+        const credits = await creditService.getCredits(user?.id);
+        if (credits < estimatedCost) {
+          setMicError(`Insufficient credits. Need ${estimatedCost} credits.`);
+          setIsGenerating(false);
+          setGenerationStage('idle');
+          return;
+        }
+      }
+
+      // Get audio tag labels
+      const audioTagLabels = audioTagsEnabled && selectedAudioTags.length > 0
+        ? AUDIO_TAG_CATEGORIES.flatMap(cat => cat.tags)
+            .filter(tag => selectedAudioTags.includes(tag.id))
+            .map(tag => tag.label)
+        : undefined;
+
+      // Generate enhanced meditation
+      const enhanced = await geminiService.enhanceScript(transcribedText, audioTagLabels);
+
+      if (!enhanced || !enhanced.trim()) {
+        throw new Error('Failed to generate meditation script.');
+      }
+
+      // Show editable preview
+      setEditableScript(enhanced);
+      setShowScriptPreview(true);
+      setIsGenerating(false);
+      setGenerationStage('idle');
+
+    } catch (error: any) {
+      console.error('Failed to generate script:', error);
+      setMicError(error?.message || 'Failed to generate meditation.');
+      setIsGenerating(false);
+      setGenerationStage('idle');
+    }
+  };
 
   // Step 1: Generate script and show editable preview
   const handleGenerateAndPlay = async () => {
