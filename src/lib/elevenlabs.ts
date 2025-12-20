@@ -1,4 +1,5 @@
 // ElevenLabs API service for voice cloning and TTS
+// Uses the correct /v1/voices/add endpoint for instant voice cloning
 
 const ELEVENLABS_API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY;
 const ELEVENLABS_BASE_URL = 'https://api.elevenlabs.io';
@@ -6,9 +7,10 @@ const ELEVENLABS_BASE_URL = 'https://api.elevenlabs.io';
 export interface VoiceCloningOptions {
   name: string;
   description?: string;
+  labels?: Record<string, string>;
 }
 
-export interface TTSSOptions {
+export interface TTSOptions {
   model_id?: string;
   voice_settings?: {
     stability?: number;
@@ -18,83 +20,129 @@ export interface TTSSOptions {
   };
 }
 
+export interface VoiceCloningResult {
+  voice_id: string;
+  name: string;
+}
+
+/**
+ * Check if ElevenLabs API key is configured
+ */
+export function isElevenLabsConfigured(): boolean {
+  return !!ELEVENLABS_API_KEY;
+}
+
 export const elevenlabsService = {
   /**
-   * Creates an instant voice clone from audio sample
-   * @param audioBlob - Audio blob (30 seconds minimum)
+   * Creates an instant voice clone from audio sample using the correct /v1/voices/add endpoint
+   * @param audioBlob - Audio blob (recommended 30+ seconds for best quality)
    * @param options - Voice cloning options
-   * @returns Promise<string> - Voice ID
+   * @returns Promise<VoiceCloningResult> - Voice ID and name
    */
   async cloneVoice(audioBlob: Blob, options: VoiceCloningOptions): Promise<string> {
     if (!ELEVENLABS_API_KEY) {
-      throw new Error('ElevenLabs API key not configured');
+      throw new Error('ElevenLabs API key not configured. Please add VITE_ELEVENLABS_API_KEY to your .env.local file.');
     }
 
-    // Validate audio duration (must be at least 30 seconds for instant cloning)
-    const duration = await getAudioDuration(audioBlob);
-    if (duration < 30) {
-      throw new Error(`Audio must be at least 30 seconds. Current duration: ${duration.toFixed(1)}s`);
+    // Get audio duration for validation/warning (not blocking)
+    let duration = 0;
+    try {
+      duration = await getAudioDuration(audioBlob);
+      console.log(`Audio duration: ${duration.toFixed(1)}s`);
+
+      // Warn if less than recommended duration but don't block
+      if (duration < 10) {
+        throw new Error(`Audio is too short (${duration.toFixed(1)}s). Please record at least 10 seconds for basic quality, 30+ seconds recommended.`);
+      }
+    } catch (e: any) {
+      // If duration check fails, log warning but continue
+      if (e.message?.includes('too short')) {
+        throw e;
+      }
+      console.warn('Could not determine audio duration, proceeding anyway:', e.message);
     }
 
-    // Step 1: Get user ID
-    const userResponse = await fetch(`${ELEVENLABS_BASE_URL}/v1/user`, {
-      headers: {
-        'xi-api-key': ELEVENLABS_API_KEY,
-      },
-    });
+    // Convert WebM to WAV for better compatibility with ElevenLabs
+    let audioFile: Blob;
+    let fileName: string;
 
-    if (!userResponse.ok) {
-      throw new Error('Failed to get user information from ElevenLabs');
+    if (audioBlob.type === 'audio/webm' || audioBlob.type.includes('webm')) {
+      try {
+        console.log('Converting WebM to WAV for better compatibility...');
+        audioFile = await convertToWav(audioBlob);
+        fileName = 'voice_sample.wav';
+        console.log(`Converted to WAV: ${(audioFile.size / 1024).toFixed(1)} KB`);
+      } catch (conversionError) {
+        console.warn('WAV conversion failed, using original WebM:', conversionError);
+        audioFile = audioBlob;
+        fileName = 'voice_sample.webm';
+      }
+    } else if (audioBlob.type === 'audio/mpeg' || audioBlob.type === 'audio/mp3') {
+      audioFile = audioBlob;
+      fileName = 'voice_sample.mp3';
+    } else if (audioBlob.type === 'audio/wav' || audioBlob.type === 'audio/wave') {
+      audioFile = audioBlob;
+      fileName = 'voice_sample.wav';
+    } else {
+      // Default to original blob with webm extension
+      audioFile = audioBlob;
+      fileName = 'voice_sample.webm';
     }
 
-    const userData = await userResponse.json();
-    const userId = userData.subscription?.user_id || 'default';
+    // Create multipart form data for the /v1/voices/add endpoint
+    const formData = new FormData();
+    formData.append('name', options.name);
+    formData.append('files', audioFile, fileName);
 
-    // Step 2: Add voice to collection
-    const addVoiceResponse = await fetch(`${ELEVENLABS_BASE_URL}/v1/voices`, {
+    if (options.description) {
+      formData.append('description', options.description);
+    }
+
+    // Add labels if provided (must be JSON string)
+    if (options.labels) {
+      formData.append('labels', JSON.stringify(options.labels));
+    }
+
+    console.log('Uploading voice to ElevenLabs /v1/voices/add...');
+
+    // Single request to /v1/voices/add - this is the correct endpoint for instant voice cloning
+    const response = await fetch(`${ELEVENLABS_BASE_URL}/v1/voices/add`, {
       method: 'POST',
       headers: {
         'xi-api-key': ELEVENLABS_API_KEY,
-        'Content-Type': 'application/json',
+        // DO NOT set Content-Type header - let browser set multipart boundary automatically
       },
-      body: JSON.stringify({
-        name: options.name,
-        description: options.description || `Voice clone created on ${new Date().toISOString()}`,
-      }),
+      body: formData,
     });
 
-    if (!addVoiceResponse.ok) {
-      const error = await addVoiceResponse.json();
-      throw new Error(`Failed to create voice: ${error.detail || error.message}`);
-    }
+    if (!response.ok) {
+      let errorMessage = 'Voice cloning failed';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.detail?.message || errorData.detail || errorData.message || `HTTP ${response.status}`;
 
-    const voiceData = await addVoiceResponse.json();
-    const voiceId = voiceData.voice_id;
-
-    // Step 3: Upload audio sample
-    const formData = new FormData();
-    formData.append('name', `${voiceId}_sample`);
-    formData.append('files', audioBlob, 'voice_sample.webm');
-
-    const uploadResponse = await fetch(
-      `${ELEVENLABS_BASE_URL}/v1/voices/${voiceId}/samples`,
-      {
-        method: 'POST',
-        headers: {
-          'xi-api-key': ELEVENLABS_API_KEY,
-        },
-        body: formData,
+        // Provide helpful error messages for common issues
+        if (response.status === 401) {
+          errorMessage = 'Invalid ElevenLabs API key. Please check your VITE_ELEVENLABS_API_KEY.';
+        } else if (response.status === 422) {
+          errorMessage = `Invalid request: ${errorMessage}. Make sure your audio is clear and at least 10 seconds long.`;
+        } else if (response.status === 429) {
+          errorMessage = 'Rate limit exceeded. Please wait a moment and try again.';
+        }
+      } catch {
+        errorMessage = `Voice cloning failed with status ${response.status}`;
       }
-    );
-
-    if (!uploadResponse.ok) {
-      // Clean up the voice if upload fails
-      await this.deleteVoice(voiceId);
-      const error = await uploadResponse.json();
-      throw new Error(`Failed to upload audio: ${error.detail || error.message}`);
+      throw new Error(errorMessage);
     }
 
-    return voiceId;
+    const data = await response.json();
+
+    if (!data.voice_id) {
+      throw new Error('No voice_id returned from ElevenLabs API');
+    }
+
+    console.log(`Voice cloned successfully! Voice ID: ${data.voice_id}`);
+    return data.voice_id;
   },
 
   /**
@@ -102,15 +150,19 @@ export const elevenlabsService = {
    * @param text - Text to synthesize
    * @param voiceId - Voice ID from cloning
    * @param options - TTS options
-   * @returns Promise<string> - Base64 encoded audio
+   * @returns Promise<string> - Base64 encoded audio (MP3)
    */
   async generateSpeech(
     text: string,
     voiceId: string,
-    options: TTSSOptions = {}
+    options: TTSOptions = {}
   ): Promise<string> {
     if (!ELEVENLABS_API_KEY) {
       throw new Error('ElevenLabs API key not configured');
+    }
+
+    if (!text || text.trim() === '') {
+      throw new Error('Text is required for speech generation');
     }
 
     const requestData = {
@@ -118,7 +170,7 @@ export const elevenlabsService = {
       model_id: options.model_id || 'eleven_multilingual_v2',
       voice_settings: {
         stability: options.voice_settings?.stability ?? 0.5,
-        similarity_boost: options.voice_settings?.similarity_boost ?? 0.8,
+        similarity_boost: options.voice_settings?.similarity_boost ?? 0.75,
         style: options.voice_settings?.style ?? 0.0,
         use_speaker_boost: options.voice_settings?.use_speaker_boost ?? true,
       },
@@ -138,8 +190,20 @@ export const elevenlabsService = {
     );
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(`TTS generation failed: ${error.detail || error.message}`);
+      let errorMessage = 'TTS generation failed';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.detail?.message || errorData.detail || errorData.message || `HTTP ${response.status}`;
+
+        if (response.status === 401) {
+          errorMessage = 'Invalid ElevenLabs API key';
+        } else if (response.status === 404) {
+          errorMessage = 'Voice not found. It may have been deleted.';
+        }
+      } catch {
+        errorMessage = `TTS failed with status ${response.status}`;
+      }
+      throw new Error(errorMessage);
     }
 
     const audioBlob = await response.blob();
@@ -156,7 +220,7 @@ export const elevenlabsService = {
           reject(new Error('Failed to convert audio to base64'));
         }
       };
-      reader.onerror = reject;
+      reader.onerror = () => reject(new Error('Failed to read audio blob'));
       reader.readAsDataURL(audioBlob);
     });
   },
@@ -164,7 +228,7 @@ export const elevenlabsService = {
   /**
    * Gets the status of a voice
    * @param voiceId - Voice ID to check
-   * @returns Promise<string> - Status
+   * @returns Promise<string> - Status ('ready' if voice exists)
    */
   async getVoiceStatus(voiceId: string): Promise<string> {
     if (!ELEVENLABS_API_KEY) {
@@ -181,15 +245,17 @@ export const elevenlabsService = {
     );
 
     if (!response.ok) {
+      if (response.status === 404) {
+        return 'deleted';
+      }
       throw new Error('Failed to get voice status');
     }
 
-    const voiceData = await response.json();
-    return voiceData.status || 'ready';
+    return 'ready';
   },
 
   /**
-   * Deletes a voice clone
+   * Deletes a voice clone from ElevenLabs
    * @param voiceId - Voice ID to delete
    */
   async deleteVoice(voiceId: string): Promise<void> {
@@ -207,9 +273,15 @@ export const elevenlabsService = {
       }
     );
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(`Failed to delete voice: ${error.detail || error.message}`);
+    if (!response.ok && response.status !== 404) {
+      let errorMessage = 'Failed to delete voice';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.detail || errorData.message || errorMessage;
+      } catch {
+        // Ignore JSON parse errors
+      }
+      throw new Error(errorMessage);
     }
   },
 
@@ -235,28 +307,141 @@ export const elevenlabsService = {
     const data = await response.json();
     return data.voices || [];
   },
+
+  /**
+   * Get user subscription info (for checking quotas)
+   */
+  async getUserInfo(): Promise<any> {
+    if (!ELEVENLABS_API_KEY) {
+      throw new Error('ElevenLabs API key not configured');
+    }
+
+    const response = await fetch(`${ELEVENLABS_BASE_URL}/v1/user`, {
+      headers: {
+        'xi-api-key': ELEVENLABS_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch user info');
+    }
+
+    return response.json();
+  },
 };
 
 /**
  * Helper function to get audio duration from a blob
+ * Includes timeout to prevent hanging on malformed audio
  */
 async function getAudioDuration(blob: Blob): Promise<number> {
   return new Promise((resolve, reject) => {
     const audio = document.createElement('audio');
     const url = URL.createObjectURL(blob);
 
-    audio.addEventListener('loadedmetadata', () => {
-      resolve(audio.duration);
+    // Timeout after 5 seconds
+    const timeout = setTimeout(() => {
       URL.revokeObjectURL(url);
+      reject(new Error('Timeout getting audio duration'));
+    }, 5000);
+
+    audio.addEventListener('loadedmetadata', () => {
+      clearTimeout(timeout);
+      const duration = audio.duration;
+      URL.revokeObjectURL(url);
+
+      // Handle Infinity duration (common with WebM)
+      if (!isFinite(duration) || duration === Infinity) {
+        // Estimate based on file size (rough approximation: ~128kbps for webm)
+        const estimatedDuration = (blob.size / 16000); // bytes / (128kbps / 8)
+        console.log(`Duration was Infinity, estimating: ${estimatedDuration.toFixed(1)}s`);
+        resolve(estimatedDuration);
+      } else {
+        resolve(duration);
+      }
     });
 
     audio.addEventListener('error', () => {
-      reject(new Error('Failed to load audio metadata'));
+      clearTimeout(timeout);
       URL.revokeObjectURL(url);
+      reject(new Error('Failed to load audio metadata'));
     });
 
     audio.src = url;
   });
+}
+
+/**
+ * Convert WebM audio to WAV format for better ElevenLabs compatibility
+ * Uses Web Audio API for decoding and manual WAV encoding
+ */
+async function convertToWav(webmBlob: Blob): Promise<Blob> {
+  const audioContext = new AudioContext({ sampleRate: 44100 });
+
+  try {
+    const arrayBuffer = await webmBlob.arrayBuffer();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+    // Encode as WAV
+    const wavBuffer = encodeWAV(audioBuffer);
+    return new Blob([wavBuffer], { type: 'audio/wav' });
+  } finally {
+    await audioContext.close();
+  }
+}
+
+/**
+ * Encode an AudioBuffer to WAV format
+ */
+function encodeWAV(audioBuffer: AudioBuffer): ArrayBuffer {
+  const numChannels = audioBuffer.numberOfChannels;
+  const sampleRate = audioBuffer.sampleRate;
+  const format = 1; // PCM
+  const bitDepth = 16;
+
+  // Interleave channels
+  const length = audioBuffer.length * numChannels * (bitDepth / 8);
+  const buffer = new ArrayBuffer(44 + length);
+  const view = new DataView(buffer);
+
+  // Write WAV header
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, 36 + length, true);
+  writeString(view, 8, 'WAVE');
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true); // Subchunk1Size
+  view.setUint16(20, format, true);
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numChannels * (bitDepth / 8), true);
+  view.setUint16(32, numChannels * (bitDepth / 8), true);
+  view.setUint16(34, bitDepth, true);
+  writeString(view, 36, 'data');
+  view.setUint32(40, length, true);
+
+  // Write audio data
+  const channelData: Float32Array[] = [];
+  for (let i = 0; i < numChannels; i++) {
+    channelData.push(audioBuffer.getChannelData(i));
+  }
+
+  let offset = 44;
+  for (let i = 0; i < audioBuffer.length; i++) {
+    for (let ch = 0; ch < numChannels; ch++) {
+      const sample = Math.max(-1, Math.min(1, channelData[ch][i]));
+      const int16 = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+      view.setInt16(offset, int16, true);
+      offset += 2;
+    }
+  }
+
+  return buffer;
+}
+
+function writeString(view: DataView, offset: number, string: string): void {
+  for (let i = 0; i < string.length; i++) {
+    view.setUint8(offset + i, string.charCodeAt(i));
+  }
 }
 
 /**

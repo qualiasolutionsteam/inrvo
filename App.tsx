@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { View, VoiceProfile, ScriptTimingMap, CloningStatus, CreditInfo } from './types';
 import { TEMPLATE_CATEGORIES, VOICE_PROFILES, ICONS, BACKGROUND_TRACKS, BackgroundTrack, AUDIO_TAG_CATEGORIES } from './constants';
 import GlassCard from './components/GlassCard';
@@ -64,41 +64,41 @@ const App: React.FC = () => {
   const [favoriteAudioTags, setFavoriteAudioTags] = useState<string[]>([]);
   const [suggestedAudioTags, setSuggestedAudioTags] = useState<string[]>([]);
 
-  // Smart tag suggestions based on prompt content
-  const getSuggestedTags = (prompt: string): string[] => {
+  // Keyword to tag mapping (memoized to prevent recreation)
+  const keywordTagMap = useMemo(() => ({
+    // Breathing related
+    'breath': ['deep_breath', 'exhale'],
+    'breathing': ['deep_breath', 'exhale'],
+    'inhale': ['deep_breath'],
+    'exhale': ['exhale'],
+    // Pause/calm related
+    'pause': ['short_pause', 'long_pause'],
+    'calm': ['long_pause', 'silence'],
+    'peace': ['long_pause', 'silence'],
+    'quiet': ['silence'],
+    'silent': ['silence'],
+    'stillness': ['silence', 'long_pause'],
+    // Sound related
+    'laugh': ['giggling'],
+    'happy': ['giggling'],
+    'joy': ['giggling'],
+    'gentle': ['soft_hum'],
+    'hum': ['soft_hum'],
+    // Voice related
+    'whisper': ['whisper'],
+    'soft': ['whisper', 'soft_hum'],
+    'sigh': ['sigh'],
+    'relax': ['sigh', 'deep_breath'],
+    'release': ['sigh', 'exhale'],
+  }), []);
+
+  // Smart tag suggestions based on prompt content (memoized callback)
+  const getSuggestedTags = useCallback((prompt: string): string[] => {
     const lowerPrompt = prompt.toLowerCase();
     const suggestions: string[] = [];
 
-    // Keyword to tag mapping
-    const keywordMap: Record<string, string[]> = {
-      // Breathing related
-      'breath': ['deep_breath', 'exhale'],
-      'breathing': ['deep_breath', 'exhale'],
-      'inhale': ['deep_breath'],
-      'exhale': ['exhale'],
-      // Pause/calm related
-      'pause': ['short_pause', 'long_pause'],
-      'calm': ['long_pause', 'silence'],
-      'peace': ['long_pause', 'silence'],
-      'quiet': ['silence'],
-      'silent': ['silence'],
-      'stillness': ['silence', 'long_pause'],
-      // Sound related
-      'laugh': ['giggling'],
-      'happy': ['giggling'],
-      'joy': ['giggling'],
-      'gentle': ['soft_hum'],
-      'hum': ['soft_hum'],
-      // Voice related
-      'whisper': ['whisper'],
-      'soft': ['whisper', 'soft_hum'],
-      'sigh': ['sigh'],
-      'relax': ['sigh', 'deep_breath'],
-      'release': ['sigh', 'exhale'],
-    };
-
     // Check each keyword
-    Object.entries(keywordMap).forEach(([keyword, tags]) => {
+    Object.entries(keywordTagMap).forEach(([keyword, tags]) => {
       if (lowerPrompt.includes(keyword)) {
         tags.forEach(tag => {
           if (!suggestions.includes(tag)) {
@@ -110,23 +110,26 @@ const App: React.FC = () => {
 
     // Limit to top 4 suggestions
     return suggestions.slice(0, 4);
-  };
+  }, [keywordTagMap]);
 
-  // Group tracks by category for music modal
-  const tracksByCategory = BACKGROUND_TRACKS.reduce((acc, track) => {
-    if (!acc[track.category]) acc[track.category] = [];
-    acc[track.category].push(track);
-    return acc;
-  }, {} as Record<string, BackgroundTrack[]>);
+  // Group tracks by category for music modal (memoized - static data)
+  const tracksByCategory = useMemo(() =>
+    BACKGROUND_TRACKS.reduce((acc, track) => {
+      if (!acc[track.category]) acc[track.category] = [];
+      acc[track.category].push(track);
+      return acc;
+    }, {} as Record<string, BackgroundTrack[]>),
+  []);
 
-  const categoryConfig: Record<string, { label: string; color: string; bgColor: string }> = {
+  // Category config for styling (memoized - static data)
+  const categoryConfig = useMemo(() => ({
     'ambient': { label: 'Ambient', color: 'text-cyan-400', bgColor: 'bg-cyan-500/10' },
     'nature': { label: 'Nature', color: 'text-emerald-400', bgColor: 'bg-emerald-500/10' },
     'binaural': { label: 'Binaural', color: 'text-violet-400', bgColor: 'bg-violet-500/10' },
     'instrumental': { label: 'Instrumental', color: 'text-purple-400', bgColor: 'bg-purple-500/10' },
     'lofi': { label: 'Lo-Fi', color: 'text-orange-400', bgColor: 'bg-orange-500/10' },
     'classical': { label: 'Classical', color: 'text-rose-400', bgColor: 'bg-rose-500/10' },
-  };
+  } as Record<string, { label: string; color: string; bgColor: string }>), []);
 
   // Burger menu states
   const [showBurgerMenu, setShowBurgerMenu] = useState(false);
@@ -611,6 +614,9 @@ const App: React.FC = () => {
 
     setCloningStatus({ state: 'validating' });
 
+    let elevenlabsVoiceId: string | null = null;
+    let creditsDeducted = false;
+
     try {
       // Check credits
       const { can: canClone, reason } = await creditService.canClone(user.id);
@@ -622,22 +628,14 @@ const App: React.FC = () => {
       setCloningStatus({ state: 'uploading_to_elevenlabs' });
 
       // Clone with ElevenLabs
-      let elevenlabsVoiceId: string;
       try {
         elevenlabsVoiceId = await elevenlabsService.cloneVoice(blob, {
           name,
           description: 'Voice clone created with INrVO',
         });
-
-        // Deduct credits
-        const costConfig = creditService.getCostConfig();
-        await creditService.deductCredits(
-          costConfig.VOICE_CLONE,
-          'CLONE_CREATE',
-          undefined,
-          user.id
-        );
+        console.log('Voice cloned successfully with ID:', elevenlabsVoiceId);
       } catch (cloneError: any) {
+        console.error('ElevenLabs cloning failed:', cloneError);
         setCloningStatus({
           state: 'error',
           message: cloneError.message || 'Voice cloning failed',
@@ -646,18 +644,61 @@ const App: React.FC = () => {
         return;
       }
 
+      // Deduct credits after successful clone
+      try {
+        const costConfig = creditService.getCostConfig();
+        await creditService.deductCredits(
+          costConfig.VOICE_CLONE,
+          'CLONE_CREATE',
+          undefined,
+          user.id
+        );
+        creditsDeducted = true;
+      } catch (creditError: any) {
+        console.error('Failed to deduct credits:', creditError);
+        // Continue even if credit deduction fails - we don't want to lose the voice
+      }
+
       setCloningStatus({ state: 'saving_to_database' });
 
-      // Save to database
-      const savedVoice = await createVoiceProfile(
-        name,
-        'Cloned voice profile',
-        'en-US',
-        undefined,
-        elevenlabsVoiceId
-      );
+      // Save to database with rollback on failure
+      let savedVoice;
+      try {
+        savedVoice = await createVoiceProfile(
+          name,
+          'Cloned voice profile',
+          'en-US',
+          undefined,
+          elevenlabsVoiceId
+        );
+      } catch (dbError: any) {
+        console.error('Database save failed, rolling back:', dbError);
 
-      // Save audio sample as backup
+        // Rollback: Delete voice from ElevenLabs
+        if (elevenlabsVoiceId) {
+          try {
+            await elevenlabsService.deleteVoice(elevenlabsVoiceId);
+            console.log('Rolled back ElevenLabs voice:', elevenlabsVoiceId);
+          } catch (rollbackError) {
+            console.error('Failed to rollback ElevenLabs voice:', rollbackError);
+          }
+        }
+
+        // TODO: Refund credits if deducted
+        // For now, log the issue
+        if (creditsDeducted) {
+          console.warn('Credits were deducted but voice save failed. Manual refund may be needed.');
+        }
+
+        setCloningStatus({
+          state: 'error',
+          message: dbError.message || 'Failed to save voice profile',
+          canRetry: true,
+        });
+        return;
+      }
+
+      // Save audio sample as backup (non-critical, don't fail on error)
       try {
         const base64 = await blobToBase64(blob);
         await createVoiceClone(
@@ -667,7 +708,7 @@ const App: React.FC = () => {
           { elevenlabsVoiceId }
         );
       } catch (e) {
-        console.warn('Failed to save voice sample:', e);
+        console.warn('Failed to save voice sample backup:', e);
       }
 
       // Create voice profile for UI
