@@ -444,5 +444,13 @@ export const ICONS = {
       <circle fill="url(#tagsGrad)" cx="6" cy="9" r="1"/>
       <path fill="url(#tagsGrad)" opacity="0.5" d="m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L17 19"/>
     </svg>
+  ),
+
+  // Send/Arrow Up icon (ChatGPT style)
+  Send: ({ className = "w-6 h-6" }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M12 19V5" />
+      <path d="M5 12l7-7 7 7" />
+    </svg>
   )
 };

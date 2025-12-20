@@ -932,7 +932,7 @@ const App: React.FC = () => {
                     <div className="relative">
                       <textarea
                         placeholder="e.g., 'calm my anxiety', 'help me sleep'..."
-                        className="w-full bg-transparent p-3 md:p-6 text-sm md:text-base text-slate-200 placeholder:text-slate-600 resize-none outline-none min-h-[60px] md:min-h-[100px] max-h-[120px] md:max-h-[200px] leading-relaxed"
+                        className="w-full bg-transparent p-3 md:p-4 text-sm md:text-base text-slate-200 placeholder:text-slate-600 resize-none outline-none min-h-[48px] md:min-h-[64px] max-h-[100px] md:max-h-[140px] leading-relaxed"
                         value={script}
                         onChange={(e) => setScript(e.target.value)}
                         onKeyDown={(e) => {
@@ -1067,20 +1067,14 @@ const App: React.FC = () => {
                           onClick={handleGenerateAndPlay}
                           disabled={isGenerating || !script.trim()}
                           className={`
-                            px-4 md:px-8 py-2.5 md:py-3 rounded-xl md:rounded-2xl font-bold text-[10px] md:text-sm flex items-center gap-2 md:gap-3 transition-all min-h-[40px] md:min-h-[44px]
-                            ${isGenerating ? 'bg-indigo-600/50 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-2xl hover:shadow-indigo-500/30 active:scale-95 text-white'}
+                            p-2.5 md:p-3 rounded-xl md:rounded-2xl transition-all min-h-[40px] min-w-[40px] md:min-h-[44px] md:min-w-[44px] flex items-center justify-center
+                            ${isGenerating ? 'bg-indigo-600/50 cursor-not-allowed' : script.trim() ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-2xl hover:shadow-indigo-500/30 active:scale-95 text-white' : 'bg-white/10 text-slate-500'}
                           `}
                         >
                           {isGenerating ? (
-                            <>
-                              <div className="animate-spin rounded-full h-3.5 w-3.5 md:h-4 md:w-4 border-2 border-white/30 border-t-white"></div>
-                              <span className="hidden sm:inline">Generating...</span>
-                            </>
+                            <div className="animate-spin rounded-full h-4 w-4 md:h-5 md:w-5 border-2 border-white/30 border-t-white"></div>
                           ) : (
-                            <>
-                              <ICONS.Sparkle className="w-4 h-4 md:w-5 md:h-5" />
-                              <span>Create</span>
-                            </>
+                            <ICONS.Send className="w-4 h-4 md:w-5 md:h-5" />
                           )}
                         </button>
                       </div>
