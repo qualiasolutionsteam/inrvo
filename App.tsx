@@ -947,10 +947,10 @@ const App: React.FC = () => {
                       <div className="relative flex-shrink-0">
                           <button
                             onClick={() => setShowPromptMenu(!showPromptMenu)}
-                            className={`p-2 rounded-full transition-all flex items-center justify-center ${
+                            className={`p-2 rounded-full transition-all flex items-center justify-center border ${
                               showPromptMenu
-                                ? 'bg-indigo-500/20 text-indigo-400'
-                                : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+                                ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/50'
+                                : 'text-slate-400 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/5'
                             }`}
                             title="Open menu"
                           >
@@ -1082,8 +1082,8 @@ const App: React.FC = () => {
                         onClick={handleGenerateAndPlay}
                         disabled={isGenerating || !script.trim()}
                         className={`
-                          flex-shrink-0 p-2 rounded-full transition-all flex items-center justify-center
-                          ${isGenerating ? 'bg-indigo-500/50 cursor-not-allowed text-white/70' : script.trim() ? 'bg-indigo-500 hover:bg-indigo-400 active:scale-95 text-white' : 'text-slate-600'}
+                          flex-shrink-0 p-2 rounded-full transition-all flex items-center justify-center border
+                          ${isGenerating ? 'bg-indigo-500/50 border-indigo-500/50 cursor-not-allowed text-white/70' : script.trim() ? 'bg-indigo-500 border-indigo-400 hover:bg-indigo-400 active:scale-95 text-white' : 'text-slate-400 border-white/20'}
                         `}
                       >
                         {isGenerating ? (
@@ -1097,8 +1097,12 @@ const App: React.FC = () => {
                     {/* Status bar */}
                     <div className="px-3 md:px-6 py-2 md:py-3 flex justify-between items-center text-[9px] md:text-[11px] uppercase tracking-wider md:tracking-widest font-bold text-slate-500 border-t border-white/5 bg-white/[0.01]">
                       <div className="flex items-center gap-2 md:gap-3">
-                        <span className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full flex-shrink-0 ${isRecording ? 'bg-rose-500 animate-ping' : isGenerating ? 'bg-indigo-500 animate-pulse' : 'bg-emerald-500'}`}></span>
-                        <span className="text-slate-400 truncate">{isRecording ? 'Capturing...' : isGenerating ? 'Generating...' : 'Ready'}</span>
+                        {(isRecording || isGenerating) && (
+                          <>
+                            <span className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full flex-shrink-0 ${isRecording ? 'bg-rose-500 animate-ping' : 'bg-indigo-500 animate-pulse'}`}></span>
+                            <span className="text-slate-400 truncate">{isRecording ? 'Capturing...' : 'Generating...'}</span>
+                          </>
+                        )}
                       </div>
                       {/* Audio Tags Indicator */}
                       {audioTagsEnabled && selectedAudioTags.length > 0 && (
