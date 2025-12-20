@@ -38,6 +38,55 @@ const App: React.FC = () => {
   const [selectedAudioTags, setSelectedAudioTags] = useState<string[]>([]);
   const [audioTagsEnabled, setAudioTagsEnabled] = useState(false);
   const [favoriteAudioTags, setFavoriteAudioTags] = useState<string[]>([]);
+  const [suggestedAudioTags, setSuggestedAudioTags] = useState<string[]>([]);
+
+  // Smart tag suggestions based on prompt content
+  const getSuggestedTags = (prompt: string): string[] => {
+    const lowerPrompt = prompt.toLowerCase();
+    const suggestions: string[] = [];
+
+    // Keyword to tag mapping
+    const keywordMap: Record<string, string[]> = {
+      // Breathing related
+      'breath': ['deep_breath', 'exhale'],
+      'breathing': ['deep_breath', 'exhale'],
+      'inhale': ['deep_breath'],
+      'exhale': ['exhale'],
+      // Pause/calm related
+      'pause': ['short_pause', 'long_pause'],
+      'calm': ['long_pause', 'silence'],
+      'peace': ['long_pause', 'silence'],
+      'quiet': ['silence'],
+      'silent': ['silence'],
+      'stillness': ['silence', 'long_pause'],
+      // Sound related
+      'laugh': ['giggling'],
+      'happy': ['giggling'],
+      'joy': ['giggling'],
+      'gentle': ['soft_hum'],
+      'hum': ['soft_hum'],
+      // Voice related
+      'whisper': ['whisper'],
+      'soft': ['whisper', 'soft_hum'],
+      'sigh': ['sigh'],
+      'relax': ['sigh', 'deep_breath'],
+      'release': ['sigh', 'exhale'],
+    };
+
+    // Check each keyword
+    Object.entries(keywordMap).forEach(([keyword, tags]) => {
+      if (lowerPrompt.includes(keyword)) {
+        tags.forEach(tag => {
+          if (!suggestions.includes(tag)) {
+            suggestions.push(tag);
+          }
+        });
+      }
+    });
+
+    // Limit to top 4 suggestions
+    return suggestions.slice(0, 4);
+  };
 
   // Group tracks by category for music modal
   const tracksByCategory = BACKGROUND_TRACKS.reduce((acc, track) => {
@@ -971,6 +1020,8 @@ const App: React.FC = () => {
                                   {/* Audio Tags */}
                                   <button
                                     onClick={() => {
+                                      // Calculate smart suggestions based on current prompt
+                                      setSuggestedAudioTags(getSuggestedTags(script));
                                       setShowAudioTagsModal(true);
                                       setShowPromptMenu(false);
                                     }}
@@ -1410,6 +1461,37 @@ const App: React.FC = () => {
                       }`} />
                     </button>
                   </div>
+
+                  {/* Smart Suggestions */}
+                  {suggestedAudioTags.length > 0 && (
+                    <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+                      <p className="text-xs font-medium text-amber-300 mb-2">✨ Suggested for your prompt</p>
+                      <div className="flex flex-wrap gap-2">
+                        {suggestedAudioTags.map(tagId => {
+                          const tag = AUDIO_TAG_CATEGORIES.flatMap(c => c.tags).find(t => t.id === tagId);
+                          const isAlreadySelected = selectedAudioTags.includes(tagId);
+                          return tag ? (
+                            <button
+                              key={tagId}
+                              onClick={() => {
+                                if (!isAlreadySelected) {
+                                  setSelectedAudioTags(prev => [...prev, tagId]);
+                                }
+                              }}
+                              disabled={isAlreadySelected}
+                              className={`px-2 py-1 rounded-lg text-xs transition-colors ${
+                                isAlreadySelected
+                                  ? 'bg-amber-500/10 text-amber-500/50 cursor-not-allowed'
+                                  : 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
+                              }`}
+                            >
+                              {tag.label} {isAlreadySelected ? '✓' : '+'}
+                            </button>
+                          ) : null;
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Selected Tags Preview */}
                   {selectedAudioTags.length > 0 && (
