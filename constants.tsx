@@ -167,42 +167,42 @@ export interface BackgroundTrack {
   previewUrl?: string; // For future use
 }
 
-// Free royalty-free audio from Internet Archive (archive.org)
-// CC0/Public Domain licensed ambient tracks suitable for meditation backgrounds
-// These stream directly from archive.org CDN which allows cross-origin requests
+// Free royalty-free audio for background music
+// Using SoundHelix (public domain test audio that works with CORS)
+// Note: These are placeholder tracks - replace with actual meditation audio in production
 export const BACKGROUND_TRACKS: BackgroundTrack[] = [
   // No Music Option
   { id: 'none', name: 'No Music', description: 'Voice only, no background', category: 'ambient' },
 
-  // Nature Sounds - From meditation/healing collections
-  { id: 'rain', name: 'Gentle Rain', description: 'Soft rainfall for deep relaxation', category: 'nature', audioUrl: 'https://archive.org/download/va-deep-meditation-50-tracks-healing-sounds-of-nature-2016/Rebirth%20Yoga%20Music%20Academy%20-%20Deep%20Meditation%20%28Morning%20Birds%2C%20Waterfall%29.mp3' },
-  { id: 'ocean', name: 'Ocean Waves', description: 'Rhythmic waves on a peaceful shore', category: 'nature', audioUrl: 'https://archive.org/download/va-deep-meditation-50-tracks-healing-sounds-of-nature-2016/Om%20Meditation%20Music%20Academy%20-%20Healing%20Power%20of%20Water.mp3' },
-  { id: 'forest', name: 'Forest Ambience', description: 'Birds and rustling leaves', category: 'nature', audioUrl: 'https://archive.org/download/va-deep-meditation-50-tracks-healing-sounds-of-nature-2016/Calming%20Music%20Sanctuary%20-%20Yoga%20Infinity%20Journey.mp3' },
-  { id: 'spa', name: 'Bali Spa', description: 'Peaceful spa ambience', category: 'nature', audioUrl: 'https://archive.org/download/va-deep-meditation-50-tracks-healing-sounds-of-nature-2016/Om%20Meditation%20Music%20Academy%20-%20Bali%20Spa%20%28Music%20for%20Massage%29.mp3' },
-  { id: 'creek', name: 'Zen Garden', description: 'Tranquil garden sounds', category: 'nature', audioUrl: 'https://archive.org/download/va-deep-meditation-50-tracks-healing-sounds-of-nature-2016/Healing%20Meditation%20Zone%20-%20Relaxing%20Zen%20Music%20for%20Reduce%20Stress.mp3' },
+  // Nature Sounds - Ambient instrumental tracks
+  { id: 'rain', name: 'Gentle Rain', description: 'Soft ambient for relaxation', category: 'nature', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+  { id: 'ocean', name: 'Ocean Waves', description: 'Rhythmic ambient sounds', category: 'nature', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
+  { id: 'forest', name: 'Forest Ambience', description: 'Peaceful background music', category: 'nature', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
+  { id: 'spa', name: 'Spa Ambience', description: 'Relaxing spa music', category: 'nature', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' },
+  { id: 'creek', name: 'Zen Garden', description: 'Tranquil garden sounds', category: 'nature', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3' },
 
-  // Ambient - From Calm Pills collection (CC0 licensed)
-  { id: 'space', name: 'Still Habitat', description: 'Deep ambient soundscape', category: 'ambient', audioUrl: 'https://archive.org/download/CalmPills/Still%20Habitat.mp3' },
-  { id: 'drone', name: 'Slowly Dusk', description: 'Gentle evening ambient', category: 'ambient', audioUrl: 'https://archive.org/download/CalmPills/Slowly%20Dusk.mp3' },
-  { id: 'meditation-bells', name: 'Dreams from Sea', description: 'Oceanic ambient tones', category: 'ambient', audioUrl: 'https://archive.org/download/CalmPills/Dreams%20from%20the%20Sea.mp3' },
+  // Ambient - Electronic ambient tracks
+  { id: 'space', name: 'Cosmic Drift', description: 'Deep ambient soundscape', category: 'ambient', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3' },
+  { id: 'drone', name: 'Healing Drone', description: 'Gentle ambient music', category: 'ambient', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3' },
+  { id: 'meditation-bells', name: 'Temple Bells', description: 'Meditative ambient', category: 'ambient', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3' },
 
   // Instrumental - Soft relaxation music
-  { id: 'piano', name: 'Soft Piano', description: 'Gentle piano melodies', category: 'instrumental', audioUrl: 'https://archive.org/download/CalmPills/Lullaby%20for%20Grownups.mp3' },
-  { id: 'guitar', name: 'Soft Relaxation', description: 'Calming instrumental', category: 'instrumental', audioUrl: 'https://archive.org/download/va-deep-meditation-50-tracks-healing-sounds-of-nature-2016/Serenity%20Music%20Relaxation%20-%20Soft%20Music%20to%20Relax.mp3' },
-  { id: 'strings', name: 'Ambient Strings', description: 'Ethereal string arrangements', category: 'instrumental', audioUrl: 'https://archive.org/download/va-deep-meditation-50-tracks-healing-sounds-of-nature-2016/Serenity%20Music%20Relaxation%20-%20Peaceful%20Music%20Insomnia%20Cure.mp3' },
+  { id: 'piano', name: 'Soft Piano', description: 'Gentle piano melodies', category: 'instrumental', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3' },
+  { id: 'guitar', name: 'Acoustic Guitar', description: 'Calming instrumental', category: 'instrumental', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3' },
+  { id: 'strings', name: 'Ambient Strings', description: 'Ethereal arrangements', category: 'instrumental', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3' },
 
   // Binaural/Meditation - Deep meditation tracks
-  { id: 'binaural-alpha', name: 'Alpha Waves', description: 'Relaxation and creativity', category: 'binaural', audioUrl: 'https://archive.org/download/va-deep-meditation-50-tracks-healing-sounds-of-nature-2016/Healing%20Meditation%20Zone%20-%20Mindfulness%20Meditation.mp3' },
-  { id: 'binaural-theta', name: 'Theta Meditation', description: 'Deep meditation state', category: 'binaural', audioUrl: 'https://archive.org/download/va-deep-meditation-50-tracks-healing-sounds-of-nature-2016/Rebirth%20Yoga%20Music%20Academy%20-%20Summer%20Reiki%20Music.mp3' },
-  { id: 'binaural-delta', name: 'Delta Sleep', description: 'Deep sleep inducing', category: 'binaural', audioUrl: 'https://archive.org/download/va-deep-meditation-50-tracks-healing-sounds-of-nature-2016/Calming%20Music%20Sanctuary%20-%20Spa%20Weekends.mp3' },
+  { id: 'binaural-alpha', name: 'Alpha Waves', description: 'Relaxation and focus', category: 'binaural', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3' },
+  { id: 'binaural-theta', name: 'Theta Waves', description: 'Deep meditation state', category: 'binaural', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-13.mp3' },
+  { id: 'binaural-delta', name: 'Delta Waves', description: 'Deep sleep inducing', category: 'binaural', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-14.mp3' },
 
   // Lo-Fi - Chill ambient tracks
-  { id: 'lofi-chill', name: 'Lo-Fi Chill', description: 'Relaxing lo-fi ambient', category: 'lofi', audioUrl: 'https://archive.org/download/CalmPills/Pause.mp3' },
-  { id: 'lofi-rain', name: 'Lo-Fi Dreams', description: 'Dreamy lo-fi ambience', category: 'lofi', audioUrl: 'https://archive.org/download/CalmPills/Empty%20Thoughts.mp3' },
+  { id: 'lofi-chill', name: 'Lo-Fi Chill', description: 'Relaxing lo-fi beats', category: 'lofi', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3' },
+  { id: 'lofi-rain', name: 'Lo-Fi Dreams', description: 'Dreamy lo-fi vibes', category: 'lofi', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-16.mp3' },
 
   // Classical - Peaceful compositions
-  { id: 'classical-calm', name: 'Calm Classical', description: 'Peaceful classical ambience', category: 'classical', audioUrl: 'https://archive.org/download/CalmPills/Serene%20Memories.mp3' },
-  { id: 'classical-nocturne', name: 'Nocturne', description: 'Nighttime piano ambience', category: 'classical', audioUrl: 'https://archive.org/download/CalmPills/Midnight%20Piano.mp3' },
+  { id: 'classical-calm', name: 'Calm Classical', description: 'Peaceful classical music', category: 'classical', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+  { id: 'classical-nocturne', name: 'Nocturne', description: 'Nighttime piano music', category: 'classical', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
 ];
 
 export const AUDIO_TAG_CATEGORIES: { id: string; name: string; color: string; bgColor: string; tags: { id: string; label: string; description: string }[] }[] = [

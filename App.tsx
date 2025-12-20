@@ -837,23 +837,57 @@ const App: React.FC = () => {
     // Stop any existing background music
     stopBackgroundMusic();
 
-    if (track.id === 'none' || !track.audioUrl) return;
+    if (track.id === 'none' || !track.audioUrl) {
+      console.log('[Music] No track selected or no audio URL');
+      return;
+    }
 
     try {
-      const audio = new Audio(track.audioUrl);
+      console.log('[Music] Loading track:', track.name, track.audioUrl);
+      const audio = new Audio();
+      audio.crossOrigin = 'anonymous';
+      audio.preload = 'auto';
       audio.loop = true;
       audio.volume = backgroundVolume;
+
+      // Set up event handlers before setting src
+      audio.onerror = (e) => {
+        console.error('[Music] Audio error:', e, audio.error);
+      };
+      audio.oncanplaythrough = () => {
+        console.log('[Music] Audio ready to play:', track.name);
+      };
+      audio.onplay = () => {
+        console.log('[Music] Audio started playing:', track.name);
+      };
+
+      audio.src = track.audioUrl;
       backgroundAudioRef.current = audio;
 
+      // Wait for audio to be ready, then play
       await audio.play();
+      console.log('[Music] Play called successfully');
     } catch (error) {
-      console.error('Failed to play background music:', error);
+      console.error('[Music] Failed to play background music:', error);
+      // Try without crossOrigin as fallback
+      try {
+        console.log('[Music] Retrying without crossOrigin...');
+        const audio = new Audio(track.audioUrl);
+        audio.loop = true;
+        audio.volume = backgroundVolume;
+        backgroundAudioRef.current = audio;
+        await audio.play();
+        console.log('[Music] Fallback play successful');
+      } catch (fallbackError) {
+        console.error('[Music] Fallback also failed:', fallbackError);
+      }
     }
   };
 
   // Stop background music
   const stopBackgroundMusic = () => {
     if (backgroundAudioRef.current) {
+      console.log('[Music] Stopping background music');
       backgroundAudioRef.current.pause();
       backgroundAudioRef.current.currentTime = 0;
       backgroundAudioRef.current = null;
@@ -1995,6 +2029,8 @@ const App: React.FC = () => {
                             key={track.id}
                             onClick={() => {
                               setSelectedBackgroundTrack(track);
+                              // Start playing the selected music immediately
+                              startBackgroundMusic(track);
                               setShowMusicModal(false);
                             }}
                             className={`p-3 md:p-4 rounded-xl text-left transition-all ${
