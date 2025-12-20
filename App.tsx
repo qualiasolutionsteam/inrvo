@@ -16,9 +16,22 @@ import { elevenlabsService, base64ToBlob } from './src/lib/elevenlabs';
 import { creditService } from './src/lib/credits';
 import { supabase, getCurrentUser, signOut, createVoiceProfile, getUserVoiceProfiles, VoiceProfile as DBVoiceProfile, createVoiceClone, saveMeditationHistory, getMeditationHistory, deleteMeditationHistory, MeditationHistory, getAudioTagPreferences, updateAudioTagPreferences, AudioTagPreference } from './lib/supabase';
 
+// Rotating taglines - one shown randomly per session
+const TAGLINES = [
+  { main: 'Meditation,', highlight: 'made for you', sub: 'Just describe how you feel.' },
+  { main: 'Your calm,', highlight: 'on demand', sub: 'Tell us what you need.' },
+  { main: 'Wellness,', highlight: 'personalized', sub: 'Say what you're feeling.' },
+  { main: 'Your moment of', highlight: 'calm', sub: 'Describe it. We'll create it.' },
+  { main: 'Rest,', highlight: 'reimagined', sub: 'Just tell us what you need.' },
+  { main: 'Designed', highlight: 'around you', sub: 'Describe your state of mind.' },
+  { main: 'Your personal', highlight: 'sanctuary', sub: 'Just say how you're feeling.' },
+  { main: 'Peace,', highlight: 'on your terms', sub: 'Tell us what you're looking for.' },
+];
+
 const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [currentView, setCurrentView] = useState<View>(View.HOME);
+  const [tagline] = useState(() => TAGLINES[Math.floor(Math.random() * TAGLINES.length)]);
   const [script, setScript] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [availableVoices, setAvailableVoices] = useState<VoiceProfile[]>(VOICE_PROFILES);
@@ -912,9 +925,9 @@ const App: React.FC = () => {
               {/* Tagline - centered in remaining space */}
               <div className="flex-1 flex flex-col items-center justify-center px-4 pb-[200px] md:pb-[240px]">
                 <p className="text-2xl md:text-4xl font-light tracking-wide text-white/70 text-center">
-                  Meditation, <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-indigo-500 font-semibold">made for you</span>
+                  {tagline.main} <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-indigo-500 font-semibold">{tagline.highlight}</span>
                 </p>
-                <p className="text-base md:text-2xl text-slate-500 mt-1 md:mt-2 hidden sm:block text-center">Just describe how you feel.</p>
+                <p className="text-base md:text-2xl text-slate-500 mt-1 md:mt-2 hidden sm:block text-center">{tagline.sub}</p>
               </div>
 
               {/* Prompt Box - Fixed at bottom */}
