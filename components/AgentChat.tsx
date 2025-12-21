@@ -21,10 +21,11 @@ const SendIcon = () => (
   </svg>
 );
 
-const MicIcon = () => (
-  <svg className="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
-    <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" />
+const WavesIcon = () => (
+  <svg className="w-5 h-5 md:w-6 md:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+    <path d="M2 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0" />
+    <path d="M2 17c2-3 4-3 6 0s4 3 6 0 4-3 6 0" opacity="0.5" />
+    <path d="M2 7c2-3 4-3 6 0s4 3 6 0 4-3 6 0" opacity="0.3" />
   </svg>
 );
 
@@ -467,7 +468,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
                 ) : inputValue.trim() ? (
                   <SendIcon />
                 ) : (
-                  <MicIcon />
+                  <WavesIcon />
                 )}
               </button>
             </div>
