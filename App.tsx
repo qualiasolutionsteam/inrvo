@@ -1619,16 +1619,122 @@ const App: React.FC = () => {
                           setShowVoiceManager(true);
                         }
                       }}
+                      onGenerateAudio={async (meditationScript, tags) => {
+                        if (!selectedVoice) {
+                          setShowVoiceManager(true);
+                          return;
+                        }
+                        // Set script and tags, then synthesize
+                        setEditableScript(meditationScript);
+                        setSelectedAudioTags(tags);
+                        setScript(meditationScript);
+                        setEnhancedScript(meditationScript);
+                        // Use the play edited script flow
+                        setShowScriptPreview(false);
+                        setIsGenerating(true);
+                        setGenerationStage('voice');
+                        setMicError(null);
+
+                        try {
+                          // Initialize audio context
+                          if (!audioContextRef.current) {
+                            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+                          }
+
+                          // Generate speech
+                          const { audioBuffer, base64 } = await voiceService.generateSpeech(
+                            meditationScript,
+                            selectedVoice,
+                            audioContextRef.current
+                          );
+
+                          if (!base64 || base64.trim() === '') {
+                            throw new Error('Failed to generate audio. Please try again.');
+                          }
+
+                          setGenerationStage('ready');
+
+                          // Stop any existing playback
+                          if (audioSourceRef.current) {
+                            try { audioSourceRef.current.stop(); } catch (e) {}
+                          }
+                          if (animationFrameRef.current) {
+                            cancelAnimationFrame(animationFrameRef.current);
+                          }
+
+                          // Store the audio buffer
+                          audioBufferRef.current = audioBuffer;
+                          setDuration(audioBuffer.duration);
+                          setCurrentTime(0);
+                          lastWordIndexRef.current = 0;
+                          setCurrentWordIndex(0);
+                          pauseOffsetRef.current = 0;
+
+                          // Start playback
+                          const source = audioContextRef.current.createBufferSource();
+                          source.buffer = audioBuffer;
+                          source.connect(audioContextRef.current.destination);
+                          source.start();
+                          audioSourceRef.current = source;
+                          playbackStartTimeRef.current = audioContextRef.current.currentTime;
+
+                          // Update state
+                          setIsPlaying(true);
+                          setIsInlineMode(true);
+                          setIsGenerating(false);
+                          setGenerationStage('idle');
+
+                          // Build timing map
+                          const map = buildTimingMap(meditationScript, audioBuffer.duration);
+                          setTimingMap(map);
+
+                          // Start background music
+                          startBackgroundMusic(selectedBackgroundTrack);
+
+                          // Deduct credits if cloned voice
+                          if (selectedVoice.isCloned) {
+                            creditService.deductCredits(
+                              creditService.calculateTTSCost(meditationScript),
+                              'TTS_GENERATE',
+                              selectedVoice.id,
+                              user?.id
+                            ).catch(err => console.warn('Failed to deduct credits:', err));
+                          }
+
+                          // Save to history
+                          saveMeditationHistory(
+                            meditationScript.substring(0, 100),
+                            meditationScript,
+                            selectedVoice.id,
+                            selectedVoice.name,
+                            selectedBackgroundTrack?.id,
+                            selectedBackgroundTrack?.name,
+                            Math.round(audioBuffer.duration),
+                            tags.length > 0 ? tags : undefined
+                          ).catch(err => console.warn('Failed to save history:', err));
+
+                          source.onended = () => {
+                            setIsPlaying(false);
+                            if (animationFrameRef.current) {
+                              cancelAnimationFrame(animationFrameRef.current);
+                            }
+                          };
+                        } catch (error: any) {
+                          console.error('Failed to generate audio:', error);
+                          setMicError(error?.message || 'Failed to generate audio. Please try again.');
+                          setIsGenerating(false);
+                          setGenerationStage('idle');
+                        }
+                      }}
                       onChatStarted={() => setChatStarted(true)}
                       onRequestVoiceSelection={() => setShowVoiceManager(true)}
-                      onOpenTemplates={() => setShowTemplatesModal(true)}
-                      onOpenMusic={() => setShowMusicModal(true)}
-                      onOpenTags={() => {
-                        setSuggestedAudioTags(getSuggestedTags(script));
-                        setShowAudioTagsModal(true);
-                      }}
                       selectedVoice={selectedVoice}
+                      selectedMusic={selectedBackgroundTrack}
+                      availableMusic={BACKGROUND_TRACKS}
+                      availableTags={AUDIO_TAG_CATEGORIES}
+                      onMusicChange={(track) => setSelectedBackgroundTrack(track)}
                       isGenerating={isGenerating}
+                      isGeneratingAudio={isGenerating && generationStage === 'voice'}
                     />
                   )}
                 </div>
