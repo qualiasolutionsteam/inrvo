@@ -181,23 +181,37 @@ export function useMeditationAgent(): UseMeditationAgentReturn {
         },
       });
 
-      // Update UI with response
-      setMessages(prev => prev.map(msg =>
-        msg.id === loadingId
-          ? {
-              ...msg,
-              content: response.message,
-              isLoading: false,
-              actions: response.suggestedActions,
-              quote: response.quote,
-            }
-          : msg
-      ));
-
-      // If agent is ready to generate meditation, do it automatically
+      // If agent is ready to generate meditation, skip showing the chat response
+      // and go directly to the ScriptEditor experience
       if (response.shouldGenerateMeditation && response.meditationType) {
+        // Show brief transition message instead of agent's full response
+        // (which might contain meditation text from AI not following instructions)
+        setMessages(prev => prev.map(msg =>
+          msg.id === loadingId
+            ? {
+                ...msg,
+                content: `Creating your personalized ${response.meditationType.replace('_', ' ')} meditation...`,
+                isLoading: false,
+              }
+            : msg
+        ));
+
+        // Generate the meditation - this will open ScriptEditor automatically
         const meditationPrompt = agentRef.current.generateMeditationPrompt(response.meditationType);
         await generateMeditation(meditationPrompt, response.meditationType);
+      } else {
+        // Normal conversational response - show the agent's message
+        setMessages(prev => prev.map(msg =>
+          msg.id === loadingId
+            ? {
+                ...msg,
+                content: response.message,
+                isLoading: false,
+                actions: response.suggestedActions,
+                quote: response.quote,
+              }
+            : msg
+        ));
       }
 
     } catch (err: any) {
@@ -263,14 +277,8 @@ export function useMeditationAgent(): UseMeditationAgentReturn {
       setCurrentMeditation(meditation);
       console.log("[useMeditationAgent] Setting meditation:", { script: meditation.script.substring(0, 50) + "...", readyForReview: meditation.readyForReview });
 
-      // Add a brief message - the ScriptEditor modal will handle the full preview
-      const meditationMessage: ChatMessage = {
-        id: generateMessageId(),
-        role: 'assistant',
-        content: `I've crafted your ${type.replace('_', ' ')} meditation. You can now review and customize it before we generate the audio.`,
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, meditationMessage]);
+      // Don't add another message - the ScriptEditor modal opens automatically
+      // The brief "Creating your meditation..." message was already shown
 
       return meditation;
 

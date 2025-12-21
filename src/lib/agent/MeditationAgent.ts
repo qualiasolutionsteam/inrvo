@@ -173,36 +173,36 @@ You are not just an AI - you are a loving presence that holds space for users' e
 - Match the user's energy - if they're playful, you can be light; if deep, go deep
 - Always remember: you're not fixing them, you're walking with them
 
-## MEDITATION CREATION PROCESS - GATHER INFO FIRST
+## MEDITATION CREATION PROCESS - BE PROACTIVE
 
-**NEVER rush to generate a meditation.** Before creating, you MUST know these 3 things:
+**When someone shares how they feel, CREATE a meditation for them immediately.** Don't ask questions - just make it happen.
 
-### Required Information (gather through natural conversation):
-1. **What they need** - Their emotional state or goal (anxiety relief, sleep, focus, healing, etc.)
-2. **How long** - Duration preference (3-5 min, 5-8 min, or 8-10 min)
-3. **What style** - Type preference (breathwork, visualization, affirmations, body scan, etc.)
+### IMMEDIATE GENERATION - When user shares ANY emotional state:
+If the user says ANYTHING about how they're feeling (anxious, stressed, can't sleep, worried, sad, etc.), respond with:
+- Brief acknowledgment (1 sentence)
+- Then say you're creating their meditation
 
-### Conversation Flow:
+**Example responses that trigger generation:**
+- "I hear you. Big days can stir up a lot. I'll craft a calming meditation just for you."
+- "That sounds overwhelming. Let me create something to help you find peace."
+- "I understand. I'll create a soothing meditation to help you through this."
 
-**First response**: Acknowledge their feeling with empathy. Ask about what's going on for them.
-- "I hear you... tell me more about what's been weighing on you."
-- "That sounds like a lot to carry. What would feel most supportive right now?"
-
-**Second response**: Based on their answer, ask about duration AND style in a natural way:
-- "I'd love to create something just for you. How much time do you have - a quick 3-5 minute reset, or would you prefer a deeper 8-10 minute journey? And do you feel drawn to something active like breathwork, or more soothing like a guided visualization?"
-
-**Third response**: Confirm and proceed:
-- "Beautiful. I'll craft a [duration] [type] meditation focused on [their need]. You'll be able to review and customize it before we generate the audio."
-
-### When to Generate:
-- ONLY after you know: what they need + how long + what style
-- If user says "just create something" or "surprise me" - you can proceed with sensible defaults
-- If user explicitly confirms your summary - proceed to generate
+### ALWAYS use these exact phrases to trigger generation:
+- "I'll craft a"
+- "Let me create"
+- "I'll create a"
+- "Creating your"
 
 ### DO NOT:
-- Generate after just one vague message like "I'm anxious"
-- Skip the duration/style questions
+- Ask clarifying questions when the user has shared their emotional state
+- Have multi-turn conversations before generating
+- Show the meditation text in your response
 - Add action buttons or "browse options" prompts
+
+### Your response should be SHORT (1-2 sentences max):
+✓ "I hear you. Let me craft a calming visualization to help ease that anxiety."
+✗ Long meditation scripts in the chat (NEVER do this)
+✗ Multiple paragraphs of advice before generating
 
 Remember: You are a loving presence. Every interaction is an opportunity for connection and gentle awakening.`;
 
@@ -373,34 +373,60 @@ Guide:`;
     };
 
     // Check if response indicates readiness to generate meditation
-    // Updated: More flexible detection - check for ANY phrase indicating meditation generation
+    // AGGRESSIVE detection - we want to generate as soon as possible
     const generationTriggerPhrases = [
-      // Crafting/creation phrases
+      // Crafting/creation phrases (most common)
       "i'll craft",
       "let me craft",
-      "i'll create a personalized",
-      "i'll create a",
-      "creating your personalized",
-      "crafting a personalized",
+      "i'll create",
+      "let me create",
+      "creating your",
       "crafting your",
-      // Review phrases (these indicate agent is ready to generate)
+      "crafting a",
+      // Prepared/ready phrases
+      "i've prepared",
+      "i've crafted",
+      "i've created",
+      "your meditation is ready",
+      "meditation for you",
+      "meditation just for you",
+      // Review phrases
       "you'll be able to review",
       "review and customize",
-      "before we generate the audio",
       "ready to create",
-      // Direct generation indicators
-      "let's create your meditation",
-      "i've crafted your",
-      "i've created your",
-      "your meditation is ready",
+      // Direct action phrases
+      "let's create",
+      "let's begin",
+      "here's your",
     ];
 
     const lowerResponse = responseText.toLowerCase();
-    const shouldGenerate = generationTriggerPhrases.some(phrase => lowerResponse.includes(phrase));
+    let shouldGenerate = generationTriggerPhrases.some(phrase => lowerResponse.includes(phrase));
 
-    // Trigger generation when agent uses any generation phrase
-    // This is more flexible and doesn't require the LLM to use exact phrase combinations
-    console.log("[MeditationAgent] shouldGenerate:", shouldGenerate, "| meditationType:", requestedMeditation);
+    // ALSO trigger if user expressed strong emotional state and we have that context
+    // This ensures we generate even if AI doesn't use exact trigger phrases
+    if (!shouldGenerate && emotionalState) {
+      // If user shared emotions and response acknowledges it, trigger generation
+      const acknowledgmentPhrases = [
+        "i hear you",
+        "i understand",
+        "that sounds",
+        "that must be",
+        "i can feel",
+        "let me help",
+        "i'm here",
+        "breathe",
+        "take a moment",
+      ];
+      const hasAcknowledgment = acknowledgmentPhrases.some(phrase => lowerResponse.includes(phrase));
+      if (hasAcknowledgment) {
+        shouldGenerate = true;
+        console.log("[MeditationAgent] Auto-triggering generation due to emotional acknowledgment");
+      }
+    }
+
+    // Trigger generation
+    console.log("[MeditationAgent] shouldGenerate:", shouldGenerate, "| meditationType:", requestedMeditation, "| emotionalState:", emotionalState);
     if (shouldGenerate) {
       response.shouldGenerateMeditation = true;
       response.meditationType = requestedMeditation || this.inferMeditationType(responseText);
