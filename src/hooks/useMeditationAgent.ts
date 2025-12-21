@@ -112,17 +112,10 @@ export function useMeditationAgent(): UseMeditationAgentReturn {
     const preferences = conversationStore.loadPreferences();
     agentRef.current = new MeditationAgent(generateContent, preferences);
 
-    // Load existing conversation if any
-    const existingConversation = conversationStore.getCurrentConversation();
-    if (existingConversation) {
-      const chatMessages = existingConversation.messages.map((msg, index) => ({
-        id: `msg_${index}`,
-        role: msg.role as 'user' | 'assistant',
-        content: msg.content,
-        timestamp: msg.timestamp,
-      }));
-      setMessages(chatMessages);
-    }
+    // Always start fresh - don't load previous conversations
+    // Each visit to the app is a new meditation session
+    conversationStore.startNewConversation();
+    setMessages([]);
 
     // Cleanup
     return () => {

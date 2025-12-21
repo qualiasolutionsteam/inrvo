@@ -1,8 +1,8 @@
 /**
  * AgentChat Component
  *
- * A conversational chat interface for the INrVO Meditation Agent.
- * Replaces the simple prompt input with an intelligent conversational experience.
+ * A dedicated conversational chat interface for the INrVO Meditation Agent.
+ * Always-visible chat with fresh conversations on each visit.
  */
 
 import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
@@ -16,7 +16,7 @@ import { ScriptEditor } from './ScriptEditor';
 // ============================================================================
 
 const SendIcon = () => (
-  <svg className="w-3.5 h-3.5 md:w-4 md:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+  <svg className="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
   </svg>
 );
@@ -24,18 +24,6 @@ const SendIcon = () => (
 const SparkleIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
-  </svg>
-);
-
-const ChevronUpIcon = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M18 15l-6-6-6 6" />
-  </svg>
-);
-
-const ChevronDownIcon = () => (
-  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M6 9l6 6 6-6" />
   </svg>
 );
 
@@ -94,67 +82,53 @@ const QuickPromptIcons: Record<string, React.FC<{ className?: string }>> = {
 
 interface MessageBubbleProps {
   message: ChatMessage;
-  onActionClick: (action: AgentAction) => void;
   isLast: boolean;
 }
 
-const MessageBubble = memo<MessageBubbleProps>(({ message, onActionClick, isLast }) => {
+const MessageBubble = memo<MessageBubbleProps>(({ message, isLast }) => {
   const isUser = message.role === 'user';
 
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-3`}>
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
+      {/* Agent avatar for non-user messages */}
+      {!isUser && (
+        <div className="flex-shrink-0 mr-3 mt-1">
+          <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600
+                        flex items-center justify-center shadow-lg shadow-indigo-500/30">
+            <SparkleIcon className="w-4 h-4 md:w-5 md:h-5 text-white" />
+          </div>
+        </div>
+      )}
+
       <div
         className={`
-          max-w-[90%] rounded-2xl px-4 py-2.5
+          max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-3
           ${isUser
-            ? 'bg-gradient-to-br from-indigo-600/90 to-indigo-700/80 text-white shadow-[0_0_25px_-8px_rgba(99,102,241,0.6)]'
-            : 'bg-white/[0.08] backdrop-blur-sm text-white/90 border border-white/10 shadow-[0_0_20px_-10px_rgba(99,102,241,0.2)]'
+            ? 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white shadow-lg shadow-indigo-500/20'
+            : 'bg-white/[0.06] backdrop-blur-sm text-white/90 border border-white/10'
           }
           ${message.isLoading ? 'animate-pulse' : ''}
           ${isLast ? 'animate-in fade-in slide-in-from-bottom-2 duration-300' : ''}
-          transition-shadow duration-300 hover:shadow-[0_0_30px_-8px_rgba(99,102,241,0.4)]
         `}
       >
         {message.isLoading ? (
-          <div className="flex items-center gap-2">
-            <div className="flex gap-1">
-              <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce shadow-[0_0_8px_rgba(99,102,241,0.6)]" style={{ animationDelay: '0ms' }} />
-              <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce shadow-[0_0_8px_rgba(99,102,241,0.6)]" style={{ animationDelay: '150ms' }} />
-              <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce shadow-[0_0_8px_rgba(99,102,241,0.6)]" style={{ animationDelay: '300ms' }} />
+          <div className="flex items-center gap-3 py-1">
+            <div className="flex gap-1.5">
+              <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
-            <span className="text-white/50 text-xs">Contemplating...</span>
+            <span className="text-white/50 text-sm">Contemplating...</span>
           </div>
         ) : (
-          <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+          <div className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">{message.content}</div>
         )}
 
         {/* Quote Card */}
         {message.quote && (
-          <div className="mt-2 pt-2 border-t border-white/10">
-            <p className="italic text-white/60 text-xs">"{message.quote.quote}"</p>
-            <p className="text-indigo-400 text-[10px] mt-1 glow-text-subtle">— {message.quote.teacher}</p>
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        {message.actions && message.actions.length > 0 && !message.isLoading && (
-          <div className="mt-2 pt-2 border-t border-white/10 flex flex-wrap gap-1.5">
-            {message.actions.map((action, index) => (
-              <button
-                key={index}
-                onClick={() => onActionClick(action)}
-                className="px-2.5 py-1 text-[10px] rounded-full
-                           bg-gradient-to-r from-indigo-500/30 to-purple-500/30
-                           hover:from-indigo-500/50 hover:to-purple-500/50
-                           border border-indigo-500/20 hover:border-indigo-400/40
-                           text-indigo-200 transition-all duration-300 flex items-center gap-1
-                           hover:shadow-[0_0_15px_-5px_rgba(99,102,241,0.5)]
-                           active:scale-95"
-              >
-                <SparkleIcon className="w-2.5 h-2.5 drop-shadow-[0_0_4px_rgba(99,102,241,0.5)]" />
-                {action.label}
-              </button>
-            ))}
+          <div className="mt-3 pt-3 border-t border-white/10">
+            <p className="italic text-white/60 text-sm">"{message.quote.quote}"</p>
+            <p className="text-indigo-400 text-xs mt-1.5">— {message.quote.teacher}</p>
           </div>
         )}
       </div>
@@ -176,20 +150,18 @@ const QuickPromptChip = memo<QuickPromptChipProps>(({ label, icon, onClick }) =>
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full
-                 bg-gradient-to-r from-white/5 to-white/[0.02]
-                 border border-white/10 hover:border-indigo-500/30
-                 text-white/60 hover:text-white transition-all duration-300
-                 text-xs whitespace-nowrap group
-                 hover:shadow-[0_0_20px_-8px_rgba(99,102,241,0.5)]
-                 hover:bg-gradient-to-r hover:from-indigo-500/10 hover:to-purple-500/10
-                 active:scale-95"
+      className="flex items-center gap-2 px-4 py-2.5 rounded-2xl
+                 bg-white/[0.04] hover:bg-white/[0.08]
+                 border border-white/10 hover:border-indigo-500/40
+                 text-white/70 hover:text-white transition-all duration-300
+                 text-sm group
+                 hover:shadow-[0_0_25px_-10px_rgba(99,102,241,0.5)]
+                 active:scale-[0.98]"
     >
       {IconComponent && (
-        <IconComponent className="w-3.5 h-3.5 text-indigo-400/70 group-hover:text-indigo-300
-                                   transition-all duration-300 group-hover:drop-shadow-[0_0_6px_rgba(99,102,241,0.5)]" />
+        <IconComponent className="w-4 h-4 text-indigo-400/80 group-hover:text-indigo-300 transition-colors" />
       )}
-      <span className="group-hover:text-shadow-glow">{label}</span>
+      <span>{label}</span>
     </button>
   );
 });
@@ -201,21 +173,13 @@ QuickPromptChip.displayName = 'QuickPromptChip';
 // ============================================================================
 
 interface AgentChatProps {
-  // Callbacks
   onMeditationReady?: (script: string, type: MeditationType, prompt: string) => void;
   onGenerateAudio?: (script: string, selectedTags: string[]) => void;
   onRequestVoiceSelection?: () => void;
-  onOpenTemplates?: () => void;
-  onOpenMusic?: () => void;
-  onOpenTags?: () => void;
-  onChatStarted?: () => void; // Called when user sends first message
-
-  // State from parent
+  onChatStarted?: () => void;
   selectedVoice?: VoiceProfile | null;
   isGenerating?: boolean;
   isGeneratingAudio?: boolean;
-
-  // Styling
   className?: string;
 }
 
@@ -223,9 +187,6 @@ export const AgentChat: React.FC<AgentChatProps> = ({
   onMeditationReady,
   onGenerateAudio,
   onRequestVoiceSelection,
-  onOpenTemplates,
-  onOpenMusic,
-  onOpenTags,
   onChatStarted,
   selectedVoice,
   isGenerating: externalIsGenerating,
@@ -238,33 +199,29 @@ export const AgentChat: React.FC<AgentChatProps> = ({
     isGeneratingMeditation,
     currentMeditation,
     sendMessage,
-    clearConversation,
-    executeAction,
     greeting,
     quickPrompts,
   } = useMeditationAgent();
 
   const [inputValue, setInputValue] = useState('');
-  const [isExpanded, setIsExpanded] = useState(false);
   const [showScriptEditor, setShowScriptEditor] = useState(false);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const isProcessing = isLoading || isGeneratingMeditation || externalIsGenerating;
+  const hasMessages = messages.length > 0;
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
-    if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Notify parent when chat has started (first message sent)
+  // Notify parent when chat has started
   useEffect(() => {
-    if (messages.length > 0 && onChatStarted) {
+    if (hasMessages && onChatStarted) {
       onChatStarted();
     }
-  }, [messages.length > 0, onChatStarted]);
+  }, [hasMessages, onChatStarted]);
 
   // Show ScriptEditor when meditation is ready for review
   useEffect(() => {
@@ -279,62 +236,38 @@ export const AgentChat: React.FC<AgentChatProps> = ({
     if (onGenerateAudio) {
       onGenerateAudio(script, selectedTags);
     } else if (onMeditationReady && currentMeditation) {
-      // Fallback to legacy callback
       const recentUserMessage = messages.filter(m => m.role === 'user').pop();
-      onMeditationReady(
-        script,
-        currentMeditation.meditationType,
-        recentUserMessage?.content || ''
-      );
+      onMeditationReady(script, currentMeditation.meditationType, recentUserMessage?.content || '');
     }
   }, [onGenerateAudio, onMeditationReady, currentMeditation, messages]);
 
-  // Handle closing the script editor
   const handleCloseEditor = useCallback(() => {
     setShowScriptEditor(false);
   }, []);
 
-  // Handle form submission
   const handleSubmit = useCallback((e?: React.FormEvent) => {
     e?.preventDefault();
     if (!inputValue.trim() || isProcessing) return;
 
     sendMessage(inputValue.trim());
     setInputValue('');
-    setIsExpanded(true); // Expand to show conversation
 
-    // Reset textarea height
     if (inputRef.current) {
       inputRef.current.style.height = 'auto';
     }
   }, [inputValue, isProcessing, sendMessage]);
 
-  // Handle quick prompt click
   const handleQuickPrompt = useCallback((prompt: string) => {
     sendMessage(prompt);
-    setIsExpanded(true);
   }, [sendMessage]);
 
-  // Handle action button click
-  const handleActionClick = useCallback((action: AgentAction) => {
-    if (action.type === 'play_audio') {
-      if (!selectedVoice && onRequestVoiceSelection) {
-        onRequestVoiceSelection();
-      }
-    } else {
-      executeAction(action);
-    }
-  }, [selectedVoice, onRequestVoiceSelection, executeAction]);
-
-  // Handle textarea auto-resize
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputValue(e.target.value);
     const textarea = e.target;
     textarea.style.height = 'auto';
-    textarea.style.height = Math.min(textarea.scrollHeight, 80) + 'px';
+    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
   }, []);
 
-  // Handle keyboard shortcuts
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -342,10 +275,8 @@ export const AgentChat: React.FC<AgentChatProps> = ({
     }
   }, [handleSubmit]);
 
-  const hasMessages = messages.length > 0;
-
   return (
-    <div className={`w-full ${className}`}>
+    <div className={`flex flex-col h-full ${className}`}>
       {/* Script Editor Modal */}
       {showScriptEditor && currentMeditation?.script && (
         <ScriptEditor
@@ -359,151 +290,127 @@ export const AgentChat: React.FC<AgentChatProps> = ({
         />
       )}
 
-      {/* Expandable Chat Area - shows above input when there are messages */}
-      {hasMessages && isExpanded && (
-        <div className="mb-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <div className="glass rounded-2xl border border-white/20 overflow-hidden max-w-4xl mx-auto">
-            {/* Chat Header */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-white/10 bg-white/5">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                  <SparkleIcon className="w-3 h-3 text-white" />
-                </div>
-                <span className="text-white/80 text-xs font-medium">Meditation Guide</span>
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-6">
+        <div className="max-w-2xl mx-auto">
+          {/* Welcome State */}
+          {!hasMessages && (
+            <div className="flex flex-col items-center justify-center min-h-[50vh] text-center animate-in fade-in duration-500">
+              {/* Agent Avatar */}
+              <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600
+                            flex items-center justify-center mb-6 shadow-xl shadow-indigo-500/30">
+                <SparkleIcon className="w-8 h-8 md:w-10 md:h-10 text-white" />
               </div>
-              <button
-                onClick={() => setIsExpanded(false)}
-                className="p-1 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition-colors"
-                title="Minimize"
-              >
-                <ChevronDownIcon />
-              </button>
-            </div>
 
-            {/* Messages */}
-            <div
-              ref={messagesContainerRef}
-              className="max-h-[40vh] overflow-y-auto px-4 py-3 scroll-smooth"
-            >
+              {/* Greeting */}
+              <h2 className="text-xl md:text-2xl font-light text-white mb-2">
+                {greeting || "How are you feeling today?"}
+              </h2>
+              <p className="text-white/50 text-sm md:text-base mb-8 max-w-md">
+                I'm here to guide you through a personalized meditation journey.
+              </p>
+
+              {/* Quick Prompts */}
+              <div className="flex flex-wrap gap-2 md:gap-3 justify-center max-w-lg">
+                {quickPrompts.slice(0, 6).map((prompt, index) => (
+                  <QuickPromptChip
+                    key={index}
+                    label={prompt.label}
+                    icon={prompt.icon}
+                    onClick={() => handleQuickPrompt(prompt.label)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Message List */}
+          {hasMessages && (
+            <div className="space-y-1">
               {messages.map((message, index) => (
                 <MessageBubble
                   key={message.id}
                   message={message}
-                  onActionClick={handleActionClick}
                   isLast={index === messages.length - 1}
                 />
               ))}
+              <div ref={messagesEndRef} />
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Collapsed indicator when there are messages */}
-      {hasMessages && !isExpanded && (
-        <div className="mb-2 max-w-4xl mx-auto">
-          <button
-            onClick={() => setIsExpanded(true)}
-            className="w-full glass rounded-xl px-4 py-2 flex items-center justify-between
-                       border border-white/20 hover:border-white/30 transition-colors group"
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                <SparkleIcon className="w-2.5 h-2.5 text-white" />
-              </div>
-              <span className="text-white/60 text-xs">
-                {messages.length} message{messages.length !== 1 ? 's' : ''} • Click to expand
-              </span>
-            </div>
-            <ChevronUpIcon />
-          </button>
-        </div>
-      )}
-
-      {/* Quick Prompts - show when no messages */}
-      {!hasMessages && (
-        <div className="mb-3 max-w-4xl mx-auto">
-          <div className="flex flex-wrap gap-2 justify-center px-2">
-            {quickPrompts.slice(0, 4).map((prompt, index) => (
-              <QuickPromptChip
-                key={index}
-                label={prompt.label}
-                icon={prompt.icon}
-                onClick={() => handleQuickPrompt(prompt.label)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Input Area - Glass Card Style matching the original */}
-      <div className="glass glass-prompt rounded-2xl md:rounded-[32px] p-1.5 md:p-2 shadow-2xl shadow-indigo-900/20 border border-white/30 max-w-4xl mx-auto">
-        <form onSubmit={handleSubmit} className="flex items-center gap-2 md:gap-3 px-1 md:px-2">
-          {/* Plus Menu Button */}
-          <div className="relative flex-shrink-0">
-            <button
-              type="button"
-              onClick={onOpenTemplates}
-              className="p-1.5 md:p-2 rounded-full transition-all flex items-center justify-center border
-                         text-slate-300 hover:text-white border-white/40 hover:border-white/60 hover:bg-white/5"
-              title="Templates & Options"
-            >
-              <svg className="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Input Field */}
-          <textarea
-            ref={inputRef}
-            value={inputValue}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder={hasMessages ? "Continue the conversation..." : "How are you feeling today?"}
-            rows={1}
-            className="flex-1 bg-transparent py-2.5 md:py-3 text-sm md:text-base text-slate-200
-                       placeholder:text-slate-500 outline-none min-w-0 w-0 resize-none"
-            style={{ maxHeight: '80px' }}
-            disabled={isProcessing}
-          />
-
-          {/* Voice Selection Indicator */}
-          {selectedVoice && (
-            <button
-              type="button"
-              onClick={onRequestVoiceSelection}
-              className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/20
-                         text-cyan-400 text-[10px] font-medium border border-cyan-500/30
-                         hover:bg-cyan-500/30 transition-colors"
-            >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-              </svg>
-              {selectedVoice.name}
-            </button>
           )}
+        </div>
+      </div>
 
-          {/* Send Button */}
-          <button
-            type="submit"
-            disabled={isProcessing || !inputValue.trim()}
-            className={`
-              flex-shrink-0 p-1.5 md:p-2 rounded-full transition-all flex items-center justify-center border
-              ${isProcessing
-                ? 'bg-indigo-500/50 border-indigo-400/60 cursor-not-allowed text-white/70'
-                : inputValue.trim()
-                  ? 'bg-indigo-500 border-indigo-300 hover:bg-indigo-400 active:scale-95 text-white'
-                  : 'text-slate-300 border-white/40'
-              }
-            `}
-          >
-            {isProcessing ? (
-              <div className="animate-spin rounded-full h-3.5 w-3.5 md:h-4 md:w-4 border-2 border-white/30 border-t-white" />
-            ) : (
-              <SendIcon />
-            )}
-          </button>
-        </form>
+      {/* Input Area - Fixed at bottom */}
+      <div className="flex-shrink-0 p-4 md:p-6 border-t border-white/5 bg-black/20 backdrop-blur-xl">
+        <div className="max-w-2xl mx-auto">
+          <form onSubmit={handleSubmit} className="flex items-end gap-3">
+            {/* Input Field */}
+            <div className="flex-1 relative">
+              <textarea
+                ref={inputRef}
+                value={inputValue}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                placeholder={hasMessages ? "Share more or ask anything..." : "Tell me how you're feeling..."}
+                rows={1}
+                className="w-full px-4 py-3 md:py-3.5 rounded-2xl
+                         bg-white/[0.06] border border-white/10
+                         focus:border-indigo-500/50 focus:bg-white/[0.08]
+                         text-white text-sm md:text-base
+                         placeholder:text-white/30
+                         outline-none resize-none transition-all duration-200
+                         focus:ring-2 focus:ring-indigo-500/20"
+                style={{ maxHeight: '120px' }}
+                disabled={isProcessing}
+              />
+
+              {/* Voice indicator inside input */}
+              {selectedVoice && (
+                <button
+                  type="button"
+                  onClick={onRequestVoiceSelection}
+                  className="absolute right-3 top-1/2 -translate-y-1/2
+                           flex items-center gap-1.5 px-2 py-1 rounded-full
+                           bg-indigo-500/20 text-indigo-300 text-[10px] font-medium
+                           hover:bg-indigo-500/30 transition-colors"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                          d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                  </svg>
+                  <span className="hidden md:inline">{selectedVoice.name}</span>
+                </button>
+              )}
+            </div>
+
+            {/* Send Button */}
+            <button
+              type="submit"
+              disabled={isProcessing || !inputValue.trim()}
+              className={`
+                flex-shrink-0 w-11 h-11 md:w-12 md:h-12 rounded-xl
+                flex items-center justify-center transition-all duration-200
+                ${isProcessing
+                  ? 'bg-indigo-500/50 cursor-not-allowed'
+                  : inputValue.trim()
+                    ? 'bg-indigo-500 hover:bg-indigo-400 active:scale-95 shadow-lg shadow-indigo-500/30'
+                    : 'bg-white/[0.06] text-white/30'
+                }
+              `}
+            >
+              {isProcessing ? (
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white" />
+              ) : (
+                <SendIcon />
+              )}
+            </button>
+          </form>
+
+          {/* Subtle hint */}
+          <p className="text-center text-white/20 text-[10px] mt-3">
+            Press Enter to send • Shift+Enter for new line
+          </p>
+        </div>
       </div>
     </div>
   );
