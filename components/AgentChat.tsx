@@ -126,8 +126,7 @@ const MessageBubble = memo<MessageBubbleProps>(({ message, isLast }) => {
             ? 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white shadow-lg shadow-indigo-500/20'
             : 'bg-white/[0.06] backdrop-blur-sm text-white/90 border border-white/10'
           }
-          ${message.isLoading ? 'animate-pulse' : ''}
-          ${isLast ? 'animate-in fade-in slide-in-from-bottom-2 duration-300' : ''}
+          ${isLast && !message.isLoading ? 'animate-in fade-in slide-in-from-bottom-2 duration-300' : ''}
         `}
       >
         {message.isLoading ? (
