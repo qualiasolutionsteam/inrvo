@@ -1480,16 +1480,8 @@ const App: React.FC = () => {
               </button>
             )}
 
-            {/* Logo */}
-            <div
-              className="flex items-center gap-2 cursor-pointer group opacity-80 hover:opacity-100 transition-opacity"
-              onClick={() => setCurrentView(View.HOME)}
-            >
-              <ICONS.Logo className="h-5 md:h-7 text-white" />
-            </div>
-
             {/* Desktop Navigation Links - Hidden on mobile */}
-            <div className="hidden md:flex items-center gap-1 ml-6">
+            <div className="hidden md:flex items-center gap-1">
               <button
                 onClick={() => setShowHowItWorks(true)}
                 className="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"
@@ -1556,7 +1548,7 @@ const App: React.FC = () => {
                 // Tagline at top - hidden when chat has started
                 <div className="flex-1 flex flex-col px-4 pb-[calc(200px+env(safe-area-inset-bottom,0px))] md:pb-[calc(240px+env(safe-area-inset-bottom,0px))]">
                   {!chatStarted && (
-                    <div className="pt-8 md:pt-16 text-center animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="pt-20 md:pt-28 text-center animate-in fade-in slide-in-from-top-4 duration-500">
                       <p className="text-2xl md:text-4xl font-light tracking-wide text-white/70">
                         {tagline.main} <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-indigo-500 font-semibold">{tagline.highlight}</span>
                       </p>
@@ -2266,8 +2258,17 @@ const App: React.FC = () => {
 
         {/* Sidebar Drawer - Slides in and pushes content */}
         <div className={`fixed top-0 left-0 bottom-0 z-[95] w-[280px] md:w-[320px] bg-[#0a0f1a] border-r border-white/10 flex flex-col transition-transform duration-300 ${showBurgerMenu ? 'translate-x-0' : '-translate-x-full'}`}>
-              {/* Sidebar Header with Close Button */}
-              <div className="flex-shrink-0 p-3 md:p-4 border-b border-white/5">
+              {/* Sidebar Header with Logo and Close Button */}
+              <div className="flex-shrink-0 p-3 md:p-4 border-b border-white/5 flex items-center justify-between">
+                {/* Logo */}
+                <div
+                  className="flex items-center gap-2 cursor-pointer group opacity-90 hover:opacity-100 transition-opacity"
+                  onClick={() => { setCurrentView(View.HOME); setShowBurgerMenu(false); }}
+                >
+                  <ICONS.Logo className="h-5 md:h-6 text-white" />
+                </div>
+
+                {/* Close Button */}
                 <button
                   onClick={() => setShowBurgerMenu(false)}
                   className="p-2 md:p-2.5 min-w-[40px] min-h-[40px] md:min-w-[44px] md:min-h-[44px]

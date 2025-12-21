@@ -310,20 +310,6 @@ export const AgentChat: React.FC<AgentChatProps> = ({
       {/* Input Area - Fixed at bottom */}
       <div className="flex-shrink-0 px-4 pb-6 pt-2">
         <div className="max-w-xl mx-auto">
-          {/* Quick Prompts - show above input when no messages */}
-          {!hasMessages && (
-            <div className="flex justify-center gap-2 mb-3">
-              {quickPrompts.slice(0, 3).map((prompt, index) => (
-                <QuickPromptChip
-                  key={index}
-                  label={prompt.label}
-                  icon={prompt.icon}
-                  onClick={() => handleQuickPrompt(prompt.label)}
-                />
-              ))}
-            </div>
-          )}
-
           <form onSubmit={handleSubmit} className="flex items-center gap-2">
             {/* Input Field */}
             <div className="flex-1">
