@@ -11,31 +11,20 @@ function stripAudioTags(text: string): string {
 }
 
 /**
- * Pre-process text for meditation-style slower speech
- * Adds natural pauses around punctuation for a calmer, more measured delivery
+ * Pre-process text for meditation-style natural speech
+ * Adds subtle pauses at sentence boundaries for a calm but natural delivery
  */
 function prepareMeditationText(text: string): string {
   let processed = text;
 
-  // Add pauses after sentences (periods, exclamation, question marks)
-  // Using ellipsis creates a natural pause in ElevenLabs
-  processed = processed.replace(/\.(\s+)/g, '... $1');
-  processed = processed.replace(/\!(\s+)/g, '!... $1');
-  processed = processed.replace(/\?(\s+)/g, '?... $1');
+  // Add gentle pauses after sentences only (not after every comma)
+  // Single ellipsis for natural breath pauses between sentences
+  processed = processed.replace(/\.(\s+)/g, '. ... $1');
+  processed = processed.replace(/\!(\s+)/g, '! ... $1');
+  processed = processed.replace(/\?(\s+)/g, '? ... $1');
 
-  // Add subtle pauses after commas and semicolons
-  processed = processed.replace(/,(\s+)/g, ', ... $1');
-  processed = processed.replace(/;(\s+)/g, '; ... $1');
-
-  // Add pauses after colons
-  processed = processed.replace(/:(\s+)/g, ': ... $1');
-
-  // Add longer pauses for ellipses that were already in the text
-  processed = processed.replace(/\.\.\.(?!\.)/g, '...... ');
-
-  // Add pauses around em-dashes
-  processed = processed.replace(/—/g, ' ... — ... ');
-  processed = processed.replace(/--/g, ' ... ');
+  // Preserve existing ellipses as longer pauses
+  processed = processed.replace(/\.\.\.(?!\s*\.)/g, '..... ');
 
   // Clean up multiple spaces
   processed = processed.replace(/\s+/g, ' ').trim();
@@ -70,12 +59,13 @@ export const voiceService = {
       throw new Error('Please clone a voice to generate meditations. Default voices are no longer available.');
     }
 
-    // Voice settings optimized for slow, calm meditation delivery
+    // Voice settings optimized for natural, human-like meditation delivery
+    // Lower stability + higher style = more natural variations in tone
     const meditationTTSOptions = {
       voice_settings: {
-        stability: 0.90,           // Very high = consistent, measured pace
-        similarity_boost: 0.65,    // Slightly lower for more natural delivery
-        style: 0.05,               // Very low = minimal variation, soothing
+        stability: 0.55,           // Lower = more natural variation in delivery
+        similarity_boost: 0.80,    // Higher = closer to original voice sample
+        style: 0.35,               // Higher = more expressiveness, less robotic
         use_speaker_boost: true,
       },
     };
