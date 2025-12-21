@@ -1,6 +1,10 @@
 import { supabase } from '../../lib/supabase';
 
-// Credits configuration
+// CREDIT SYSTEM DISABLED - All users have unlimited access
+const CREDITS_DISABLED = true;
+const UNLIMITED_CREDITS = 999999999;
+
+// Credits configuration (kept for reference but not enforced)
 const COST_CONFIG = {
   VOICE_CLONE: 5000, // 5,000 credits to clone ($5)
   TTS_1K_CHARS: 280, // 280 credits per 1K characters ($0.30)
@@ -35,9 +39,14 @@ export interface UsageLimits {
 export const creditService = {
   /**
    * Get user's current credit balance with caching
-   * Uses 5-minute TTL cache to reduce redundant database calls
+   * CREDIT SYSTEM DISABLED - Returns unlimited credits
    */
   async getCredits(userId?: string, bypassCache = false): Promise<number> {
+    // CREDIT SYSTEM DISABLED - Return unlimited credits
+    if (CREDITS_DISABLED) {
+      return UNLIMITED_CREDITS;
+    }
+
     if (!userId) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -132,9 +141,8 @@ export const creditService = {
   },
 
   /**
-   * Deduct credits for an operation using atomic RPC (optimized)
-   * Combines credit check, deduction, usage tracking, and limit updates in 1 DB call
-   * Falls back to legacy method if RPC not available
+   * Deduct credits for an operation
+   * CREDIT SYSTEM DISABLED - Always returns true
    */
   async deductCredits(
     amount: number,
@@ -143,6 +151,11 @@ export const creditService = {
     userId?: string,
     characterCount?: number
   ): Promise<boolean> {
+    // CREDIT SYSTEM DISABLED - Always allow operations
+    if (CREDITS_DISABLED) {
+      return true;
+    }
+
     if (!userId) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -209,8 +222,8 @@ export const creditService = {
   },
 
   /**
-   * Check user credits status in a single RPC call (optimized)
-   * Replaces 2-3 sequential queries with 1 database call
+   * Check user credits status
+   * CREDIT SYSTEM DISABLED - Returns unlimited credits
    */
   async checkCreditsStatus(userId?: string): Promise<{
     creditsRemaining: number;
@@ -219,6 +232,17 @@ export const creditService = {
     canClone: boolean;
     cloneCost: number;
   }> {
+    // CREDIT SYSTEM DISABLED - Return unlimited status
+    if (CREDITS_DISABLED) {
+      return {
+        creditsRemaining: UNLIMITED_CREDITS,
+        clonesCreated: 0,
+        clonesLimit: 999999,
+        canClone: true,
+        cloneCost: 0
+      };
+    }
+
     if (!userId) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -257,9 +281,15 @@ export const creditService = {
   },
 
   /**
-   * Check if user can clone a voice (uses optimized RPC when available)
+   * Check if user can clone a voice
+   * CREDIT SYSTEM DISABLED - Always returns true
    */
   async canClone(userId?: string): Promise<{ can: boolean; reason?: string }> {
+    // CREDIT SYSTEM DISABLED - Always allow cloning
+    if (CREDITS_DISABLED) {
+      return { can: true };
+    }
+
     if (!userId) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return { can: false, reason: 'User not authenticated' };

@@ -93,22 +93,22 @@ serve(async (req) => {
       );
     }
 
-    // Calculate TTS cost (280 credits per 1K characters)
+    // Calculate TTS cost (280 credits per 1K characters) - CREDIT SYSTEM DISABLED
     const creditsNeeded = Math.ceil((text.length / 1000) * 280);
 
-    // Check user credits
-    const { data: userCredits } = await supabase
-      .from('user_credits')
-      .select('credits_remaining')
-      .eq('user_id', userId)
-      .single();
-
-    if (!userCredits || userCredits.credits_remaining < creditsNeeded) {
-      return new Response(
-        JSON.stringify({ error: `Insufficient credits. Need ${creditsNeeded} credits.` }),
-        { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // CREDIT SYSTEM DISABLED - Allow all generations without credit checks
+    // const { data: userCredits } = await supabase
+    //   .from('user_credits')
+    //   .select('credits_remaining')
+    //   .eq('user_id', userId)
+    //   .single();
+    //
+    // if (!userCredits || userCredits.credits_remaining < creditsNeeded) {
+    //   return new Response(
+    //     JSON.stringify({ error: `Insufficient credits. Need ${creditsNeeded} credits.` }),
+    //     { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    //   );
+    // }
 
     // Only cloned ElevenLabs voices are supported
     if (!voiceProfile.elevenlabs_voice_id) {
@@ -165,25 +165,25 @@ serve(async (req) => {
       throw new Error('No audio data received');
     }
 
-    // Deduct credits
-    await supabase.rpc('deduct_credits', {
-      p_user_id: userId,
-      p_amount: creditsNeeded,
-    });
+    // CREDIT SYSTEM DISABLED - Skip credit deduction
+    // await supabase.rpc('deduct_credits', {
+    //   p_user_id: userId,
+    //   p_amount: creditsNeeded,
+    // });
 
-    // Track usage
-    await supabase
-      .from('voice_cloning_usage')
-      .insert({
-        user_id: userId,
-        voice_profile_id: voiceId,
-        credits_consumed: creditsNeeded,
-        operation_type: 'TTS_GENERATE',
-        metadata: {
-          text_length: text.length,
-          processed_in_edge: true,
-        },
-      });
+    // CREDIT SYSTEM DISABLED - Skip usage tracking
+    // await supabase
+    //   .from('voice_cloning_usage')
+    //   .insert({
+    //     user_id: userId,
+    //     voice_profile_id: voiceId,
+    //     credits_consumed: creditsNeeded,
+    //     operation_type: 'TTS_GENERATE',
+    //     metadata: {
+    //       text_length: text.length,
+    //       processed_in_edge: true,
+    //     },
+    //   });
 
     const result: GenerateSpeechResponse = {
       success: true,

@@ -85,28 +85,28 @@ serve(async (req) => {
       );
     }
 
-    // Check user credits and clone limit in single RPC call (replaces 2 queries)
-    const { data: creditStatus, error: creditError } = await supabase
-      .rpc('check_user_credits_status', { p_user_id: userId });
-
-    if (creditError) {
-      console.error('Credit check error:', creditError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to check credits' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const status = creditStatus?.[0];
-    if (!status || !status.can_clone) {
-      const errorMessage = status?.credits_remaining < 5000
-        ? 'Insufficient credits'
-        : 'Monthly clone limit reached';
-      return new Response(
-        JSON.stringify({ error: errorMessage }),
-        { status: status?.credits_remaining < 5000 ? 402 : 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // CREDIT SYSTEM DISABLED - Skip credit and clone limit checks
+    // const { data: creditStatus, error: creditError } = await supabase
+    //   .rpc('check_user_credits_status', { p_user_id: userId });
+    //
+    // if (creditError) {
+    //   console.error('Credit check error:', creditError);
+    //   return new Response(
+    //     JSON.stringify({ error: 'Failed to check credits' }),
+    //     { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    //   );
+    // }
+    //
+    // const status = creditStatus?.[0];
+    // if (!status || !status.can_clone) {
+    //   const errorMessage = status?.credits_remaining < 5000
+    //     ? 'Insufficient credits'
+    //     : 'Monthly clone limit reached';
+    //   return new Response(
+    //     JSON.stringify({ error: errorMessage }),
+    //     { status: status?.credits_remaining < 5000 ? 402 : 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    //   );
+    // }
 
     // Convert base64 to blob
     const binaryString = atob(audioBase64);
@@ -218,22 +218,19 @@ serve(async (req) => {
 
     if (profileError) throw profileError;
 
-    // Perform credit deduction, usage tracking, and clone count update atomically
-    // Replaces 3 separate queries with 1 atomic RPC call
-    const { data: operationResult, error: operationError } = await supabase
-      .rpc('perform_credit_operation', {
-        p_user_id: userId,
-        p_amount: 5000,
-        p_operation_type: 'CLONE_CREATE',
-        p_voice_profile_id: voiceProfile.id,
-        p_character_count: null,
-      });
-
-    if (operationError) {
-      console.error('Credit operation error:', operationError);
-      // Don't fail the entire operation if credit tracking fails
-      // Voice is already cloned - log for manual reconciliation
-    }
+    // CREDIT SYSTEM DISABLED - Skip credit deduction and tracking
+    // const { data: operationResult, error: operationError } = await supabase
+    //   .rpc('perform_credit_operation', {
+    //     p_user_id: userId,
+    //     p_amount: 5000,
+    //     p_operation_type: 'CLONE_CREATE',
+    //     p_voice_profile_id: voiceProfile.id,
+    //     p_character_count: null,
+    //   });
+    //
+    // if (operationError) {
+    //   console.error('Credit operation error:', operationError);
+    // }
 
     const response: ProcessVoiceResponse = {
       success: true,
