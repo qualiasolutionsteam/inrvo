@@ -120,60 +120,88 @@ AUDIO CUES TO INCORPORATE: ${audioTags.join(', ')}
 Weave these naturally into the script where they enhance the experience.`;
       }
 
-      prompt = `You are an expert wellness content creator. Create personalized content that PRECISELY matches the user's request.
+      prompt = `You are an expert meditation guide creating HIGHLY PERSONALIZED content. Your meditation must feel like it was written specifically for THIS person's exact situation.
 
-USER'S REQUEST: "${thought}"
+=== USER'S REQUEST ===
+"${thought}"
+=== END REQUEST ===
 
-STEP 1 - DETECT CONTENT TYPE (do not output this, just use it internally):
-- GUIDED MEDITATION: breathing, relaxation, mindfulness, visualization, chakras, grounding
-- SLEEP STORY: sleep, bedtime, drifting off, rest, dreams, nighttime
-- CALMING NARRATIVE: specific scene, journey, adventure, escape to a place
-- AFFIRMATIONS: positive statements, mantras, self-love, confidence
-- BREATHING EXERCISE: breath work, box breathing, counting breaths
-- BODY SCAN: body awareness, tension release, progressive relaxation
+## STEP 1: DEEP ANALYSIS (internal only)
 
-STEP 2 - EXTRACT KEY ELEMENTS from the request:
-- Specific setting mentioned (beach, forest, mountain, space, etc.)
-- Specific goal (anxiety relief, focus, sleep, energy, healing)
-- Specific emotions they want to feel
-- Time of day context (morning, evening, night)
-- Any specific techniques mentioned
+Identify EVERYTHING specific in the user's request:
+- SITUATION: What specific event/challenge are they facing? (e.g., job interview tomorrow, can't sleep, just had a fight)
+- EMOTION: What are they actually feeling? (anxious, stressed, sad, overwhelmed, scared)
+- SETTING: Did they request a specific place? (beach, forest, space, etc.)
+- TIME: When is this for? (tonight, morning, quick break, before an event)
+- GOAL: What outcome do they want? (calm, sleep, confidence, peace, clarity)
+- TECHNIQUE: Any specific methods mentioned? (breathing, body scan, visualization)
 
-STEP 3 - ADAPT YOUR RESPONSE:
-Structure:
-- Meditation: Opening breath → Core practice → Gentle close
-- Sleep story: Scene setting → Slow journey → Fade to rest
-- Affirmations: Grounding → Affirmation series → Empowerment
-- Breathing: Setup → Rhythm → Guided cycles → Return
+## STEP 2: CONTENT TYPE SELECTION
 
-Tone:
-- Sleep: Extra slow, dreamy, hypnotic, trailing sentences...
-- Morning/Energy: Uplifting, awakening, vibrant yet calm
-- Anxiety: Grounding, reassuring, present-moment
-- Healing: Compassionate, nurturing, gentle
+Based on your analysis, choose ONE:
+- SITUATION-SPECIFIC MEDITATION: For events like interviews, exams, presentations, dates
+- EMOTIONAL HEALING: For sadness, grief, heartbreak, self-doubt
+- ANXIETY/STRESS RELIEF: For overwhelm, panic, racing thoughts
+- SLEEP INDUCTION: For insomnia, racing mind at night, restlessness
+- GROUNDING/PRESENCE: For feeling scattered, disconnected, anxious
+- ENERGY/MOTIVATION: For feeling stuck, unmotivated, tired
+- SELF-LOVE/CONFIDENCE: For self-criticism, doubt, low esteem
+
+## STEP 3: PERSONALIZATION REQUIREMENTS
+
+YOUR MEDITATION MUST:
+1. Reference their SPECIFIC situation within the first 50 words
+   - If they have an interview → mention the interview directly
+   - If they can't sleep → acknowledge their restless mind
+   - If they're anxious about something → name that thing
+
+2. Address their EXACT emotional state
+   - Don't just do a "generic calm" meditation
+   - Speak to what they're actually feeling
+
+3. Use the setting THEY requested (if any)
+   - If they said beach, use beach imagery
+   - If they said forest, use forest imagery
+   - If no setting mentioned, choose one that fits their mood
+
+4. Match the TIME context
+   - Night/sleep: Slower, drowsier, trailing sentences...
+   - Morning: Gentle awakening energy
+   - Before an event: Building confidence and grounding
+
+## STEP 4: WRITE THE SCRIPT
+
+Structure (400-550 words total):
+1. OPENING (40-60 words): Acknowledge exactly where they are emotionally. Make them feel SEEN.
+2. GROUNDING (50-70 words): Breath awareness, body settling
+3. CORE EXPERIENCE (200-280 words): The main visualization/practice
+4. INTEGRATION (50-70 words): Connecting the experience to their situation
+5. CLOSING (40-60 words): Gentle return with lasting calm/confidence
+
+Style requirements:
+- Use "you" throughout for intimacy
+- Rich sensory details (5 senses)
+- Present tense
+- Include audio tags: [pause], [long pause], [deep breath], [exhale slowly]
+- Natural ellipses for pacing...
+- Fresh language (avoid "journey", "sacred", overused meditation clichés)
+
 ${audioTagsInstruction}
 
-STEP 4 - WRITE THE SCRIPT (400-550 words for a 5-6 minute meditation):
-- Use "you" for intimacy
-- Rich sensory details (see, hear, feel, smell)
-- Present tense
-- Include frequent pauses using [pause], [long pause], [deep breath] tags
-- Natural pauses via ellipses...
-- Fresh, evocative language (avoid clichés)
-- Build the experience gradually - don't rush
-- Include opening grounding, main practice, and gentle closing
-- Add breathing cues throughout: [deep breath], [exhale slowly]
+## OUTPUT
 
-PACING GUIDELINES:
-- Start with grounding (30-50 words)
-- Include 3-5 breathing moments with [deep breath] or [exhale slowly]
-- Add [pause] after important phrases
-- Add [long pause] between major sections
-- End with gentle return to awareness (40-60 words)
+Only the meditation script. No titles, headers, labels, or explanations. Start immediately with the experience.
 
-OUTPUT: Only the script. No titles, headers, or explanations. Start immediately with the experience.
+## CRITICAL ACCURACY CHECK
 
-CRITICAL: Match EXACTLY what the user asked for. If they want a beach visualization, give them a beach. If they want sleep help, make it sleep-focused. Accuracy to their request is paramount.`;
+Before writing, verify:
+✓ Does my script reference their specific situation?
+✓ Does it address their exact emotional state?
+✓ Am I using the setting they requested (or an appropriate one)?
+✓ Does the tone match their needs (sleep vs. energy vs. confidence)?
+✓ Would this feel personally written for THEM, not generic?
+
+If you cannot answer YES to all of these, revise your approach.`;
     }
 
     // Call Gemini API

@@ -799,13 +799,85 @@ export function getRandomQuote(teacherName?: string): { quote: string; teacher: 
 }
 
 /**
- * Find emotional state from user input
+ * Find emotional state from user input with enhanced semantic matching
+ * Uses weighted scoring for more accurate detection
  */
 export function detectEmotionalState(input: string): EmotionalState | undefined {
   const lowered = input.toLowerCase();
-  return EMOTIONAL_STATES.find(state =>
+
+  // First, try exact/partial keyword matching
+  const directMatch = EMOTIONAL_STATES.find(state =>
     state.emotions.some(emotion => lowered.includes(emotion))
   );
+  if (directMatch) return directMatch;
+
+  // Enhanced semantic matching with synonyms and context phrases
+  const semanticPatterns: Record<string, string[]> = {
+    'anxious': [
+      'heart racing', 'can\'t calm down', 'mind won\'t stop', 'racing thoughts',
+      'butterflies', 'on edge', 'tight chest', 'can\'t breathe', 'panic', 'freaking out',
+      'so much going on', 'big day', 'job interview', 'presentation', 'exam',
+      'meeting tomorrow', 'deadline', 'pressure'
+    ],
+    'stressed': [
+      'overwhelmed', 'too much', 'drowning', 'can\'t handle', 'at my limit',
+      'burned out', 'running on empty', 'exhausted', 'drained', 'swamped',
+      'work is killing', 'no break', 'non-stop'
+    ],
+    'sad': [
+      'feeling low', 'heavy heart', 'empty inside', 'lost someone', 'miss them',
+      'crying', 'tears', 'heartache', 'broke up', 'alone', 'nobody cares',
+      'what\'s the point', 'feeling blue', 'down in the dumps'
+    ],
+    'cant_sleep': [
+      'wide awake', 'tossing and turning', 'mind racing at night', '3am',
+      'middle of the night', 'can\'t fall asleep', 'woke up', 'tired but wired',
+      'exhausted but can\'t sleep', 'bed time', 'going to sleep', 'ready for bed'
+    ],
+    'angry': [
+      'so mad', 'pissed', 'furious', 'want to scream', 'seeing red',
+      'blood boiling', 'can\'t stand', 'hate this', 'unfair'
+    ],
+    'seeking_peace': [
+      'just want peace', 'need calm', 'quiet my mind', 'find stillness',
+      'inner peace', 'tranquil', 'serene', 'chill out', 'unwind', 'decompress',
+      'relax', 'de-stress', 'wind down'
+    ],
+    'self_critical': [
+      'i\'m so stupid', 'hate myself', 'not good enough', 'failure',
+      'can\'t do anything right', 'worthless', 'useless', 'disappointment'
+    ],
+    'unmotivated': [
+      'no energy', 'don\'t feel like', 'can\'t get started', 'procrastinating',
+      'stuck in a rut', 'going through the motions', 'lost my drive'
+    ],
+    'lonely': [
+      'no one to talk to', 'feel so alone', 'isolated', 'no friends',
+      'disconnected', 'nobody understands'
+    ],
+    'seeking_growth': [
+      'want to improve', 'become better', 'level up', 'transform',
+      'new chapter', 'fresh start', 'breakthrough'
+    ],
+    'grateful': [
+      'so blessed', 'thankful for', 'appreciate', 'lucky to have',
+      'feeling good about', 'happy today'
+    ]
+  };
+
+  // Score each emotional state based on pattern matches
+  let bestMatch: EmotionalState | undefined;
+  let highestScore = 0;
+
+  for (const [stateId, patterns] of Object.entries(semanticPatterns)) {
+    const matchCount = patterns.filter(pattern => lowered.includes(pattern)).length;
+    if (matchCount > highestScore) {
+      highestScore = matchCount;
+      bestMatch = EMOTIONAL_STATES.find(s => s.id === stateId);
+    }
+  }
+
+  return bestMatch;
 }
 
 /**

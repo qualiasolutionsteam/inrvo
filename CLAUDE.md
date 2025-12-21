@@ -4,90 +4,76 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-INrVO is a web-based AI-powered wellness platform for personalized meditations and immersive storytelling. Users can create guided meditations using Gemini AI, clone their voice with ElevenLabs, and interact with a conversational meditation agent.
+INrVO is an AI-powered meditation platform that generates personalized meditation scripts using Gemini 2.0 Flash and synthesizes audio using ElevenLabs voice cloning. Users can clone their own voice or use existing profiles for intimate, personalized meditation guidance.
+
+## Build & Development Commands
+
+```bash
+npm run dev          # Vite dev server (http://localhost:3000)
+npm run build        # Production build
+npm test             # Run Vitest in watch mode
+npm run test:run     # Run tests once
+npm run test:coverage # Generate coverage report
+```
 
 ## Tech Stack
 
-- **Frontend**: React 19, Vite 6, TypeScript, Tailwind CSS 4
-- **Backend**: Supabase (PostgreSQL + Auth + Edge Functions)
-- **AI**: Google Gemini 2.0 Flash (script generation), ElevenLabs (voice cloning + TTS)
-- **Testing**: Vitest with happy-dom, Testing Library
-- **Deployment**: Vercel
-
-## Commands
-
-```bash
-npm run dev              # Start dev server (port 3000)
-npm run build            # Production build
-npm run test             # Run tests in watch mode
-npm run test:run         # Run tests once (CI mode)
-npm run test:coverage    # Generate coverage report
-```
+- **Frontend**: React 19 + TypeScript 5.8 + Vite 6 + Tailwind CSS 4
+- **Backend**: Supabase (PostgreSQL with RLS, Edge Functions in Deno)
+- **AI Services**: Gemini 2.0 Flash (script generation), ElevenLabs (voice cloning + TTS)
+- **Monitoring**: Sentry (production only)
 
 ## Architecture
 
-### Core Services (`src/lib/`)
-- `voiceService.ts` - Unified voice synthesis abstraction
-- `elevenlabs.ts` - Voice cloning and TTS API
-- `edgeFunctions.ts` - Secure server-side API calls via Supabase Edge Functions
-- `credits.ts` - Credit system (currently disabled - unlimited access)
-- `textSync.ts` - Audio-text synchronization for inline playback
+### Key Directories
+- `components/` - React UI components (lazy-loaded for bundle optimization)
+- `src/contexts/` - React Context for modal state management (ModalContext)
+- `src/hooks/` - Custom hooks: useVoiceGeneration, useVoiceCloning, useAudioPlayback
+- `src/lib/agent/` - MeditationAgent (emotional detection, wisdom teachers, conversation management)
+- `src/lib/` - Services: voiceService.ts, elevenlabs.ts, edgeFunctions.ts, credits.ts
+- `supabase/functions/` - Edge Functions: generate-speech, gemini-script, process-voice
+- `supabase/migrations/` - Database schema migrations
 
-### Agent System (`src/lib/agent/`)
-- `MeditationAgent.ts` - Conversational AI with tool capabilities
-- `knowledgeBase.ts` - Wisdom traditions, meditation types, emotional states
-- `agentTools.ts` - Agent-callable functions
-- `conversationStore.ts` - Persistent conversation state
+### Data Flow
+1. User input → AgentChat → MeditationAgent (emotional state detection)
+2. Script generation → Edge Function → Gemini API
+3. User edits script with audio tags in ScriptEditor
+4. Voice selection → TTS via Edge Function → ElevenLabs API
+5. Audio playback with text sync via InlinePlayer
 
-### Context System (`src/contexts/modals/`)
-Centralized modal management with separate contexts for Auth, Clone, Settings, Legal, Navigation.
-
-### Edge Functions (`supabase/functions/`)
-- `gemini-script` - Generate meditations using Gemini
-- `generate-speech` - TTS via ElevenLabs
-- `elevenlabs-voice-ops` - Voice cloning operations
-- `process-voice` - Voice validation and processing
-
-## Key Files
-
-- `App.tsx` - Main app component
-- `constants.tsx` - Templates, voices, backgrounds, icons
-- `types.ts` - TypeScript interfaces
-- `geminiService.ts` - Client-side Gemini integration
-
-## Audio Tag System
-
-Meditation scripts use embedded tags like `[pause]`, `[breathing]`, `[whisper]` that are color-coded in the UI:
-- Cyan: pauses
-- Emerald: breathing exercises
-- Violet: voice styles
-- Rose: sounds/effects
-
-## Database
-
-Supabase with RLS (Row Level Security) on all tables:
-- `user_profiles` - Extended user data
-- `voice_clones` - User voice recordings with metadata
-- `voice_sessions` - Generated meditation history
-- `audio_tags` - Meditation effect markers
-- `agent_conversations` - Chat history
-
-Migrations are in `supabase/migrations/` - use sequential naming.
-
-## Testing Notes
-
-- Coverage thresholds enforced on `src/lib/credits.ts` (90% requirement)
-- Tests use happy-dom environment
-- Mock setup in `tests/setup.ts` includes Sentry and AudioContext mocks
+### Audio Tag System
+Scripts contain inline markers like `[pause]`, `[deep breath]`, `[long pause]` that control TTS pacing and enable text-to-audio synchronization. Tags are defined in `constants.tsx`.
 
 ## Environment Variables
 
-Required in `.env.local`:
-- `VITE_SUPABASE_URL` - Supabase project URL
-- `VITE_SUPABASE_ANON_KEY` - Supabase publishable key
-- `VITE_SENTRY_DSN` - Sentry error tracking (optional)
+```env
+# Frontend (.env.local)
+VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJ...
 
-Edge Function secrets (set in Supabase dashboard):
-- `ELEVENLABS_API_KEY`
-- `GEMINI_API_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
+# Edge Function secrets (set in Supabase dashboard)
+ELEVENLABS_API_KEY=sk_...
+GEMINI_API_KEY=AI...
+```
+
+## Database
+
+Core tables: `voice_profiles`, `user_credits`, `agent_conversations`, `voice_metadata`, `user_audio_tag_preferences`
+
+All tables use Row Level Security - users can only access their own data.
+
+The credit system is currently disabled (`CREDITS_DISABLED = true` in credits.ts) for unlimited access.
+
+## Key Files
+
+- `App.tsx` - Main app component (~1400 lines, handles core UI state)
+- `types.ts` - Global TypeScript interfaces
+- `constants.tsx` - Audio tag categories, template types, background tracks
+- `src/lib/agent/MeditationAgent.ts` - Core agent with emotional state detection
+- `src/lib/agent/knowledgeBase.ts` - Wisdom teachers, meditation types, emotional mapping
+
+## Deployment
+
+- **Frontend**: Vercel (auto-deploys from main branch)
+- **Edge Functions**: Deploy via `supabase functions deploy <function-name>`
+- **Security headers**: Configured in vercel.json (HSTS, CSP, etc.)

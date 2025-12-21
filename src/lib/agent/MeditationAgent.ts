@@ -19,6 +19,13 @@ import {
   type MeditationTypeInfo,
 } from './knowledgeBase';
 
+import {
+  loadMeditationPreferences,
+  buildPersonalizationPrompt,
+  getPreferredApproach,
+  type MeditationPreferences,
+} from '../preferencesService';
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -213,12 +220,17 @@ Remember: You are a loving presence. Every interaction is an opportunity for con
 export class MeditationAgent {
   private context: ConversationContext;
   private generateContent: (prompt: string) => Promise<string>;
+  private userId?: string;
+  private meditationPreferences: MeditationPreferences | null = null;
+  private preferencesLoaded = false;
 
   constructor(
     generateContentFn: (prompt: string) => Promise<string>,
-    initialPreferences?: UserPreferences
+    initialPreferences?: UserPreferences,
+    userId?: string
   ) {
     this.generateContent = generateContentFn;
+    this.userId = userId;
     this.context = {
       messages: [],
       userPreferences: initialPreferences || {},
@@ -227,6 +239,34 @@ export class MeditationAgent {
         messageCount: 0,
       },
     };
+
+    // Load meditation preferences asynchronously
+    if (userId) {
+      this.loadPreferences();
+    }
+  }
+
+  /**
+   * Load user's meditation preferences from database
+   */
+  private async loadPreferences(): Promise<void> {
+    if (!this.userId || this.preferencesLoaded) return;
+
+    try {
+      this.meditationPreferences = await loadMeditationPreferences(this.userId);
+      this.preferencesLoaded = true;
+      console.log('[MeditationAgent] Loaded user preferences:', this.meditationPreferences);
+    } catch (error) {
+      console.error('[MeditationAgent] Error loading preferences:', error);
+    }
+  }
+
+  /**
+   * Set user ID and load their preferences
+   */
+  async setUserId(userId: string): Promise<void> {
+    this.userId = userId;
+    await this.loadPreferences();
   }
 
   /**
@@ -504,45 +544,209 @@ Guide:`;
 
   /**
    * Generate a meditation prompt based on conversation context
+   * Enhanced version with detailed context extraction for accuracy
    */
   generateMeditationPrompt(type?: MeditationType): string {
     const mood = this.context.sessionState.currentMood;
     const meditationType = type || this.context.sessionState.selectedMeditation || 'guided_visualization';
     const meditationInfo = MEDITATION_TYPES.find(m => m.id === meditationType);
 
+    // Collect ALL user messages for comprehensive context
+    const allUserMessages = this.context.messages
+      .filter(m => m.role === 'user')
+      .map(m => m.content);
+
+    // Extract specific elements from user input
+    const combinedInput = allUserMessages.join(' ').toLowerCase();
+    const extractedContext = this.extractUserContext(combinedInput);
+
     let prompt = '';
 
-    // Get relevant emotional context
+    // Primary emotional state
     if (mood) {
       const state = EMOTIONAL_STATES.find(s => s.id === mood);
       if (state) {
-        prompt += `Create a ${meditationInfo?.name || 'meditation'} for someone who is feeling ${state.emotions[0]}. `;
+        prompt += `PRIMARY EMOTIONAL STATE: ${state.emotions[0]}\n`;
+        prompt += `SUPPORTIVE APPROACH: ${state.supportiveMessage}\n\n`;
       }
     }
 
-    // Add meditation type specifics
-    if (meditationInfo) {
-      prompt += `This should be a ${meditationInfo.name.toLowerCase()} that helps with ${meditationInfo.benefits.slice(0, 2).join(' and ')}. `;
+    // Specific user situation
+    if (extractedContext.situation) {
+      prompt += `USER'S SITUATION: ${extractedContext.situation}\n`;
     }
 
-    // Add teacher influence if available
+    // Specific settings/scenes requested
+    if (extractedContext.settings.length > 0) {
+      prompt += `REQUESTED SETTING: ${extractedContext.settings.join(', ')}\n`;
+    }
+
+    // Time context
+    if (extractedContext.timeContext) {
+      prompt += `TIME CONTEXT: ${extractedContext.timeContext}\n`;
+    }
+
+    // Specific goals mentioned
+    if (extractedContext.goals.length > 0) {
+      prompt += `USER'S GOALS: ${extractedContext.goals.join(', ')}\n`;
+    }
+
+    // Duration preferences
+    if (extractedContext.duration) {
+      prompt += `PREFERRED DURATION: ${extractedContext.duration}\n`;
+    }
+
+    // Meditation type with benefits
+    if (meditationInfo) {
+      prompt += `\nMEDITATION TYPE: ${meditationInfo.name}\n`;
+      prompt += `BENEFITS TO EMPHASIZE: ${meditationInfo.benefits.join(', ')}\n`;
+    }
+
+    // Add teacher influence for authenticity
     const recommendation = mood ? getMeditationRecommendation(mood) : null;
     if (recommendation && recommendation.teachers.length > 0) {
       const teacher = recommendation.teachers[0];
-      prompt += `Draw inspiration from the teachings of ${teacher.name} (${teacher.coreTeaching}). `;
+      prompt += `\nWISDOM INFLUENCE: Draw subtly from ${teacher.name}'s approach - "${teacher.coreTeaching}"\n`;
     }
 
-    // Extract any specific requests from recent conversation
-    const recentUserMessages = this.context.messages
-      .filter(m => m.role === 'user')
-      .slice(-3)
-      .map(m => m.content);
-
-    if (recentUserMessages.length > 0) {
-      prompt += `The user mentioned: "${recentUserMessages.join('. ')}"`;
+    // Include learned preferences from past sessions
+    const preferencesPrompt = buildPersonalizationPrompt(this.meditationPreferences, mood);
+    if (preferencesPrompt) {
+      prompt += preferencesPrompt;
     }
+
+    // Check if user has a preferred approach for this emotional state
+    if (mood && this.meditationPreferences) {
+      const preferredApproach = getPreferredApproach(this.meditationPreferences, mood);
+      if (preferredApproach) {
+        prompt += `\nIMPORTANT: This user has responded well to ${preferredApproach} in the past when feeling ${mood}. Consider incorporating this approach.\n`;
+      }
+    }
+
+    // Include the actual user words for maximum accuracy
+    prompt += `\n--- USER'S EXACT WORDS ---\n`;
+    prompt += allUserMessages.slice(-5).join('\n');
+    prompt += `\n--- END USER'S WORDS ---\n`;
+
+    prompt += `\nCRITICAL: The meditation MUST directly address what the user asked for. Match their specific situation, not a generic version.`;
 
     return prompt;
+  }
+
+  /**
+   * Extract specific context from user input for accurate meditation generation
+   */
+  private extractUserContext(input: string): {
+    situation: string | null;
+    settings: string[];
+    timeContext: string | null;
+    goals: string[];
+    duration: string | null;
+  } {
+    const result = {
+      situation: null as string | null,
+      settings: [] as string[],
+      timeContext: null as string | null,
+      goals: [] as string[],
+      duration: null as string | null,
+    };
+
+    // Extract specific situations
+    const situationPatterns = [
+      { pattern: /(?:have|got|facing|before|after|during)\s+(?:a|an|my|the)?\s*([a-z\s]+(?:interview|meeting|exam|presentation|date|surgery|flight|trip|call|appointment))/i, capture: 1 },
+      { pattern: /(?:dealing with|going through|struggling with|facing)\s+([a-z\s]+)/i, capture: 1 },
+      { pattern: /(?:my|the)\s+([a-z]+)\s+(?:is|are|was|were)\s+(?:making|causing|giving)/i, capture: 0 },
+      { pattern: /(?:broke up|breakup|divorce|lost my|death of|passed away)/i, capture: 0 },
+      { pattern: /(?:work|job|boss|coworker|colleague)\s+(?:is|are|stress)/i, capture: 0 },
+    ];
+
+    for (const { pattern } of situationPatterns) {
+      const match = input.match(pattern);
+      if (match) {
+        result.situation = match[0].trim();
+        break;
+      }
+    }
+
+    // Extract settings/scenes
+    const settingKeywords = [
+      'beach', 'ocean', 'sea', 'waves', 'shore', 'sand',
+      'forest', 'woods', 'trees', 'nature', 'garden',
+      'mountain', 'mountains', 'peak', 'summit', 'hiking',
+      'river', 'stream', 'waterfall', 'lake', 'pond',
+      'meadow', 'field', 'flowers', 'grass',
+      'sky', 'clouds', 'stars', 'moon', 'sun', 'sunrise', 'sunset',
+      'rain', 'storm', 'thunder', 'snow', 'winter',
+      'cabin', 'cottage', 'home', 'room', 'bed',
+      'temple', 'sanctuary', 'sacred', 'spiritual',
+      'space', 'cosmos', 'universe', 'floating',
+    ];
+
+    for (const keyword of settingKeywords) {
+      if (input.includes(keyword)) {
+        result.settings.push(keyword);
+      }
+    }
+
+    // Extract time context
+    const timePatterns = [
+      { pattern: /(?:tonight|going to bed|bedtime|before sleep|can't sleep|falling asleep)/i, time: 'nighttime/sleep' },
+      { pattern: /(?:morning|wake up|start my day|before work)/i, time: 'morning/awakening' },
+      { pattern: /(?:lunch|break|midday|afternoon)/i, time: 'midday/break' },
+      { pattern: /(?:evening|after work|wind down|end of day)/i, time: 'evening/unwinding' },
+      { pattern: /(?:quick|short|5 minutes?|few minutes?|brief)/i, time: 'quick session' },
+      { pattern: /(?:deep|long|extended|thorough|full)/i, time: 'extended session' },
+    ];
+
+    for (const { pattern, time } of timePatterns) {
+      if (pattern.test(input)) {
+        result.timeContext = time;
+        break;
+      }
+    }
+
+    // Extract specific goals
+    const goalPatterns = [
+      { pattern: /(?:want to|need to|help me|trying to)\s+(?:feel more\s+)?(\w+)/i, goal: null },
+      { pattern: /(?:reduce|release|let go of|overcome)\s+(?:my\s+)?(\w+)/i, goal: null },
+      { pattern: /(?:find|gain|build|increase|improve)\s+(?:more\s+)?(\w+)/i, goal: null },
+    ];
+
+    const goalKeywords = [
+      'calm', 'peace', 'relaxation', 'focus', 'clarity', 'confidence',
+      'sleep', 'rest', 'energy', 'motivation', 'courage', 'strength',
+      'self-love', 'forgiveness', 'acceptance', 'gratitude', 'joy',
+      'healing', 'release', 'letting go', 'grounding', 'centering',
+    ];
+
+    for (const keyword of goalKeywords) {
+      if (input.includes(keyword)) {
+        result.goals.push(keyword);
+      }
+    }
+
+    // Extract duration preferences
+    const durationPatterns = [
+      { pattern: /(\d+)\s*(?:min|minute)/i, extract: true },
+      { pattern: /(?:quick|short|brief)/i, duration: '3-5 minutes' },
+      { pattern: /(?:medium|normal|regular)/i, duration: '10-15 minutes' },
+      { pattern: /(?:long|deep|extended|full)/i, duration: '20-30 minutes' },
+    ];
+
+    for (const item of durationPatterns) {
+      if ('extract' in item) {
+        const match = input.match(item.pattern);
+        if (match) {
+          result.duration = `${match[1]} minutes`;
+          break;
+        }
+      } else if (item.pattern.test(input)) {
+        result.duration = item.duration;
+        break;
+      }
+    }
+
+    return result;
   }
 
   /**
