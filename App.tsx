@@ -1465,18 +1465,20 @@ const App: React.FC = () => {
         {/* Simple Navigation - Mobile Optimized */}
         <nav className={`fixed top-0 right-0 z-50 p-3 md:p-6 flex justify-between items-center bg-gradient-to-b from-[#020617]/80 to-transparent transition-all duration-300 ${showBurgerMenu ? 'left-[280px] md:left-[320px]' : 'left-0'}`}>
           <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
-            {/* Sidebar Toggle Button */}
-            <button
-              onClick={() => setShowBurgerMenu(!showBurgerMenu)}
-              className="p-2 md:p-2.5 min-w-[40px] min-h-[40px] md:min-w-[44px] md:min-h-[44px]
-                         rounded-lg md:rounded-xl bg-white/5 hover:bg-white/10
-                         text-slate-400 hover:text-white transition-all flex items-center justify-center
-                         border border-white/5 hover:border-indigo-500/30
-                         hover:shadow-[0_0_20px_-8px_rgba(99,102,241,0.5)]"
-              title="Toggle sidebar"
-            >
-              <ICONS.SidebarToggle className="w-5 h-5" />
-            </button>
+            {/* Sidebar Toggle Button - Only show when sidebar is closed */}
+            {!showBurgerMenu && (
+              <button
+                onClick={() => setShowBurgerMenu(true)}
+                className="p-2 md:p-2.5 min-w-[40px] min-h-[40px] md:min-w-[44px] md:min-h-[44px]
+                           rounded-lg md:rounded-xl bg-white/5 hover:bg-white/10
+                           text-slate-400 hover:text-white transition-all flex items-center justify-center
+                           border border-white/5 hover:border-indigo-500/30
+                           hover:shadow-[0_0_20px_-8px_rgba(99,102,241,0.5)]"
+                title="Open sidebar"
+              >
+                <ICONS.SidebarToggle className="w-5 h-5" />
+              </button>
+            )}
 
             {/* Logo */}
             <div
@@ -2264,8 +2266,23 @@ const App: React.FC = () => {
 
         {/* Sidebar Drawer - Slides in and pushes content */}
         <div className={`fixed top-0 left-0 bottom-0 z-[95] w-[280px] md:w-[320px] bg-[#0a0f1a] border-r border-white/10 flex flex-col transition-transform duration-300 ${showBurgerMenu ? 'translate-x-0' : '-translate-x-full'}`}>
+              {/* Sidebar Header with Close Button */}
+              <div className="flex-shrink-0 p-3 md:p-4 border-b border-white/5">
+                <button
+                  onClick={() => setShowBurgerMenu(false)}
+                  className="p-2 md:p-2.5 min-w-[40px] min-h-[40px] md:min-w-[44px] md:min-h-[44px]
+                             rounded-lg md:rounded-xl bg-white/5 hover:bg-white/10
+                             text-slate-400 hover:text-white transition-all flex items-center justify-center
+                             border border-white/5 hover:border-indigo-500/30
+                             hover:shadow-[0_0_20px_-8px_rgba(99,102,241,0.5)]"
+                  title="Close sidebar"
+                >
+                  <ICONS.SidebarToggle className="w-5 h-5" />
+                </button>
+              </div>
+
               {/* History Content */}
-              <div className="flex-1 overflow-y-auto p-4 pt-20">
+              <div className="flex-1 overflow-y-auto p-4">
 
                 {user ? (
                   <>
