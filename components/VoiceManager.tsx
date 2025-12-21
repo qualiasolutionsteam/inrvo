@@ -85,7 +85,7 @@ const VoiceManager: React.FC<VoiceManagerProps> = ({
         {/* Back Button */}
       <button
         onClick={onClose}
-        className="fixed top-6 left-6 md:top-8 md:left-8 text-slate-600 hover:text-white transition-all flex items-center gap-3 group btn-press focus-ring rounded-full z-10"
+        className="fixed top-6 left-6 md:top-8 md:left-8 text-slate-600 hover:text-white transition-all flex items-center gap-3 group btn-press focus-ring rounded-full z-[100]"
       >
         <div className="w-12 h-12 min-w-[44px] min-h-[44px] rounded-full border border-white/5 flex items-center justify-center group-hover:bg-white/10 group-hover:scale-110 transition-all">
           <ICONS.ArrowBack className="w-5 h-5" />

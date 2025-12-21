@@ -575,7 +575,8 @@ export const AgentChat: React.FC<AgentChatProps> = ({
   const handleGenerate = useCallback((editedScript: string) => {
     if (editedScript && onGenerateAudio) {
       onGenerateAudio(editedScript, selectedTags);
-      setShowMeditationPanel(false);
+      // Don't close the panel here - let it show the loading state
+      // Panel will be replaced by InlinePlayer when audio is ready
     }
   }, [onGenerateAudio, selectedTags]);
 
