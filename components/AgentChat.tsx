@@ -17,7 +17,20 @@ import { ScriptEditor } from './ScriptEditor';
 
 const SendIcon = () => (
   <svg className="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+    <path d="M5 12h14M12 5l7 7-7 7" />
+  </svg>
+);
+
+const MicIcon = () => (
+  <svg className="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+    <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" />
+  </svg>
+);
+
+const WaveIcon = () => (
+  <svg className="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M2 12h2M6 8v8M10 5v14M14 8v8M18 10v4M22 12h0" strokeLinecap="round" />
   </svg>
 );
 
@@ -203,11 +216,15 @@ export const AgentChat: React.FC<AgentChatProps> = ({
 
   const [inputValue, setInputValue] = useState('');
   const [showScriptEditor, setShowScriptEditor] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [transcribedText, setTranscribedText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   const isProcessing = isLoading || isGeneratingMeditation || externalIsGenerating;
   const hasMessages = messages.length > 0;
+  const showMicButton = !inputValue.trim() && !isRecording;
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -228,6 +245,96 @@ export const AgentChat: React.FC<AgentChatProps> = ({
       setShowScriptEditor(true);
     }
   }, [currentMeditation]);
+
+  // Cleanup speech recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
+    };
+  }, []);
+
+  // Start voice recording with Web Speech API
+  const startVoiceRecording = useCallback(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      console.error('Speech recognition not supported');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    // Track final transcript locally to avoid closure issues
+    let accumulatedTranscript = '';
+
+    recognition.onstart = () => {
+      setIsRecording(true);
+      setTranscribedText('');
+      accumulatedTranscript = '';
+    };
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      let finalTranscript = '';
+      let interimTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+
+      // Accumulate final results
+      if (finalTranscript) {
+        accumulatedTranscript = (accumulatedTranscript + ' ' + finalTranscript).trim();
+        setTranscribedText(accumulatedTranscript);
+      } else if (interimTranscript) {
+        // Show interim + accumulated for real-time feedback
+        setTranscribedText((accumulatedTranscript + ' ' + interimTranscript).trim());
+      }
+    };
+
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      console.error('Speech recognition error:', event.error);
+      setIsRecording(false);
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+      // Auto-send the accumulated transcript if we have any
+      if (accumulatedTranscript.trim()) {
+        sendMessage(accumulatedTranscript.trim());
+        setTranscribedText('');
+      }
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  }, [sendMessage]);
+
+  // Stop voice recording
+  const stopVoiceRecording = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+  }, []);
+
+  // Handle mic button click
+  const handleMicClick = useCallback(() => {
+    if (isRecording) {
+      stopVoiceRecording();
+    } else {
+      startVoiceRecording();
+    }
+  }, [isRecording, startVoiceRecording, stopVoiceRecording]);
 
   // Handle generating audio from the script editor
   const handleGenerateFromEditor = useCallback((script: string, selectedTags: string[]) => {
@@ -313,43 +420,54 @@ export const AgentChat: React.FC<AgentChatProps> = ({
         <div className="max-w-3xl mx-auto">
           <form onSubmit={handleSubmit}>
             {/* Unified Input Container */}
-            <div className="relative flex items-center bg-white/[0.06] border border-white/10
+            <div className={`relative flex items-center bg-white/[0.06] border
                           rounded-full px-4 md:px-6 py-2.5
-                          focus-within:border-indigo-500/40 focus-within:bg-white/[0.08]
-                          transition-all duration-200 shadow-lg shadow-black/10">
+                          transition-all duration-200 shadow-lg shadow-black/10
+                          ${isRecording
+                            ? 'border-rose-500/50 bg-rose-500/10'
+                            : 'border-white/10 focus-within:border-indigo-500/40 focus-within:bg-white/[0.08]'
+                          }`}>
               <textarea
                 ref={inputRef}
-                value={inputValue}
+                value={isRecording ? transcribedText : inputValue}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
-                placeholder={hasMessages ? "Share more..." : "How are you feeling?"}
+                placeholder={isRecording ? "Listening..." : (hasMessages ? "Share more..." : "How are you feeling?")}
                 rows={1}
-                className="flex-1 bg-transparent text-white text-sm md:text-base
-                         placeholder:text-white/30
-                         outline-none resize-none py-2"
+                className={`flex-1 bg-transparent text-sm md:text-base
+                         outline-none resize-none py-2
+                         ${isRecording ? 'text-white/70 italic' : 'text-white placeholder:text-white/30'}`}
                 style={{ maxHeight: '120px' }}
-                disabled={isProcessing}
+                disabled={isProcessing || isRecording}
+                readOnly={isRecording}
               />
 
-              {/* Send Button - Inside input */}
+              {/* Dynamic Button - Mic / Send / Wave */}
               <button
-                type="submit"
-                disabled={isProcessing || !inputValue.trim()}
+                type={showMicButton || isRecording ? 'button' : 'submit'}
+                onClick={showMicButton || isRecording ? handleMicClick : undefined}
+                disabled={isProcessing && !isRecording}
                 className={`
                   flex-shrink-0 h-10 w-10 rounded-full ml-2
                   flex items-center justify-center transition-all duration-200
-                  ${isProcessing
+                  ${isProcessing && !isRecording
                     ? 'bg-indigo-500/50 cursor-not-allowed'
-                    : inputValue.trim()
-                      ? 'bg-indigo-500 hover:bg-indigo-400 active:scale-95 text-white'
-                      : 'bg-transparent text-white/30'
+                    : isRecording
+                      ? 'bg-rose-500 hover:bg-rose-400 active:scale-95 text-white animate-pulse'
+                      : inputValue.trim()
+                        ? 'bg-indigo-500 hover:bg-indigo-400 active:scale-95 text-white'
+                        : 'bg-white/10 hover:bg-white/20 active:scale-95 text-white/70 hover:text-white'
                   }
                 `}
               >
-                {isProcessing ? (
+                {isProcessing && !isRecording ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white" />
-                ) : (
+                ) : isRecording ? (
+                  <WaveIcon />
+                ) : inputValue.trim() ? (
                   <SendIcon />
+                ) : (
+                  <MicIcon />
                 )}
               </button>
             </div>
