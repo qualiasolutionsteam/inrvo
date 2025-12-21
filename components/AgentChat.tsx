@@ -341,7 +341,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
       </div>
 
       {/* Input Area - Fixed at bottom */}
-      <div className="flex-shrink-0 p-4 md:p-6 border-t border-white/5 bg-black/20 backdrop-blur-xl">
+      <div className="flex-shrink-0 p-4 md:p-6">
         <div className="max-w-2xl mx-auto">
           <form onSubmit={handleSubmit} className="flex items-end gap-3">
             {/* Input Field */}
