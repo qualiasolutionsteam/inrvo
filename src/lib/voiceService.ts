@@ -11,6 +11,39 @@ function stripAudioTags(text: string): string {
 }
 
 /**
+ * Pre-process text for meditation-style slower speech
+ * Adds natural pauses around punctuation for a calmer, more measured delivery
+ */
+function prepareMeditationText(text: string): string {
+  let processed = text;
+
+  // Add pauses after sentences (periods, exclamation, question marks)
+  // Using ellipsis creates a natural pause in ElevenLabs
+  processed = processed.replace(/\.(\s+)/g, '... $1');
+  processed = processed.replace(/\!(\s+)/g, '!... $1');
+  processed = processed.replace(/\?(\s+)/g, '?... $1');
+
+  // Add subtle pauses after commas and semicolons
+  processed = processed.replace(/,(\s+)/g, ', ... $1');
+  processed = processed.replace(/;(\s+)/g, '; ... $1');
+
+  // Add pauses after colons
+  processed = processed.replace(/:(\s+)/g, ': ... $1');
+
+  // Add longer pauses for ellipses that were already in the text
+  processed = processed.replace(/\.\.\.(?!\.)/g, '...... ');
+
+  // Add pauses around em-dashes
+  processed = processed.replace(/—/g, ' ... — ... ');
+  processed = processed.replace(/--/g, ' ... ');
+
+  // Clean up multiple spaces
+  processed = processed.replace(/\s+/g, ' ').trim();
+
+  return processed;
+}
+
+/**
  * Unified voice service that routes between Gemini and ElevenLabs
  */
 export const voiceService = {
@@ -29,13 +62,30 @@ export const voiceService = {
     // Strip audio tags before sending to TTS - they would be spoken literally
     const cleanText = stripAudioTags(text);
 
+    // Prepare text for slower, meditation-style delivery
+    const meditationText = prepareMeditationText(cleanText);
+
     // Only cloned voices with ElevenLabs ID are supported
     if (!voice.isCloned || !voice.elevenlabsVoiceId) {
       throw new Error('Please clone a voice to generate meditations. Default voices are no longer available.');
     }
 
-    // Use ElevenLabs for cloned voices
-    const base64 = await elevenlabsService.generateSpeech(cleanText, voice.elevenlabsVoiceId);
+    // Voice settings optimized for slow, calm meditation delivery
+    const meditationTTSOptions = {
+      voice_settings: {
+        stability: 0.90,           // Very high = consistent, measured pace
+        similarity_boost: 0.65,    // Slightly lower for more natural delivery
+        style: 0.05,               // Very low = minimal variation, soothing
+        use_speaker_boost: true,
+      },
+    };
+
+    // Use ElevenLabs for cloned voices with meditation settings
+    const base64 = await elevenlabsService.generateSpeech(
+      meditationText,
+      voice.elevenlabsVoiceId,
+      meditationTTSOptions
+    );
 
     // Decode to AudioBuffer if needed
     if (audioContext) {
