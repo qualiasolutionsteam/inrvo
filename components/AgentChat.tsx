@@ -190,203 +190,143 @@ const MeditationPanel = memo<MeditationPanelProps>(({
   const [showControls, setShowControls] = useState(false);
   const [activeTab, setActiveTab] = useState<'voice' | 'music' | 'tags'>('voice');
   const [editedScript, setEditedScript] = useState(script);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Calculate stats
   const wordCount = editedScript.replace(/\[.*?\]/g, '').split(/\s+/).filter(Boolean).length;
   const estimatedDuration = Math.ceil(wordCount / 100);
 
-  // Count active options
-  const activeCount = (selectedVoice ? 1 : 0) + (selectedMusic && selectedMusic.id !== 'none' ? 1 : 0) + selectedTags.length;
-
   return (
-    <div className="fixed inset-0 z-50 md:relative md:inset-auto animate-in fade-in duration-300">
-      {/* Mobile: Full screen overlay / Desktop: Inline panel */}
-      <div className="h-full md:h-auto flex flex-col bg-[#0a0a12] md:bg-transparent md:rounded-2xl md:border md:border-white/10">
+    <div className="fixed inset-0 z-50 animate-in fade-in duration-300 bg-[#0a0a12]">
+      {/* Full screen meditation editor */}
+      <div className="h-full flex flex-col">
 
-        {/* Header - minimal on mobile */}
-        <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 md:py-4 border-b border-white/5 md:border-white/10">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-              <CheckIcon className="w-3 h-3 md:w-4 md:h-4 text-white" />
+        {/* Header */}
+        <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-white/10 bg-[#0a0a12]/95 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+              <SparkleIcon className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-white/90 text-xs md:text-sm font-medium">Your meditation</p>
-              <p className="text-white/40 text-[10px] md:text-xs">{wordCount} words · ~{estimatedDuration} min</p>
+              <p className="text-white font-medium text-sm">Your Meditation</p>
+              <p className="text-white/50 text-xs">{wordCount} words · ~{estimatedDuration} min read</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 -mr-2 text-white/40 hover:text-white/70 transition-colors"
+            className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/20 transition-all"
           >
-            <CloseIcon className="w-5 h-5" />
+            <CloseIcon className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Editable Script Area - fills mobile screen */}
-        <div className="flex-1 overflow-hidden relative">
+        {/* Scrollable Script Area */}
+        <div className="flex-1 overflow-y-auto">
           <textarea
-            ref={textareaRef}
             value={editedScript}
             onChange={(e) => setEditedScript(e.target.value)}
-            className="w-full h-full bg-transparent text-white/85 text-sm md:text-base leading-relaxed
-                       resize-none outline-none p-4 md:p-6
+            className="w-full min-h-full bg-transparent text-white/90 text-base leading-relaxed
+                       resize-none outline-none p-5 pb-32
                        placeholder:text-white/30"
             placeholder="Your meditation script..."
-            style={{ minHeight: '200px' }}
           />
-
-          {/* Gradient fade at bottom */}
-          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#0a0a12] md:from-transparent to-transparent pointer-events-none" />
         </div>
 
-        {/* Bottom Action Bar */}
-        <div className="flex-shrink-0 px-3 pb-4 pt-2 md:p-4 border-t border-white/5 md:border-white/10 bg-[#0a0a12] md:bg-transparent">
-          <div className="flex items-center gap-2">
+        {/* Fixed Bottom Bar */}
+        <div className="flex-shrink-0 fixed bottom-0 left-0 right-0 bg-[#0a0a12] border-t border-white/10 p-4 space-y-3">
 
-            {/* Controls Toggle Button (+ button) */}
+          {/* Options Row */}
+          <div className="flex items-center gap-2">
+            {/* + Button to expand controls */}
             <button
               onClick={() => setShowControls(!showControls)}
-              className={`relative flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all
+              className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all
                 ${showControls
-                  ? 'bg-indigo-500 text-white rotate-45'
-                  : 'bg-white/[0.06] text-white/60 hover:bg-white/[0.1] hover:text-white/80'
-                }
-                ${activeCount > 0 && !showControls ? 'ring-2 ring-indigo-500/50' : ''}
-              `}
-            >
-              <PlusIcon className="w-5 h-5 transition-transform" />
-              {activeCount > 0 && !showControls && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-indigo-500 text-[10px] text-white flex items-center justify-center font-medium">
-                  {activeCount}
-                </span>
-              )}
-            </button>
-
-            {/* Quick status chips when controls are hidden */}
-            {!showControls && (
-              <div className="flex-1 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-                {selectedVoice && (
-                  <span className="flex-shrink-0 px-2 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-medium">
-                    {selectedVoice.name}
-                  </span>
-                )}
-                {selectedMusic && selectedMusic.id !== 'none' && (
-                  <span className="flex-shrink-0 px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-medium">
-                    {selectedMusic.name}
-                  </span>
-                )}
-                {selectedTags.length > 0 && (
-                  <span className="flex-shrink-0 px-2 py-1 rounded-full bg-violet-500/20 text-violet-300 text-[10px] font-medium">
-                    {selectedTags.length} tags
-                  </span>
-                )}
-              </div>
-            )}
-
-            {/* Generate Button */}
-            <button
-              onClick={() => onGenerate(editedScript)}
-              disabled={!selectedVoice || isGenerating}
-              className={`flex-shrink-0 h-10 px-5 md:px-6 rounded-full font-medium text-xs md:text-sm
-                         flex items-center justify-center gap-2 transition-all
-                ${!selectedVoice
-                  ? 'bg-white/10 text-white/40 cursor-not-allowed'
-                  : isGenerating
-                    ? 'bg-indigo-500/50 text-white cursor-wait min-w-[100px]'
-                    : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-400 hover:to-purple-500 active:scale-[0.98] shadow-lg shadow-indigo-500/25'
+                  ? 'bg-indigo-500 text-white'
+                  : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
                 }`}
             >
-              {isGenerating ? (
-                <>
-                  <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white/30 border-t-white" />
-                  <span className="hidden md:inline">Generating...</span>
-                </>
-              ) : !selectedVoice ? (
-                'Select voice'
-              ) : (
-                <>
-                  <PlayIcon className="w-4 h-4" />
-                  <span>Play</span>
-                </>
-              )}
+              <PlusIcon className={`w-5 h-5 transition-transform duration-200 ${showControls ? 'rotate-45' : ''}`} />
             </button>
+
+            {/* Status chips */}
+            <div className="flex-1 flex items-center gap-2 overflow-x-auto no-scrollbar">
+              <button
+                onClick={onVoiceSelect}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all
+                  ${selectedVoice
+                    ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                    : 'bg-white/10 text-white/50 border border-white/10 animate-pulse'
+                  }`}
+              >
+                <VoiceIcon className="w-3.5 h-3.5" />
+                {selectedVoice ? selectedVoice.name : 'Select Voice'}
+              </button>
+
+              {selectedMusic && selectedMusic.id !== 'none' && (
+                <span className="flex-shrink-0 px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-medium border border-emerald-500/30">
+                  🎵 {selectedMusic.name}
+                </span>
+              )}
+              {selectedTags.length > 0 && (
+                <span className="flex-shrink-0 px-3 py-1.5 rounded-full bg-violet-500/20 text-violet-300 text-xs font-medium border border-violet-500/30">
+                  {selectedTags.length} tags
+                </span>
+              )}
+            </div>
           </div>
 
-          {/* Expandable Controls Panel */}
+          {/* Expandable Controls */}
           {showControls && (
-            <div className="mt-3 animate-in slide-in-from-bottom-2 duration-200">
+            <div className="animate-in slide-in-from-bottom-2 duration-200 bg-white/5 rounded-xl p-3">
               {/* Tab Buttons */}
               <div className="flex gap-1 mb-3">
                 <button
                   onClick={() => setActiveTab('voice')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all
-                    ${activeTab === 'voice'
-                      ? 'bg-indigo-500/20 text-indigo-300'
-                      : 'bg-white/[0.04] text-white/50 hover:text-white/70'
-                    }`}
+                  className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all
+                    ${activeTab === 'voice' ? 'bg-indigo-500/30 text-indigo-300' : 'text-white/50'}`}
                 >
-                  <VoiceIcon className="w-3.5 h-3.5" />
                   Voice
                 </button>
                 <button
                   onClick={() => setActiveTab('music')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all
-                    ${activeTab === 'music'
-                      ? 'bg-emerald-500/20 text-emerald-300'
-                      : 'bg-white/[0.04] text-white/50 hover:text-white/70'
-                    }`}
+                  className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all
+                    ${activeTab === 'music' ? 'bg-emerald-500/30 text-emerald-300' : 'text-white/50'}`}
                 >
-                  <MusicIcon className="w-3.5 h-3.5" />
                   Music
                 </button>
                 <button
                   onClick={() => setActiveTab('tags')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all
-                    ${activeTab === 'tags'
-                      ? 'bg-violet-500/20 text-violet-300'
-                      : 'bg-white/[0.04] text-white/50 hover:text-white/70'
-                    }`}
+                  className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all
+                    ${activeTab === 'tags' ? 'bg-violet-500/30 text-violet-300' : 'text-white/50'}`}
                 >
-                  <TagIcon className="w-3.5 h-3.5" />
                   Tags
                 </button>
               </div>
 
               {/* Tab Content */}
-              <div className="max-h-40 overflow-y-auto">
+              <div className="max-h-32 overflow-y-auto">
                 {activeTab === 'voice' && (
                   <button
                     onClick={onVoiceSelect}
-                    className="w-full flex items-center justify-between p-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] transition-all"
+                    className="w-full p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center gap-3"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${selectedVoice ? 'bg-indigo-500/20' : 'bg-white/10'}`}>
-                        <VoiceIcon className={`w-4 h-4 ${selectedVoice ? 'text-indigo-400' : 'text-white/50'}`} />
-                      </div>
-                      <div className="text-left">
-                        <p className="text-white/90 text-sm font-medium">
-                          {selectedVoice ? selectedVoice.name : 'Select Voice'}
-                        </p>
-                        <p className="text-white/40 text-xs">
-                          {selectedVoice ? 'Tap to change' : 'Required to generate'}
-                        </p>
-                      </div>
-                    </div>
-                    <ChevronIcon className="w-4 h-4 text-white/40 -rotate-90" />
+                    <VoiceIcon className={`w-5 h-5 ${selectedVoice ? 'text-indigo-400' : 'text-white/40'}`} />
+                    <span className="text-white/80 text-sm">
+                      {selectedVoice ? `Change from ${selectedVoice.name}` : 'Tap to select a voice'}
+                    </span>
                   </button>
                 )}
 
                 {activeTab === 'music' && (
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {availableMusic.slice(0, 8).map((track) => (
+                  <div className="grid grid-cols-2 gap-2">
+                    {availableMusic.slice(0, 6).map((track) => (
                       <button
                         key={track.id}
                         onClick={() => onMusicSelect(track)}
-                        className={`p-2.5 rounded-lg text-left text-xs transition-all ${
+                        className={`p-2 rounded-lg text-xs transition-all ${
                           selectedMusic?.id === track.id
-                            ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300'
-                            : 'bg-white/[0.04] hover:bg-white/[0.08] text-white/70 border border-transparent'
+                            ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/40'
+                            : 'bg-white/5 text-white/60 hover:bg-white/10'
                         }`}
                       >
                         {track.name}
@@ -396,32 +336,55 @@ const MeditationPanel = memo<MeditationPanelProps>(({
                 )}
 
                 {activeTab === 'tags' && (
-                  <div className="space-y-3">
-                    {availableTags.map((category) => (
-                      <div key={category.id}>
-                        <p className="text-[10px] uppercase tracking-wider text-white/40 mb-1.5">{category.name}</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {category.tags.map((tag) => (
-                            <button
-                              key={tag.id}
-                              onClick={() => onTagToggle(tag.id)}
-                              className={`px-2.5 py-1 rounded-md text-xs transition-all ${
-                                selectedTags.includes(tag.id)
-                                  ? 'bg-violet-500/30 text-violet-300 border border-violet-500/40'
-                                  : 'bg-white/[0.06] text-white/60 hover:text-white/80 border border-transparent'
-                              }`}
-                            >
-                              {tag.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {availableTags.flatMap(cat => cat.tags).slice(0, 8).map((tag) => (
+                      <button
+                        key={tag.id}
+                        onClick={() => onTagToggle(tag.id)}
+                        className={`px-2.5 py-1 rounded-md text-xs transition-all ${
+                          selectedTags.includes(tag.id)
+                            ? 'bg-violet-500/30 text-violet-300'
+                            : 'bg-white/5 text-white/50 hover:bg-white/10'
+                        }`}
+                      >
+                        {tag.label}
+                      </button>
                     ))}
                   </div>
                 )}
               </div>
             </div>
           )}
+
+          {/* Big Generate Button */}
+          <button
+            onClick={() => onGenerate(editedScript)}
+            disabled={!selectedVoice || isGenerating}
+            className={`w-full py-4 rounded-2xl font-semibold text-base flex items-center justify-center gap-3 transition-all
+              ${!selectedVoice
+                ? 'bg-white/10 text-white/40'
+                : isGenerating
+                  ? 'bg-indigo-500/60 text-white'
+                  : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30 active:scale-[0.98]'
+              }`}
+          >
+            {isGenerating ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white" />
+                Generating Audio...
+              </>
+            ) : !selectedVoice ? (
+              <>
+                <VoiceIcon className="w-5 h-5" />
+                Select a Voice First
+              </>
+            ) : (
+              <>
+                <PlayIcon className="w-5 h-5" />
+                Generate & Play
+              </>
+            )}
+          </button>
         </div>
       </div>
     </div>
