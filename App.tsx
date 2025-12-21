@@ -2257,7 +2257,7 @@ const App: React.FC = () => {
         </Suspense>
 
         {/* Sidebar Drawer - Slides in and pushes content */}
-        <div className={`fixed top-0 left-0 bottom-0 z-[95] w-[280px] md:w-[320px] bg-[#0a0f1a] border-r border-white/10 flex flex-col transition-transform duration-300 ${showBurgerMenu ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className={`fixed inset-y-0 left-0 z-[95] w-[280px] md:w-[320px] h-screen bg-[#0a0f1a] border-r border-white/10 flex flex-col overflow-hidden transition-transform duration-300 ${showBurgerMenu ? 'translate-x-0' : '-translate-x-full'}`}>
               {/* Sidebar Header with Logo and Close Button */}
               <div className="flex-shrink-0 p-3 md:p-4 border-b border-white/5 flex items-center justify-between">
                 {/* Logo */}
@@ -2282,8 +2282,8 @@ const App: React.FC = () => {
                 </button>
               </div>
 
-              {/* History Content */}
-              <div className="flex-1 overflow-y-auto p-4">
+              {/* History Content - scrollable area */}
+              <div className="flex-1 min-h-0 overflow-y-auto p-4">
 
                 {user ? (
                   <>
@@ -2336,7 +2336,7 @@ const App: React.FC = () => {
 
               {/* Sign Out Button */}
               {user && (
-                <div className="p-3 border-t border-white/5">
+                <div className="flex-shrink-0 p-3 border-t border-white/5">
                   <button
                     onClick={() => {
                       setShowBurgerMenu(false);
@@ -2353,7 +2353,7 @@ const App: React.FC = () => {
               )}
 
               {/* Footer */}
-              <div className="p-4 border-t border-white/5 space-y-2">
+              <div className="flex-shrink-0 p-4 border-t border-white/5 space-y-2">
                 <div className="flex items-center justify-center gap-4 text-[10px] text-slate-600 uppercase tracking-widest">
                   <button
                     onClick={() => { setShowBurgerMenu(false); setShowAboutUs(true); }}
