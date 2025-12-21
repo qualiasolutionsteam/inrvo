@@ -126,13 +126,16 @@ serve(async (req) => {
       );
     }
 
+    // Voice settings optimized for meditative pace
+    // Higher stability = more consistent, calmer delivery
+    // Lower style = less variation, more soothing
     const requestData = {
       text,
       model_id: 'eleven_multilingual_v2',
       voice_settings: {
-        stability: voiceSettings?.stability ?? 0.5,
-        similarity_boost: voiceSettings?.similarity_boost ?? 0.8,
-        style: voiceSettings?.style ?? 0.0,
+        stability: voiceSettings?.stability ?? 0.75,        // Higher = calmer, more consistent
+        similarity_boost: voiceSettings?.similarity_boost ?? 0.7,
+        style: voiceSettings?.style ?? 0.15,                // Low style = more soothing
         use_speaker_boost: voiceSettings?.use_speaker_boost ?? true,
       },
     };

@@ -41,12 +41,8 @@ const Star = memo<{ star: Star }>(({ star }) => (
       '--base-opacity': star.baseOpacity,
       animationDelay: star.delay,
       opacity: star.baseOpacity,
-      // Enhanced box-shadow for sparkle effect
-      boxShadow: star.type === 'pulsar'
-        ? `0 0 ${star.glowRadius} ${star.glowColor}, 0 0 ${star.glowSpread} ${star.color}`
-        : `0 0 ${star.glowRadius} ${star.glowColor}`,
       // Only use will-change for special stars, reduces GPU memory
-      willChange: star.type !== 'normal' ? 'transform, opacity, box-shadow' : 'auto',
+      willChange: star.type !== 'normal' ? 'transform, opacity' : 'auto',
       // Use transform3d for GPU acceleration
       transform: 'translateZ(0)',
     } as React.CSSProperties}
@@ -70,16 +66,16 @@ const Starfield: React.FC = () => {
     return Array.from({ length: starCount }).map((_, i): Star => {
       const rand = Math.random();
 
-      // Star type distribution (Enhanced sparkle)
-      // 60% normal, 12% glitcher, 8% artifact, 20% pulsar (more pulsars for sparkle)
+      // Star type distribution (Moderate intensity)
+      // 70% normal, 15% glitcher, 8% artifact, 7% pulsar
       let type: StarType = 'normal';
-      if (rand > 0.92) type = 'artifact';      // 8%
-      else if (rand > 0.80) type = 'glitcher'; // 12%
-      else if (rand > 0.60) type = 'pulsar';   // 20% - increased for more sparkle
-      // remaining 60% split between normal animations
+      if (rand > 0.93) type = 'artifact';      // 7%
+      else if (rand > 0.85) type = 'glitcher'; // 8%
+      else if (rand > 0.78) type = 'pulsar';   // 7%
+      // remaining 78% split between normal animations
 
-      const isLarge = rand > 0.88; // More large stars
-      const hasExtraGlow = isLarge && Math.random() > 0.3; // More likely to have extra glow
+      const isLarge = rand > 0.92;
+      const hasExtraGlow = isLarge && Math.random() > 0.4;
 
       // Color palette
       const colorType = Math.random();
@@ -127,21 +123,15 @@ const Starfield: React.FC = () => {
         type,
         top: `${Math.random() * 100}%`,
         left: `${Math.random() * 100}%`,
-        size: isLarge ? `${Math.random() * 2.5 + 2}px` : `${Math.random() * 1.8 + 0.6}px`,
+        size: isLarge ? `${Math.random() * 2 + 1.8}px` : `${Math.random() * 1.5 + 0.5}px`,
         duration,
-        delay: `${Math.random() * 8}s`,
+        delay: `${Math.random() * 10}s`,
         color,
         glowColor,
-        // Enhanced glow radius for more visible sparkle
-        glowRadius: type === 'pulsar'
-          ? (hasExtraGlow ? '25px' : '18px')
-          : (hasExtraGlow ? '20px' : '12px'),
-        glowSpread: type === 'pulsar'
-          ? (hasExtraGlow ? '8px' : '5px')
-          : (hasExtraGlow ? '6px' : '3px'),
+        glowRadius: hasExtraGlow ? '18px' : '10px',
+        glowSpread: hasExtraGlow ? '5px' : '2px',
         animClass,
-        // Higher opacity for pulsars to make them more visible
-        baseOpacity: type === 'pulsar' ? Math.random() * 0.4 + 0.4 : Math.random() * 0.5 + 0.15
+        baseOpacity: type === 'pulsar' ? Math.random() * 0.3 + 0.3 : Math.random() * 0.4 + 0.1
       };
     });
   }, [starCount]);

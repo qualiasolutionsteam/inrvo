@@ -41,6 +41,8 @@ export interface MeditationResult {
   audioBuffer?: AudioBuffer;
   audioBase64?: string;
   duration?: number;
+  // New: indicates script is ready for review (not audio generated yet)
+  readyForReview?: boolean;
 }
 
 export interface UseMeditationAgentReturn {
@@ -262,20 +264,17 @@ export function useMeditationAgent(): UseMeditationAgentReturn {
         script: result.data.script,
         meditationType: result.data.meditationType,
         duration: result.data.duration,
+        readyForReview: true, // Flag that script is ready for review
       };
 
       setCurrentMeditation(meditation);
 
-      // Add a message about the generated meditation
+      // Add a brief message - the ScriptEditor modal will handle the full preview
       const meditationMessage: ChatMessage = {
         id: generateMessageId(),
         role: 'assistant',
-        content: `I've created a ${type.replace('_', ' ')} meditation for you. Here's your personalized script:\n\n"${result.data.script.slice(0, 200)}..."\n\nWould you like me to read this meditation to you?`,
+        content: `I've crafted your ${type.replace('_', ' ')} meditation. You can now review and customize it before we generate the audio.`,
         timestamp: new Date(),
-        actions: [
-          { type: 'play_audio', label: 'Generate Audio', data: { script: result.data.script } },
-          { type: 'generate_meditation', label: 'Try Another', data: { type } },
-        ],
       };
       setMessages(prev => [...prev, meditationMessage]);
 

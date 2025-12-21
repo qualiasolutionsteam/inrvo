@@ -9,6 +9,7 @@ import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { useMeditationAgent, type ChatMessage, type AgentAction } from '../src/hooks/useMeditationAgent';
 import type { VoiceProfile } from '../types';
 import type { MeditationType } from '../src/lib/agent/knowledgeBase';
+import { ScriptEditor } from './ScriptEditor';
 
 // ============================================================================
 // ICONS
@@ -202,6 +203,7 @@ QuickPromptChip.displayName = 'QuickPromptChip';
 interface AgentChatProps {
   // Callbacks
   onMeditationReady?: (script: string, type: MeditationType, prompt: string) => void;
+  onGenerateAudio?: (script: string, selectedTags: string[]) => void;
   onRequestVoiceSelection?: () => void;
   onOpenTemplates?: () => void;
   onOpenMusic?: () => void;
@@ -211,6 +213,7 @@ interface AgentChatProps {
   // State from parent
   selectedVoice?: VoiceProfile | null;
   isGenerating?: boolean;
+  isGeneratingAudio?: boolean;
 
   // Styling
   className?: string;
@@ -218,6 +221,7 @@ interface AgentChatProps {
 
 export const AgentChat: React.FC<AgentChatProps> = ({
   onMeditationReady,
+  onGenerateAudio,
   onRequestVoiceSelection,
   onOpenTemplates,
   onOpenMusic,
@@ -225,6 +229,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
   onChatStarted,
   selectedVoice,
   isGenerating: externalIsGenerating,
+  isGeneratingAudio = false,
   className = '',
 }) => {
   const {
@@ -241,6 +246,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
 
   const [inputValue, setInputValue] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showScriptEditor, setShowScriptEditor] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -260,18 +266,33 @@ export const AgentChat: React.FC<AgentChatProps> = ({
     }
   }, [messages.length > 0, onChatStarted]);
 
-  // Notify parent when meditation is ready
+  // Show ScriptEditor when meditation is ready for review
   useEffect(() => {
-    if (currentMeditation?.script && onMeditationReady) {
-      // Extract prompt from recent messages
+    if (currentMeditation?.readyForReview && currentMeditation?.script) {
+      setShowScriptEditor(true);
+    }
+  }, [currentMeditation?.readyForReview, currentMeditation?.script]);
+
+  // Handle generating audio from the script editor
+  const handleGenerateFromEditor = useCallback((script: string, selectedTags: string[]) => {
+    setShowScriptEditor(false);
+    if (onGenerateAudio) {
+      onGenerateAudio(script, selectedTags);
+    } else if (onMeditationReady && currentMeditation) {
+      // Fallback to legacy callback
       const recentUserMessage = messages.filter(m => m.role === 'user').pop();
       onMeditationReady(
-        currentMeditation.script,
+        script,
         currentMeditation.meditationType,
         recentUserMessage?.content || ''
       );
     }
-  }, [currentMeditation, onMeditationReady, messages]);
+  }, [onGenerateAudio, onMeditationReady, currentMeditation, messages]);
+
+  // Handle closing the script editor
+  const handleCloseEditor = useCallback(() => {
+    setShowScriptEditor(false);
+  }, []);
 
   // Handle form submission
   const handleSubmit = useCallback((e?: React.FormEvent) => {
@@ -325,6 +346,19 @@ export const AgentChat: React.FC<AgentChatProps> = ({
 
   return (
     <div className={`w-full ${className}`}>
+      {/* Script Editor Modal */}
+      {showScriptEditor && currentMeditation?.script && (
+        <ScriptEditor
+          script={currentMeditation.script}
+          meditationType={currentMeditation.meditationType}
+          onClose={handleCloseEditor}
+          onGenerate={handleGenerateFromEditor}
+          selectedVoice={selectedVoice || null}
+          onRequestVoiceSelection={onRequestVoiceSelection || (() => {})}
+          isGenerating={isGeneratingAudio}
+        />
+      )}
+
       {/* Expandable Chat Area - shows above input when there are messages */}
       {hasMessages && isExpanded && (
         <div className="mb-2 animate-in fade-in slide-in-from-bottom-4 duration-300">

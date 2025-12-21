@@ -132,10 +132,11 @@ export const elevenlabsService = {
     }
 
     // Use Edge Functions (secure, API key server-side)
+    // Default settings optimized for meditative, calm delivery
     return elevenLabsTTS(voiceId, text, {
-      stability: options.voice_settings?.stability ?? 0.5,
-      similarity_boost: options.voice_settings?.similarity_boost ?? 0.75,
-      style: options.voice_settings?.style ?? 0.0,
+      stability: options.voice_settings?.stability ?? 0.75,        // Higher = calmer
+      similarity_boost: options.voice_settings?.similarity_boost ?? 0.7,
+      style: options.voice_settings?.style ?? 0.15,                // Low = more soothing
       use_speaker_boost: options.voice_settings?.use_speaker_boost ?? true,
     });
   },

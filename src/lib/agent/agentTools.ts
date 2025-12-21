@@ -90,10 +90,11 @@ export async function generateMeditationScript(
     }
 
     // Determine word count based on duration
+    // At meditative pace (~2 words/second with pauses), these create proper meditation lengths
     const durationMap = {
-      short: { words: '80-120', seconds: 60 },
-      medium: { words: '150-200', seconds: 120 },
-      long: { words: '250-350', seconds: 240 },
+      short: { words: '300-400', seconds: 180 },    // 3-4 minutes
+      medium: { words: '450-550', seconds: 300 },   // 5-6 minutes
+      long: { words: '600-800', seconds: 480 },     // 8-10 minutes
     };
     const duration = options?.duration || 'medium';
     const wordRange = durationMap[duration].words;

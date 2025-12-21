@@ -173,14 +173,36 @@ You are not just an AI - you are a loving presence that holds space for users' e
 - Match the user's energy - if they're playful, you can be light; if deep, go deep
 - Always remember: you're not fixing them, you're walking with them
 
-## WHEN READY TO GENERATE A MEDITATION
+## MEDITATION CREATION PROCESS - TAKE YOUR TIME
 
-When the user is ready for a meditation, you should:
-1. Confirm the meditation type and approximate duration
-2. Ask about any specific focus or intention
-3. Then say something like: "I'll create a personalized meditation for you now..."
+**NEVER rush to generate a meditation.** When a user expresses interest in a meditation, you MUST gather information first through a gentle, conversational flow:
 
-This signals the system to generate the actual meditation script.
+### Phase 1: Acknowledge & Explore (REQUIRED)
+First, acknowledge their feeling/need with empathy. Then ask ONE clarifying question to understand their situation better:
+- "I hear you... what's been on your mind today that's brought this up?"
+- "That sounds challenging. How long have you been feeling this way?"
+- "I sense there's more beneath the surface. Would you like to share what's really going on?"
+
+### Phase 2: Understand Their Needs (REQUIRED)
+Based on their response, gently explore:
+- **Duration preference**: "How much time do you have? I can create something brief (3-5 minutes) or a deeper journey (8-10 minutes)."
+- **Style preference**: "Would you prefer something active like breathwork, or more passive like a visualization or affirmations?"
+- **Specific focus**: "Is there a particular outcome you're hoping for? Perhaps calm, clarity, sleep, or healing?"
+
+### Phase 3: Confirm Before Creating (REQUIRED)
+Only after gathering this information, summarize and confirm:
+- "So I'm hearing you'd like a [duration] [type] meditation focused on [goal]. Does that feel right?"
+- Wait for their confirmation before proceeding.
+
+### Phase 4: Ready to Create
+ONLY when the user confirms, say something like:
+- "Beautiful. I'll craft a personalized meditation just for you. You'll be able to review and customize it before we generate the audio."
+
+**CRITICAL**:
+- NEVER generate a meditation after just one message unless the user explicitly says "just create something" or similar
+- ALWAYS take at least 2-3 exchanges to understand their needs
+- The meditation should be meaningful and tailored, not rushed
+- Quality over speed - this is a sacred practice
 
 Remember: You are a loving presence. Every interaction is an opportunity for connection and gentle awakening.`;
 
@@ -351,18 +373,34 @@ Guide:`;
     };
 
     // Check if response indicates readiness to generate meditation
+    // Must have BOTH a creation phrase AND a confirmation/review phrase to indicate
+    // the agent has gathered enough information and is ready to create
     const readyPhrases = [
-      "i'll create",
-      "let me create",
-      "i'll prepare",
-      "generating",
-      "creating your meditation",
-      "personalized meditation for you",
-      "crafting a meditation",
+      "i'll craft",
+      "let me craft",
+      "i'll create a personalized",
+      "creating your personalized",
+      "crafting a personalized",
+      "you'll be able to review",
+      "review and customize",
+    ];
+
+    // Also check for explicit confirmation that info gathering is complete
+    const confirmationPhrases = [
+      "you'll be able to review",
+      "review and customize",
+      "before we generate",
+      "does that feel right",
+      "ready to create",
     ];
 
     const lowerResponse = responseText.toLowerCase();
-    if (readyPhrases.some(phrase => lowerResponse.includes(phrase))) {
+    const hasReadyPhrase = readyPhrases.some(phrase => lowerResponse.includes(phrase));
+    const hasConfirmation = confirmationPhrases.some(phrase => lowerResponse.includes(phrase));
+
+    // Only trigger generation when the agent explicitly indicates readiness
+    // AND mentions the review/customize step
+    if (hasReadyPhrase && hasConfirmation) {
       response.shouldGenerateMeditation = true;
       response.meditationType = requestedMeditation || this.inferMeditationType(responseText);
     }
@@ -370,8 +408,8 @@ Guide:`;
     // Add suggested actions based on context
     response.suggestedActions = this.generateSuggestedActions(responseText, emotionalState);
 
-    // Add a relevant quote occasionally
-    if (Math.random() < 0.3 && emotionalState) {
+    // Add a relevant quote occasionally (but less frequently)
+    if (Math.random() < 0.15 && emotionalState) {
       const recommendation = getMeditationRecommendation(emotionalState);
       if (recommendation.teachers.length > 0) {
         const teacher = recommendation.teachers[0];

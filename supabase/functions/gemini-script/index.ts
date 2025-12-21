@@ -153,12 +153,23 @@ Tone:
 - Healing: Compassionate, nurturing, gentle
 ${audioTagsInstruction}
 
-STEP 4 - WRITE THE SCRIPT (100-180 words):
+STEP 4 - WRITE THE SCRIPT (400-550 words for a 5-6 minute meditation):
 - Use "you" for intimacy
 - Rich sensory details (see, hear, feel, smell)
 - Present tense
+- Include frequent pauses using [pause], [long pause], [deep breath] tags
 - Natural pauses via ellipses...
 - Fresh, evocative language (avoid clichés)
+- Build the experience gradually - don't rush
+- Include opening grounding, main practice, and gentle closing
+- Add breathing cues throughout: [deep breath], [exhale slowly]
+
+PACING GUIDELINES:
+- Start with grounding (30-50 words)
+- Include 3-5 breathing moments with [deep breath] or [exhale slowly]
+- Add [pause] after important phrases
+- Add [long pause] between major sections
+- End with gentle return to awareness (40-60 words)
 
 OUTPUT: Only the script. No titles, headers, or explanations. Start immediately with the experience.
 
@@ -179,7 +190,7 @@ CRITICAL: Match EXACTLY what the user asked for. If they want a beach visualizat
           }],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: operation === 'extend' ? 1000 : 500,
+            maxOutputTokens: operation === 'extend' ? 1500 : 1200,
           }
         }),
       }

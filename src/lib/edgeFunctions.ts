@@ -93,14 +93,15 @@ export async function elevenLabsTTS(
     use_speaker_boost?: boolean;
   }
 ): Promise<string> {
+  // Default settings optimized for meditative, calm delivery
   const response = await callEdgeFunction<ElevenLabsTTSResponse>('elevenlabs-tts', {
     voiceId,
     text,
     model_id: 'eleven_multilingual_v2',
     voice_settings: voiceSettings || {
-      stability: 0.5,
-      similarity_boost: 0.75,
-      style: 0.0,
+      stability: 0.75,           // Higher = calmer, more consistent
+      similarity_boost: 0.7,
+      style: 0.15,               // Low style = more soothing
       use_speaker_boost: true,
     },
   });
