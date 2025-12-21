@@ -22,10 +22,15 @@ const SendIcon = () => (
 );
 
 const WavesIcon = () => (
-  <svg className="w-5 h-5 md:w-6 md:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-    <path d="M2 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0" />
-    <path d="M2 17c2-3 4-3 6 0s4 3 6 0 4-3 6 0" opacity="0.5" />
-    <path d="M2 7c2-3 4-3 6 0s4 3 6 0 4-3 6 0" opacity="0.3" />
+  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round">
+    <path d="M3 12c1-2 2.5-2 4 0s3 2 4 0 2.5-2 4 0 3 2 4 0 2.5-2 3.5 0" stroke="url(#waveGrad)" />
+    <defs>
+      <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#818cf8" stopOpacity="0.4" />
+        <stop offset="50%" stopColor="#818cf8" />
+        <stop offset="100%" stopColor="#c084fc" stopOpacity="0.6" />
+      </linearGradient>
+    </defs>
   </svg>
 );
 
@@ -443,21 +448,21 @@ export const AgentChat: React.FC<AgentChatProps> = ({
                 readOnly={isRecording}
               />
 
-              {/* Dynamic Button - Mic / Send / Wave */}
+              {/* Dynamic Button - Send (with bg) / Wave (no bg) */}
               <button
                 type={showMicButton || isRecording ? 'button' : 'submit'}
                 onClick={showMicButton || isRecording ? handleMicClick : undefined}
                 disabled={isProcessing && !isRecording}
                 className={`
-                  flex-shrink-0 h-10 w-10 rounded-full ml-2
+                  flex-shrink-0 ml-2
                   flex items-center justify-center transition-all duration-200
                   ${isProcessing && !isRecording
-                    ? 'bg-indigo-500/50 cursor-not-allowed'
+                    ? 'h-10 w-10 rounded-full bg-indigo-500/50 cursor-not-allowed'
                     : isRecording
-                      ? 'bg-rose-500 hover:bg-rose-400 active:scale-95 text-white animate-pulse'
+                      ? 'h-10 w-10 rounded-full bg-rose-500 hover:bg-rose-400 active:scale-95 text-white animate-pulse'
                       : inputValue.trim()
-                        ? 'bg-indigo-500 hover:bg-indigo-400 active:scale-95 text-white'
-                        : 'bg-white/10 hover:bg-white/20 active:scale-95 text-white/70 hover:text-white'
+                        ? 'h-10 w-10 rounded-full bg-indigo-500 hover:bg-indigo-400 active:scale-95 text-white'
+                        : 'p-2 hover:opacity-80 active:scale-95'
                   }
                 `}
               >
