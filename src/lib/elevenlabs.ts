@@ -125,13 +125,13 @@ export const elevenlabsService = {
    * Generates speech using a cloned voice
    * Uses Edge Functions for secure API key handling
    * @param text - Text to synthesize
-   * @param voiceId - Voice ID from cloning
+   * @param voiceProfileId - Database voice profile ID (edge function looks up ElevenLabs ID)
    * @param options - TTS options
    * @returns Promise<string> - Base64 encoded audio (MP3)
    */
   async generateSpeech(
     text: string,
-    voiceId: string,
+    voiceProfileId: string,
     options: TTSOptions = {}
   ): Promise<string> {
     if (!text || text.trim() === '') {
@@ -140,7 +140,7 @@ export const elevenlabsService = {
 
     // Use Edge Functions (secure, API key server-side)
     // Default settings optimized for meditative, calm delivery
-    return elevenLabsTTS(voiceId, text, {
+    return elevenLabsTTS(voiceProfileId, text, {
       stability: options.voice_settings?.stability ?? 0.75,        // Higher = calmer
       similarity_boost: options.voice_settings?.similarity_boost ?? 0.7,
       style: options.voice_settings?.style ?? 0.15,                // Low = more soothing

@@ -83,9 +83,12 @@ export interface ElevenLabsCloneResponse {
 /**
  * Generate speech using ElevenLabs via Edge Function
  * API key is stored server-side
+ * @param voiceProfileId - Database voice profile ID (not ElevenLabs voice ID)
+ * @param text - Text to synthesize
+ * @param voiceSettings - Optional voice settings for TTS
  */
 export async function elevenLabsTTS(
-  voiceId: string,
+  voiceProfileId: string,
   text: string,
   voiceSettings?: {
     stability?: number;
@@ -94,12 +97,12 @@ export async function elevenLabsTTS(
     use_speaker_boost?: boolean;
   }
 ): Promise<string> {
-  // Default settings optimized for meditative, calm delivery
-  const response = await callEdgeFunction<ElevenLabsTTSResponse>('elevenlabs-tts', {
-    voiceId,
+  // Call generate-speech edge function with database profile ID
+  // The edge function looks up the ElevenLabs voice ID from the database
+  const response = await callEdgeFunction<{ success: boolean; audioBase64: string }>('generate-speech', {
+    voiceId: voiceProfileId,  // Database profile ID, NOT ElevenLabs ID
     text,
-    model_id: 'eleven_multilingual_v2',
-    voice_settings: voiceSettings || {
+    voiceSettings: voiceSettings || {
       stability: 0.75,           // Higher = calmer, more consistent
       similarity_boost: 0.7,
       style: 0.15,               // Low style = more soothing
@@ -107,7 +110,7 @@ export async function elevenLabsTTS(
     },
   });
 
-  return response.audio;
+  return response.audioBase64;
 }
 
 /**

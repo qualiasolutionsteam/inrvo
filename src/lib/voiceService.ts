@@ -30,12 +30,14 @@ export const voiceService = {
     const cleanText = stripAudioTags(text);
 
     // Only cloned voices with ElevenLabs ID are supported
-    if (!voice.isCloned || !voice.elevenlabsVoiceId) {
+    if (!voice.isCloned || !voice.elevenlabsVoiceId || !voice.id) {
       throw new Error('Please clone a voice to generate meditations. Default voices are no longer available.');
     }
 
     // Use ElevenLabs for cloned voices
-    const base64 = await elevenlabsService.generateSpeech(cleanText, voice.elevenlabsVoiceId);
+    // Pass the database profile ID (voice.id), not the ElevenLabs voice ID
+    // The edge function will look up the ElevenLabs voice ID from the database
+    const base64 = await elevenlabsService.generateSpeech(cleanText, voice.id);
 
     // Decode to AudioBuffer if needed
     if (audioContext) {
