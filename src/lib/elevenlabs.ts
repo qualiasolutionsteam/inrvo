@@ -8,6 +8,7 @@ import {
   elevenLabsDeleteVoice,
   elevenLabsGetVoiceStatus,
 } from './edgeFunctions';
+import { VoiceMetadata } from '../../types';
 
 // Voice status cache to reduce API calls (5-minute TTL)
 const voiceStatusCache = new Map<string, { status: string; timestamp: number }>();
@@ -39,6 +40,7 @@ export interface VoiceCloningOptions {
   name: string;
   description?: string;
   labels?: Record<string, string>;
+  metadata?: VoiceMetadata;
 }
 
 export interface TTSOptions {

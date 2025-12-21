@@ -15,11 +15,23 @@ const getCorsHeaders = (origin: string | null) => ({
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 });
 
+interface VoiceMetadata {
+  language?: string;        // ISO code: 'en', 'es', 'fr', etc.
+  accent?: string;          // 'american', 'british', 'australian', etc.
+  gender?: string;          // 'male', 'female', 'other'
+  ageRange?: string;        // 'young', 'middle-aged', 'mature'
+  hasBackgroundNoise?: boolean;
+  useCase?: string;         // 'meditation', 'narration', 'conversational'
+  descriptive?: string;     // 'calm', 'warm', 'soothing'
+}
+
 interface ProcessVoiceRequest {
   audioBase64: string;
   voiceName: string;
   description?: string;
   userId: string;
+  metadata?: VoiceMetadata;
+  removeBackgroundNoise?: boolean;
 }
 
 interface ProcessVoiceResponse {
@@ -62,7 +74,7 @@ serve(async (req) => {
     }
 
     // Parse request body - use verified user.id instead of userId from body
-    const { audioBase64, voiceName, description }: Omit<ProcessVoiceRequest, 'userId'> = await req.json();
+    const { audioBase64, voiceName, description, metadata, removeBackgroundNoise }: Omit<ProcessVoiceRequest, 'userId'> = await req.json();
     const userId = user.id; // Use verified user ID from JWT
 
     // Validate input
@@ -126,61 +138,51 @@ serve(async (req) => {
       );
     }
 
-    // Create voice with ElevenLabs
+    // Build labels object for ElevenLabs API
+    const labels: Record<string, string> = {
+      use_case: 'meditation',
+      descriptive: 'calm',
+    };
+
+    if (metadata) {
+      if (metadata.language) labels.language = metadata.language;
+      if (metadata.accent) labels.accent = metadata.accent;
+      if (metadata.gender) labels.gender = metadata.gender;
+      if (metadata.ageRange) labels.age = metadata.ageRange;
+      if (metadata.useCase) labels.use_case = metadata.useCase;
+      if (metadata.descriptive) labels.descriptive = metadata.descriptive;
+    }
+
+    // Create voice with ElevenLabs IVC (Instant Voice Cloning) API
     const formData = new FormData();
     formData.append('name', voiceName);
-    formData.append('description', description || `Voice clone created on ${new Date().toISOString()}`);
+    formData.append('description', description || `Meditation voice clone created on ${new Date().toISOString()}`);
     formData.append('files', audioBlob, 'voice_sample.webm');
+    formData.append('labels', JSON.stringify(labels));
 
-    // Step 1: Add voice to collection
-    const voiceResponse = await fetch('https://api.elevenlabs.io/v1/voices', {
+    // Apply background noise removal if requested
+    if (removeBackgroundNoise || metadata?.hasBackgroundNoise) {
+      formData.append('remove_background_noise', 'true');
+    }
+
+    // Use the IVC (Instant Voice Cloning) endpoint
+    const voiceResponse = await fetch('https://api.elevenlabs.io/v1/voices/add', {
       method: 'POST',
       headers: {
         'xi-api-key': elevenlabsApiKey,
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        name: voiceName,
-        description: description,
-      }),
+      body: formData,
     });
 
     if (!voiceResponse.ok) {
       const error = await voiceResponse.json();
-      throw new Error(`ElevenLabs API error: ${error.detail || error.message}`);
+      throw new Error(`ElevenLabs API error: ${error.detail?.message || error.detail || error.message || 'Voice cloning failed'}`);
     }
 
     const voiceData = await voiceResponse.json();
     const elevenlabsVoiceId = voiceData.voice_id;
 
-    // Step 2: Upload audio sample
-    const uploadFormData = new FormData();
-    uploadFormData.append('name', `${elevenlabsVoiceId}_sample`);
-    uploadFormData.append('files', audioBlob, 'voice_sample.webm');
-
-    const uploadResponse = await fetch(
-      `https://api.elevenlabs.io/v1/voices/${elevenlabsVoiceId}/samples`,
-      {
-        method: 'POST',
-        headers: {
-          'xi-api-key': elevenlabsApiKey,
-        },
-        body: uploadFormData,
-      }
-    );
-
-    if (!uploadResponse.ok) {
-      // Clean up the voice if upload fails
-      await fetch(`https://api.elevenlabs.io/v1/voices/${elevenlabsVoiceId}`, {
-        method: 'DELETE',
-        headers: { 'xi-api-key': elevenlabsApiKey },
-      });
-
-      const error = await uploadResponse.json();
-      throw new Error(`Upload failed: ${error.detail || error.message}`);
-    }
-
-    // Create voice profile in database
+    // Create voice profile in database with metadata
     const { data: voiceProfile, error: profileError } = await supabase
       .from('voice_profiles')
       .insert({
@@ -193,6 +195,23 @@ serve(async (req) => {
         sample_duration: duration,
         status: 'READY',
         credits_used: 5000,
+        metadata: metadata ? {
+          language: metadata.language || 'en',
+          accent: metadata.accent || 'american',
+          gender: metadata.gender || 'female',
+          ageRange: metadata.ageRange || 'middle-aged',
+          hasBackgroundNoise: metadata.hasBackgroundNoise || false,
+          useCase: metadata.useCase || 'meditation',
+          descriptive: metadata.descriptive || 'calm',
+        } : {
+          language: 'en',
+          accent: 'american',
+          gender: 'female',
+          ageRange: 'middle-aged',
+          hasBackgroundNoise: false,
+          useCase: 'meditation',
+          descriptive: 'calm',
+        },
       })
       .select()
       .single();

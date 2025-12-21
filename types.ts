@@ -99,3 +99,101 @@ export interface CreditInfo {
   cloneCost: number;
   reason?: string;
 }
+
+// Voice cloning metadata for improved accuracy
+export interface VoiceMetadata {
+  language: string;           // ISO code: 'en', 'es', 'fr', etc.
+  accent: string;             // 'american', 'british', 'australian', etc.
+  gender: 'male' | 'female' | 'other';
+  ageRange: 'young' | 'middle-aged' | 'mature';
+  hasBackgroundNoise: boolean;
+  useCase?: string;           // 'meditation', 'narration', 'conversational'
+  descriptive?: string;       // 'calm', 'warm', 'soothing'
+}
+
+// Supported languages for voice cloning
+export const VOICE_LANGUAGES = [
+  { code: 'en', label: 'English' },
+  { code: 'es', label: 'Spanish' },
+  { code: 'fr', label: 'French' },
+  { code: 'de', label: 'German' },
+  { code: 'it', label: 'Italian' },
+  { code: 'pt', label: 'Portuguese' },
+  { code: 'pl', label: 'Polish' },
+  { code: 'nl', label: 'Dutch' },
+  { code: 'ja', label: 'Japanese' },
+  { code: 'zh', label: 'Chinese' },
+  { code: 'ko', label: 'Korean' },
+  { code: 'hi', label: 'Hindi' },
+  { code: 'ar', label: 'Arabic' },
+  { code: 'tr', label: 'Turkish' },
+  { code: 'ru', label: 'Russian' },
+  { code: 'sv', label: 'Swedish' },
+  { code: 'id', label: 'Indonesian' },
+  { code: 'fil', label: 'Filipino' },
+  { code: 'th', label: 'Thai' },
+  { code: 'vi', label: 'Vietnamese' },
+] as const;
+
+// Supported accents grouped by language
+export const VOICE_ACCENTS: Record<string, { value: string; label: string }[]> = {
+  en: [
+    { value: 'american', label: 'American' },
+    { value: 'british', label: 'British' },
+    { value: 'australian', label: 'Australian' },
+    { value: 'indian', label: 'Indian' },
+    { value: 'canadian', label: 'Canadian' },
+    { value: 'irish', label: 'Irish' },
+    { value: 'scottish', label: 'Scottish' },
+    { value: 'south-african', label: 'South African' },
+  ],
+  es: [
+    { value: 'castilian', label: 'Castilian (Spain)' },
+    { value: 'mexican', label: 'Mexican' },
+    { value: 'argentinian', label: 'Argentinian' },
+    { value: 'colombian', label: 'Colombian' },
+  ],
+  fr: [
+    { value: 'parisian', label: 'Parisian (France)' },
+    { value: 'canadian-french', label: 'Canadian French' },
+    { value: 'belgian', label: 'Belgian' },
+  ],
+  pt: [
+    { value: 'brazilian', label: 'Brazilian' },
+    { value: 'european', label: 'European (Portugal)' },
+  ],
+  de: [
+    { value: 'german', label: 'German (Germany)' },
+    { value: 'austrian', label: 'Austrian' },
+    { value: 'swiss', label: 'Swiss' },
+  ],
+  ar: [
+    { value: 'gulf', label: 'Gulf Arabic' },
+    { value: 'egyptian', label: 'Egyptian' },
+    { value: 'levantine', label: 'Levantine' },
+  ],
+  zh: [
+    { value: 'mandarin', label: 'Mandarin' },
+    { value: 'cantonese', label: 'Cantonese' },
+  ],
+  // Default for languages without specific accents
+  default: [
+    { value: 'native', label: 'Native' },
+  ],
+};
+
+// Get accents for a language code
+export function getAccentsForLanguage(langCode: string): { value: string; label: string }[] {
+  return VOICE_ACCENTS[langCode] || VOICE_ACCENTS.default;
+}
+
+// Default voice metadata
+export const DEFAULT_VOICE_METADATA: VoiceMetadata = {
+  language: 'en',
+  accent: 'american',
+  gender: 'female',
+  ageRange: 'middle-aged',
+  hasBackgroundNoise: false,
+  useCase: 'meditation',
+  descriptive: 'calm',
+};

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { VoiceProfile, CloningStatus, CreditInfo } from '../../types';
+import { VoiceProfile, CloningStatus, CreditInfo, VoiceMetadata, DEFAULT_VOICE_METADATA } from '../../types';
 import { creditService } from '../lib/credits';
 import { elevenlabsService, base64ToBlob } from '../lib/elevenlabs';
 import {
@@ -40,8 +40,8 @@ interface UseVoiceCloningReturn {
 
   // Actions
   fetchCreditInfo: () => Promise<void>;
-  handleCloneRecordingComplete: (blob: Blob, name: string) => Promise<void>;
-  autoSaveVoiceRecording: (audioData: string) => Promise<void>;
+  handleCloneRecordingComplete: (blob: Blob, name: string, metadata?: VoiceMetadata) => Promise<void>;
+  autoSaveVoiceRecording: (audioData: string, metadata?: VoiceMetadata) => Promise<void>;
   loadUserVoices: () => Promise<void>;
   resetCloningState: () => void;
 }
@@ -134,7 +134,7 @@ export function useVoiceCloning(
   }, [userId, onCreditInfoUpdated]);
 
   // Handle recording complete from SimpleVoiceClone
-  const handleCloneRecordingComplete = useCallback(async (blob: Blob, name: string) => {
+  const handleCloneRecordingComplete = useCallback(async (blob: Blob, name: string, metadata?: VoiceMetadata) => {
     if (!userId) {
       setCloningStatus({ state: 'error', message: 'Please sign in to clone your voice', canRetry: false });
       return;
@@ -144,6 +144,7 @@ export function useVoiceCloning(
 
     let elevenlabsVoiceId: string | null = null;
     let creditsDeducted = false;
+    const voiceMetadata = metadata || DEFAULT_VOICE_METADATA;
 
     try {
       // Check credits
@@ -155,11 +156,12 @@ export function useVoiceCloning(
 
       setCloningStatus({ state: 'uploading_to_elevenlabs' });
 
-      // Clone with ElevenLabs
+      // Clone with ElevenLabs - now includes metadata
       try {
         elevenlabsVoiceId = await elevenlabsService.cloneVoice(blob, {
           name,
-          description: 'Voice clone created with INrVO',
+          description: 'Meditation voice clone created with INrVO',
+          metadata: voiceMetadata,
         });
       } catch (cloneError: any) {
         console.error('ElevenLabs cloning failed:', cloneError);
