@@ -473,18 +473,6 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
                   }`} />
                 </button>
               </div>
-
-              {/* Continue Button */}
-              <button
-                onClick={handleProceedToRecording}
-                disabled={!creditInfo.canClone || !isConfigured}
-                className="w-full px-4 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                Continue to Recording
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
             </div>
           )}
 
@@ -601,46 +589,6 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
                   <span className="text-indigo-400 text-sm font-medium">{getStatusMessage()}</span>
                 </div>
               )}
-
-              {/* Action buttons */}
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={handleBackToMetadata}
-                  disabled={isProcessing}
-                  className="flex-1 px-4 py-3 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 font-medium transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  Back
-                </button>
-                <button
-                  onClick={handleCloneVoice}
-                  disabled={!canSubmit || isProcessing || !creditInfo.canClone || !isConfigured}
-                  className="flex-1 px-4 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isProcessing ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
-                      Processing...
-                    </>
-                  ) : (
-                    'Clone Voice'
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Success state - close button */}
-          {isSuccess && (
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={onClose}
-                className="w-full px-4 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition-all"
-              >
-                Done
-              </button>
             </div>
           )}
 
@@ -649,6 +597,63 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
             <p className="text-xs text-rose-400 text-center">
               {creditInfo.reason || 'Cannot clone voice at this time'}
             </p>
+          )}
+        </div>
+
+        {/* Sticky footer with action buttons */}
+        <div className="flex-shrink-0 p-6 pt-4 border-t border-white/10 bg-slate-900/50">
+          {/* STEP 1: Metadata - Continue button */}
+          {currentStep === 'metadata' && !isSuccess && (
+            <button
+              onClick={handleProceedToRecording}
+              disabled={!creditInfo.canClone || !isConfigured}
+              className="w-full px-4 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              Continue to Recording
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
+
+          {/* STEP 2: Recording - Back and Clone buttons */}
+          {currentStep === 'recording' && !isSuccess && (
+            <div className="flex gap-3">
+              <button
+                onClick={handleBackToMetadata}
+                disabled={isProcessing}
+                className="flex-1 px-4 py-3 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 font-medium transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Back
+              </button>
+              <button
+                onClick={handleCloneVoice}
+                disabled={!canSubmit || isProcessing || !creditInfo.canClone || !isConfigured}
+                className="flex-1 px-4 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isProcessing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
+                    Processing...
+                  </>
+                ) : (
+                  'Clone Voice'
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Success state - Done button */}
+          {isSuccess && (
+            <button
+              onClick={onClose}
+              className="w-full px-4 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition-all"
+            >
+              Done
+            </button>
           )}
         </div>
       </GlassCard>

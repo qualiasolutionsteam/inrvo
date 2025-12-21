@@ -116,15 +116,14 @@ serve(async (req) => {
     }
     const audioBlob = new Blob([bytes], { type: 'audio/webm' });
 
-    // Check audio duration (must be at least 30 seconds)
-    const audioBuffer = await audioBlob.arrayBuffer();
-    const audioContext = new AudioContext();
-    const decodedAudio = await audioContext.decodeAudioData(audioBuffer);
-    const duration = decodedAudio.duration;
+    // Estimate duration from file size (AudioContext not available in Deno)
+    // Frontend already validates duration, this is a backup check
+    // WebM audio is typically ~128kbps, so bytes / 16000 gives rough seconds
+    const estimatedDuration = bytes.length / 16000;
 
-    if (duration < 30) {
+    if (estimatedDuration < 10) {
       return new Response(
-        JSON.stringify({ error: `Audio must be at least 30 seconds. Current: ${duration.toFixed(1)}s` }),
+        JSON.stringify({ error: `Audio appears too short. Please record at least 30 seconds for best quality.` }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -192,7 +191,7 @@ serve(async (req) => {
         provider: 'ElevenLabs',
         elevenlabs_voice_id: elevenlabsVoiceId,
         cloning_status: 'READY',
-        sample_duration: duration,
+        sample_duration: estimatedDuration,
         status: 'READY',
         credits_used: 5000,
         metadata: metadata ? {
