@@ -60,6 +60,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [currentView, setCurrentView] = useState<View>(View.HOME);
   const [tagline] = useState(() => TAGLINES[Math.floor(Math.random() * TAGLINES.length)]);
+  const [chatStarted, setChatStarted] = useState(false); // Track if user has started chatting
   const [script, setScript] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExtending, setIsExtending] = useState(false);
@@ -1458,11 +1459,11 @@ const App: React.FC = () => {
     <>
       {isLoading && <LoadingScreen onComplete={() => setIsLoading(false)} />}
 
-      <div className={`relative h-[100dvh] w-full flex flex-col transition-opacity duration-700 ${isLoading ? 'opacity-0' : 'opacity-100'} ${isInlineMode ? 'overflow-y-auto' : 'overflow-hidden'}`}>
+      <div className={`relative h-[100dvh] w-full flex flex-col transition-all duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'} ${isInlineMode ? 'overflow-y-auto' : 'overflow-hidden'} ${showBurgerMenu ? 'ml-[280px] md:ml-[320px]' : 'ml-0'}`}>
         <Starfield />
 
         {/* Simple Navigation - Mobile Optimized */}
-        <nav className="fixed top-0 left-0 right-0 z-50 p-3 md:p-6 flex justify-between items-center bg-gradient-to-b from-[#020617]/80 to-transparent">
+        <nav className={`fixed top-0 right-0 z-50 p-3 md:p-6 flex justify-between items-center bg-gradient-to-b from-[#020617]/80 to-transparent transition-all duration-300 ${showBurgerMenu ? 'left-[280px] md:left-[320px]' : 'left-0'}`}>
           <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
             {/* Burger Menu Button */}
             <button
@@ -1558,12 +1559,16 @@ const App: React.FC = () => {
             <div className="w-full flex flex-col h-full animate-in fade-in duration-1000">
               {/* Conditional: Show tagline OR script reader */}
               {!isInlineMode ? (
-                // Original tagline (centered)
-                <div className="flex-1 flex flex-col items-center justify-center px-4 pb-[calc(200px+env(safe-area-inset-bottom,0px))] md:pb-[calc(240px+env(safe-area-inset-bottom,0px))]">
-                  <p className="text-2xl md:text-4xl font-light tracking-wide text-white/70 text-center">
-                    {tagline.main} <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-indigo-500 font-semibold">{tagline.highlight}</span>
-                  </p>
-                  <p className="text-base md:text-2xl text-slate-500 mt-1 md:mt-2 hidden sm:block text-center">{tagline.sub}</p>
+                // Tagline at top - hidden when chat has started
+                <div className="flex-1 flex flex-col px-4 pb-[calc(200px+env(safe-area-inset-bottom,0px))] md:pb-[calc(240px+env(safe-area-inset-bottom,0px))]">
+                  {!chatStarted && (
+                    <div className="pt-8 md:pt-16 text-center animate-in fade-in slide-in-from-top-4 duration-500">
+                      <p className="text-2xl md:text-4xl font-light tracking-wide text-white/70">
+                        {tagline.main} <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-indigo-500 font-semibold">{tagline.highlight}</span>
+                      </p>
+                      <p className="text-base md:text-2xl text-slate-500 mt-1 md:mt-2 hidden sm:block">{tagline.sub}</p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 // Script Reader (takes full space above player)
@@ -1575,7 +1580,7 @@ const App: React.FC = () => {
               )}
 
               {/* Fixed bottom: Prompt box OR Inline Player */}
-              <div className="fixed bottom-0 left-0 right-0 z-40 px-2 md:px-6 pb-[max(1rem,env(safe-area-inset-bottom))] md:pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+              <div className={`fixed bottom-0 right-0 z-40 px-2 md:px-6 pb-[max(1rem,env(safe-area-inset-bottom))] md:pb-[max(1.5rem,env(safe-area-inset-bottom))] transition-all duration-300 ${showBurgerMenu ? 'left-[280px] md:left-[320px]' : 'left-0'}`}>
                 <div className="w-full max-w-4xl mx-auto">
                   {micError && !isInlineMode && (
                     <div className="mb-4 text-center">
@@ -1616,6 +1621,7 @@ const App: React.FC = () => {
                           setShowVoiceManager(true);
                         }
                       }}
+                      onChatStarted={() => setChatStarted(true)}
                       onRequestVoiceSelection={() => setShowVoiceManager(true)}
                       onOpenTemplates={() => setShowTemplatesModal(true)}
                       onOpenMusic={() => setShowMusicModal(true)}
@@ -2264,16 +2270,8 @@ const App: React.FC = () => {
           />
         </Suspense>
 
-        {/* Burger Menu Drawer */}
-        {showBurgerMenu && (
-          <>
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
-              onClick={() => setShowBurgerMenu(false)}
-            />
-            {/* Drawer */}
-            <div className="fixed top-0 left-0 bottom-0 z-[95] w-[280px] md:w-[320px] bg-[#0a0f1a]/95 backdrop-blur-xl border-r border-white/10 animate-in slide-in-from-left duration-300 flex flex-col">
+        {/* Burger Menu Drawer - Slides in and pushes content */}
+        <div className={`fixed top-0 left-0 bottom-0 z-[95] w-[280px] md:w-[320px] bg-[#0a0f1a] border-r border-white/10 flex flex-col transition-transform duration-300 ${showBurgerMenu ? 'translate-x-0' : '-translate-x-full'}`}>
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-white/5">
                 <div className="flex items-center gap-3">
@@ -2471,8 +2469,6 @@ const App: React.FC = () => {
                 </p>
               </div>
             </div>
-          </>
-        )}
 
         {/* MODAL: How It Works */}
         {showHowItWorks && (
@@ -2571,119 +2567,19 @@ const App: React.FC = () => {
 
               {user ? (
                 <div className="w-full">
-                  {/* Tabs */}
-                  <div className="flex justify-center gap-2 mb-8">
-                    <button
-                      onClick={() => setLibraryTab('history')}
-                      className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all ${
-                        libraryTab === 'history'
-                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                          : 'bg-white/5 text-slate-400 hover:bg-white/10 border border-transparent'
-                      }`}
-                    >
-                      History
-                    </button>
-                    <button
-                      onClick={() => setLibraryTab('saved')}
-                      className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all ${
-                        libraryTab === 'saved'
-                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                          : 'bg-white/5 text-slate-400 hover:bg-white/10 border border-transparent'
-                      }`}
-                    >
-                      Saved
-                    </button>
-                  </div>
-
-                  {/* History Tab Content */}
-                  {libraryTab === 'history' && (
-                    <div className="space-y-4">
-                      {isLoadingHistory ? (
-                        <div className="flex justify-center py-12">
-                          <div className="animate-spin rounded-full h-8 w-8 border-2 border-emerald-500/30 border-t-emerald-400"></div>
-                        </div>
-                      ) : meditationHistory.length === 0 ? (
-                        <GlassCard className="!p-8 !rounded-2xl text-center">
-                          <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          </div>
-                          <h3 className="text-lg font-bold text-white mb-2">No history yet</h3>
-                          <p className="text-slate-400 text-sm mb-4">Your meditation history will appear here</p>
-                          <button
-                            onClick={() => {
-                              setShowLibrary(false);
-                              setCurrentView(View.HOME);
-                            }}
-                            className="px-5 py-2.5 rounded-full bg-gradient-to-r from-emerald-600 to-cyan-600 text-white font-medium text-sm hover:scale-105 active:scale-95 transition-all"
-                          >
-                            Create Meditation
-                          </button>
-                        </GlassCard>
-                      ) : (
-                        <div className="grid gap-3">
-                          {meditationHistory.map((item) => (
-                            <GlassCard key={item.id} className="!p-4 !rounded-xl hover:bg-white/10 transition-all group">
-                              <div className="flex items-start gap-4">
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-white font-medium text-sm line-clamp-2 mb-1">{item.prompt}</p>
-                                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                                    <span>{new Date(item.created_at).toLocaleDateString()}</span>
-                                    {item.voice_name && (
-                                      <>
-                                        <span className="text-slate-700">•</span>
-                                        <span>{item.voice_name}</span>
-                                      </>
-                                    )}
-                                    {item.duration_seconds && (
-                                      <>
-                                        <span className="text-slate-700">•</span>
-                                        <span>{Math.floor(item.duration_seconds / 60)}:{(item.duration_seconds % 60).toString().padStart(2, '0')}</span>
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button
-                                    onClick={() => handleReplayHistory(item)}
-                                    className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-all"
-                                    title="Use this prompt"
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                    </svg>
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteHistory(item.id)}
-                                    className="p-2 rounded-lg bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 transition-all"
-                                    title="Delete"
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                  </button>
-                                </div>
-                              </div>
-                            </GlassCard>
-                          ))}
-                        </div>
-                      )}
+                  {/* Saved Meditations Content */}
+                  <GlassCard className="!p-8 !rounded-2xl text-center">
+                    <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                      </svg>
                     </div>
-                  )}
-
-                  {/* Saved Tab Content (placeholder for future) */}
-                  {libraryTab === 'saved' && (
-                    <GlassCard className="!p-8 !rounded-2xl text-center">
-                      <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
-                        <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                        </svg>
-                      </div>
-                      <h3 className="text-lg font-bold text-white mb-2">Coming Soon</h3>
-                      <p className="text-slate-400 text-sm">Save your favorite meditations for quick access</p>
-                    </GlassCard>
-                  )}
+                    <h3 className="text-lg font-bold text-white mb-2">Coming Soon</h3>
+                    <p className="text-slate-400 text-sm mb-4">Save your favorite meditations for quick access</p>
+                    <p className="text-slate-500 text-xs">
+                      View your meditation history in the menu →
+                    </p>
+                  </GlassCard>
                 </div>
               ) : (
                 <GlassCard className="!p-8 !rounded-2xl text-center max-w-md">

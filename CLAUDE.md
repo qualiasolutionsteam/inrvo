@@ -43,17 +43,18 @@ User prompt → Gemini 2.0 Flash (script) → ElevenLabs TTS → AudioBuffer →
 
 | File | Purpose |
 |------|---------|
-| `App.tsx` | Main component (~1800 lines, manages all views and state) |
+| `App.tsx` | Main component (~3000 lines, manages all views and state) |
 | `geminiService.ts` | Google Generative AI integration for script generation |
 | `src/lib/voiceService.ts` | Voice generation routing (cloned voices only) |
 | `src/lib/elevenlabs.ts` | ElevenLabs TTS & voice cloning API |
 | `src/lib/edgeFunctions.ts` | Edge Function client wrappers |
 | `src/lib/textSync.ts` | Audio-text synchronization logic |
 | `src/lib/credits.ts` | Credit management & usage tracking |
-| `src/contexts/ModalContext.tsx` | Centralized state for 14 modal types |
+| `src/contexts/ModalContext.tsx` | Centralized state for modal types |
 | `components/ScriptReader.tsx` | Real-time word highlighting during playback |
 | `components/InlinePlayer.tsx` | Compact audio player with seek functionality |
 | `components/SimpleVoiceClone.tsx` | Voice recording and cloning UI |
+| `components/AgentChat.tsx` | Conversational AI chat interface |
 | `lib/supabase.ts` | Supabase client and database operations |
 
 ### Edge Functions (Supabase)
@@ -63,11 +64,10 @@ All API keys are server-side. Frontend sends JWT for authentication.
 | Function | Purpose |
 |----------|---------|
 | `elevenlabs-voice-ops/` | Voice operations (delete, status check) |
-| `elevenlabs-clone/` | Voice cloning via ElevenLabs |
-| `elevenlabs-tts/` | Text-to-speech generation |
-| `gemini-script/` | Script generation and extension |
-| `gemini-tts/` | Gemini TTS (unused - only cloned voices) |
-| `generate-speech/` | Legacy TTS with credit deduction |
+| `gemini-script/` | Script generation and extension via Gemini |
+| `generate-speech/` | TTS generation with credit deduction |
+| `process-voice/` | Voice cloning and processing |
+| `health/` | Health check endpoint |
 
 ### Credit System
 

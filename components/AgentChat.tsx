@@ -194,6 +194,7 @@ interface AgentChatProps {
   onOpenTemplates?: () => void;
   onOpenMusic?: () => void;
   onOpenTags?: () => void;
+  onChatStarted?: () => void; // Called when user sends first message
 
   // State from parent
   selectedVoice?: VoiceProfile | null;
@@ -209,6 +210,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
   onOpenTemplates,
   onOpenMusic,
   onOpenTags,
+  onChatStarted,
   selectedVoice,
   isGenerating: externalIsGenerating,
   className = '',
@@ -238,6 +240,13 @@ export const AgentChat: React.FC<AgentChatProps> = ({
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Notify parent when chat has started (first message sent)
+  useEffect(() => {
+    if (messages.length > 0 && onChatStarted) {
+      onChatStarted();
+    }
+  }, [messages.length > 0, onChatStarted]);
 
   // Notify parent when meditation is ready
   useEffect(() => {
