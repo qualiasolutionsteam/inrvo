@@ -1257,7 +1257,7 @@ const App: React.FC = () => {
 
     try {
       // Initialize audio context
-      if (!audioContextRef.current) {
+      if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       }
 
@@ -1398,7 +1398,7 @@ const App: React.FC = () => {
     setIsGenerating(true);
     setMicError(null);
     try {
-      if (!audioContextRef.current) {
+      if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       }
 
@@ -1638,8 +1638,8 @@ const App: React.FC = () => {
                         setMicError(null);
 
                         try {
-                          // Initialize audio context
-                          if (!audioContextRef.current) {
+                          // Initialize audio context (check state to handle closed contexts)
+                          if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
                             audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
                           }
 

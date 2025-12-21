@@ -255,19 +255,19 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
 
   return (
     <div className="fixed inset-0 z-[80] bg-[#020617]/95 backdrop-blur-3xl flex items-center justify-center p-4">
-      <GlassCard className="w-full max-w-lg p-6 relative">
+      <GlassCard className="w-full max-w-lg relative max-h-[90vh] flex flex-col">
         {/* Close button */}
         <button
           onClick={onClose}
           disabled={isProcessing}
-          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-400 hover:text-white transition-all disabled:opacity-50"
+          className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-400 hover:text-white transition-all disabled:opacity-50"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
 
-        <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Header */}
           <div className="text-center space-y-2">
             <h2 className="text-2xl font-bold text-white">Clone Your Voice</h2>

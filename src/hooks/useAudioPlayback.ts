@@ -121,8 +121,8 @@ export function useAudioPlayback(
   // Load audio and start playback
   const loadAndPlay = useCallback((audioBuffer: AudioBuffer, script: string) => {
     try {
-      // Initialize audio context if needed
-      if (!audioContextRef.current) {
+      // Initialize audio context if needed (check state to handle closed contexts)
+      if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       }
 

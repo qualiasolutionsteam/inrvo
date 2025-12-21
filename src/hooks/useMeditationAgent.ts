@@ -299,8 +299,8 @@ export function useMeditationAgent(): UseMeditationAgentReturn {
     setError(null);
 
     try {
-      // Get or create audio context
-      if (!audioContextRef.current) {
+      // Get or create audio context (check state to handle closed contexts)
+      if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
         audioContextRef.current = new AudioContext();
       }
 
