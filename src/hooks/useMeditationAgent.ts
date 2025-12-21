@@ -63,16 +63,16 @@ export interface UseMeditationAgentReturn {
   quickPrompts: typeof agentTools.QUICK_PROMPTS;
 }
 
-// Quick prompts for UI
+// Quick prompts for UI - using icon identifiers for SVG rendering
 const QUICK_PROMPTS = [
-  { label: "I'm feeling anxious", icon: "😰" },
-  { label: "I can't sleep", icon: "🌙" },
-  { label: "I need to calm down", icon: "🧘" },
-  { label: "I want to feel grateful", icon: "🙏" },
-  { label: "I'm stressed at work", icon: "💼" },
-  { label: "Help me focus", icon: "🎯" },
-  { label: "I need self-love", icon: "💖" },
-  { label: "I want to manifest", icon: "✨" },
+  { label: "I'm feeling anxious", icon: "waves" },
+  { label: "I can't sleep", icon: "moon" },
+  { label: "I need to calm down", icon: "lotus" },
+  { label: "I want to feel grateful", icon: "heart" },
+  { label: "I'm stressed at work", icon: "cloud" },
+  { label: "Help me focus", icon: "target" },
+  { label: "I need self-love", icon: "sparkle" },
+  { label: "I want to manifest", icon: "star" },
 ];
 
 // ============================================================================
