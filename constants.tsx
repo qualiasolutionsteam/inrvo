@@ -395,12 +395,12 @@ export const ICONS = {
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`${className} icon-glow`}>
       <defs>
         <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#818cf8" />
-          <stop offset="50%" stopColor="#c084fc" />
-          <stop offset="100%" stopColor="#818cf8" />
+          <stop offset="0%" stopColor="#38bdf8" />
+          <stop offset="50%" stopColor="#3b82f6" />
+          <stop offset="100%" stopColor="#38bdf8" />
         </linearGradient>
       </defs>
-      <path fill="url(#waveGrad)" d="M3 12a1 1 0 011-1h.5a1 1 0 011 1v0a1 1 0 01-1 1H4a1 1 0 01-1-1v0zM6.5 9a1 1 0 011-1H8a1 1 0 011 1v6a1 1 0 01-1 1h-.5a1 1 0 01-1-1V9zM11 5a1 1 0 011-1h.5a1 1 0 011 1v14a1 1 0 01-1 1H12a1 1 0 01-1-1V5zM15.5 7a1 1 0 011-1h.5a1 1 0 011 1v10a1 1 0 01-1 1h-.5a1 1 0 01-1-1V7zM20 10a1 1 0 011-1h.5a1 1 0 011 1v4a1 1 0 01-1 1H21a1 1 0 01-1-1v-4z" />
+      <path fill="url(#waveGrad)" d="M5 9a1.5 1.5 0 011.5-1.5h1A1.5 1.5 0 019 9v6a1.5 1.5 0 01-1.5 1.5h-1A1.5 1.5 0 015 15V9zM10.5 4a1.5 1.5 0 011.5-1.5h1A1.5 1.5 0 0114.5 4v16a1.5 1.5 0 01-1.5 1.5h-1a1.5 1.5 0 01-1.5-1.5V4zM16 8a1.5 1.5 0 011.5-1.5h1A1.5 1.5 0 0120 8v8a1.5 1.5 0 01-1.5 1.5h-1A1.5 1.5 0 0116 16V8z" />
     </svg>
   ),
 
