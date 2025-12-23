@@ -124,7 +124,7 @@ function isOriginAllowed(origin: string): boolean {
 export function getCorsHeaders(origin: string | null): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': origin && isOriginAllowed(origin) ? origin : ALLOWED_ORIGINS[0],
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, accept-encoding',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, accept-encoding, x-request-id',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
   };
 }
