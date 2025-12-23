@@ -243,7 +243,7 @@ const MeditationPanel = memo<MeditationPanelProps>(({
       <div className="h-full flex flex-col">
 
         {/* Header - frosted glass effect */}
-        <div className="flex-shrink-0 relative z-10 flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/50 backdrop-blur-md">
+        <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/50 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center">
               <SparkleIcon className="w-4 h-4 text-white" />
@@ -254,9 +254,10 @@ const MeditationPanel = memo<MeditationPanelProps>(({
             </div>
           </div>
           <button
-            onClick={onClose}
-            className="relative z-20 w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-all active:scale-95"
+            onClick={(e) => { e.stopPropagation(); onClose(); }}
+            className="z-[100] w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-all active:scale-95 cursor-pointer"
             aria-label="Close"
+            type="button"
           >
             <CloseIcon className="w-5 h-5" />
           </button>
@@ -653,7 +654,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
 
       {/* Input Area - Fixed at bottom, hidden when meditation panel is open */}
       {!showMeditationPanel && (
-        <div className={`flex-shrink-0 px-4 pb-6 ${hasMessages ? 'pt-2' : 'pt-[30vh] md:pt-[25vh]'}`}>
+        <div className={`flex-shrink-0 px-4 pb-6 ${hasMessages ? 'pt-2' : 'pt-[65vh] md:pt-[60vh]'}`}>
         <div className="max-w-3xl mx-auto">
           <form onSubmit={handleSubmit}>
             <div className={`relative flex items-center bg-white/[0.06] border
