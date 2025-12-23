@@ -630,23 +630,21 @@ export const AgentChat: React.FC<AgentChatProps> = ({
   }, []);
 
   return (
-    <div className={`flex flex-col h-full ${className}`}>
-      {/* Messages Area - hidden when meditation panel is open */}
-      {!showMeditationPanel && (
+    <div className={`flex flex-col ${hasMessages ? 'h-full' : ''} ${className}`}>
+      {/* Messages Area - only shown when there are messages and meditation panel is closed */}
+      {!showMeditationPanel && hasMessages && (
         <div className="flex-1 overflow-y-auto px-4 md:px-6 py-6">
           <div className="max-w-xl mx-auto">
             {/* Message List */}
-            {hasMessages && (
-              <div className="space-y-1">
-                {messages.map((message, index) => (
-                  <MessageBubble
-                    key={message.id}
-                    message={message}
-                    isLast={index === messages.length - 1 && !showMeditationPanel}
-                  />
-                ))}
-              </div>
-            )}
+            <div className="space-y-1">
+              {messages.map((message, index) => (
+                <MessageBubble
+                  key={message.id}
+                  message={message}
+                  isLast={index === messages.length - 1 && !showMeditationPanel}
+                />
+              ))}
+            </div>
 
             <div ref={messagesEndRef} />
           </div>
