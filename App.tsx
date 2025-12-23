@@ -3,6 +3,8 @@ import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspens
 import { View, VoiceProfile, ScriptTimingMap, CloningStatus, CreditInfo, VoiceMetadata } from './types';
 import { TEMPLATE_CATEGORIES, VOICE_PROFILES, ICONS, BACKGROUND_TRACKS, BackgroundTrack, AUDIO_TAG_CATEGORIES } from './constants';
 import { useModals } from './src/contexts/ModalContext';
+import { useAudio } from './src/contexts/AudioContext';
+import { useVoice } from './src/contexts/VoiceContext';
 import GlassCard from './components/GlassCard';
 import Starfield from './components/Starfield';
 import Background from './components/Background';
@@ -14,9 +16,10 @@ const Visualizer = lazy(() => import('./components/Visualizer'));
 const AuthModal = lazy(() => import('./components/AuthModal'));
 const VoiceManager = lazy(() => import('./components/VoiceManager'));
 const SimpleVoiceClone = lazy(() => import('./components/SimpleVoiceClone').then(m => ({ default: m.SimpleVoiceClone })));
+const ScriptReader = lazy(() => import('./components/ScriptReader'));
 import InlinePlayer from './components/InlinePlayer';
-import ScriptReader from './components/ScriptReader';
 import { AgentChat } from './components/AgentChat';
+import OfflineIndicator from './components/OfflineIndicator';
 import { buildTimingMap, getCurrentWordIndex } from './src/lib/textSync';
 import { geminiService, decodeAudioBuffer, blobToBase64 } from './geminiService';
 import { voiceService } from './src/lib/voiceService';
@@ -239,8 +242,8 @@ const App: React.FC = () => {
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        loadUserVoices();
-        loadAudioTagPrefs();
+        // Run initial data fetches in parallel for faster startup
+        Promise.all([loadUserVoices(), loadAudioTagPrefs()]).catch(console.error);
       }
     });
 
@@ -249,16 +252,16 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // Fetch meditation history when library opens
+  // Fetch meditation history when library or burger menu opens
   useEffect(() => {
-    if (showLibrary && user) {
+    if ((showLibrary || showBurgerMenu) && user) {
       setIsLoadingHistory(true);
       getMeditationHistory(50)
         .then(history => setMeditationHistory(history))
         .catch(err => console.error('Failed to load history:', err))
         .finally(() => setIsLoadingHistory(false));
     }
-  }, [showLibrary, user]);
+  }, [showLibrary, showBurgerMenu, user]);
 
   // Cleanup background music on unmount
   useEffect(() => {
@@ -1531,6 +1534,7 @@ const App: React.FC = () => {
 
   return (
     <>
+      <OfflineIndicator />
       {isLoading && <LoadingScreen onComplete={() => setIsLoading(false)} />}
 
       <div className={`relative h-[100dvh] w-full flex flex-col transition-all duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'} ${isInlineMode ? 'overflow-y-auto' : 'overflow-hidden'}`}>
@@ -1632,11 +1636,13 @@ const App: React.FC = () => {
                 </div>
               ) : (
                 // Script Reader (takes full space above player)
-                <ScriptReader
-                  script={enhancedScript}
-                  currentWordIndex={currentWordIndex}
-                  isPlaying={isPlaying}
-                />
+                <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="animate-pulse text-white/50">Loading...</div></div>}>
+                  <ScriptReader
+                    script={enhancedScript}
+                    currentWordIndex={currentWordIndex}
+                    isPlaying={isPlaying}
+                  />
+                </Suspense>
               )}
 
               {/* Fixed bottom: Prompt box OR Inline Player */}
