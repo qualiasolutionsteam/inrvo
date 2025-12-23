@@ -69,12 +69,10 @@ export interface UseMeditationAgentReturn {
 const QUICK_PROMPTS = [
   { label: "I'm feeling anxious", icon: "waves" },
   { label: "I can't sleep", icon: "moon" },
-  { label: "I need to calm down", icon: "lotus" },
-  { label: "I want to feel grateful", icon: "heart" },
-  { label: "I'm stressed at work", icon: "cloud" },
-  { label: "Help me focus", icon: "target" },
-  { label: "I need self-love", icon: "sparkle" },
-  { label: "I want to manifest", icon: "star" },
+  { label: "I'm stressed", icon: "cloud" },
+  { label: "Just want to talk", icon: "heart" },
+  { label: "Need some calm", icon: "lotus" },
+  { label: "Create a meditation", icon: "sparkle" },
 ];
 
 // ============================================================================
