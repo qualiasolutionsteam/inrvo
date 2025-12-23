@@ -82,18 +82,18 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onComplete }) => {
 
       {/* Subtle loading indicator */}
       <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-3">
-        <div className="flex gap-1">
+        <div className="flex gap-1.5">
           <div
-            className="w-1.5 h-1.5 rounded-full bg-cyan-500/60"
-            style={{ animation: 'pulse 1s ease-in-out infinite', animationDelay: '0s' }}
+            className="w-1 h-1 rounded-full bg-cyan-500/50"
+            style={{ animation: 'pulse 1.2s ease-in-out infinite', animationDelay: '0s' }}
           />
           <div
-            className="w-1.5 h-1.5 rounded-full bg-cyan-500/60"
-            style={{ animation: 'pulse 1s ease-in-out infinite', animationDelay: '0.2s' }}
+            className="w-1 h-1 rounded-full bg-cyan-500/50"
+            style={{ animation: 'pulse 1.2s ease-in-out infinite', animationDelay: '0.15s' }}
           />
           <div
-            className="w-1.5 h-1.5 rounded-full bg-cyan-500/60"
-            style={{ animation: 'pulse 1s ease-in-out infinite', animationDelay: '0.4s' }}
+            className="w-1 h-1 rounded-full bg-cyan-500/50"
+            style={{ animation: 'pulse 1.2s ease-in-out infinite', animationDelay: '0.3s' }}
           />
         </div>
       </div>

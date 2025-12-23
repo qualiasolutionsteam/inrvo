@@ -127,12 +127,12 @@ const MessageBubble = memo<MessageBubbleProps>(({ message, isLast }) => {
       >
         {message.isLoading ? (
           <div className="flex items-center gap-3 py-1">
-            <div className="flex gap-1.5">
-              <span className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            <div className="flex gap-1">
+              <span className="w-1.5 h-1.5 bg-cyan-400/70 rounded-full animate-pulse" style={{ animationDelay: '0ms', animationDuration: '1s' }} />
+              <span className="w-1.5 h-1.5 bg-cyan-400/70 rounded-full animate-pulse" style={{ animationDelay: '200ms', animationDuration: '1s' }} />
+              <span className="w-1.5 h-1.5 bg-cyan-400/70 rounded-full animate-pulse" style={{ animationDelay: '400ms', animationDuration: '1s' }} />
             </div>
-            <span className="text-white/50 text-sm">Contemplating...</span>
+            <span className="text-white/40 text-sm">Thinking...</span>
           </div>
         ) : (
           <div className="text-base leading-relaxed whitespace-pre-wrap">{message.content}</div>

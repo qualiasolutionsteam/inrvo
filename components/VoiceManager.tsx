@@ -119,8 +119,26 @@ const VoiceManager: React.FC<VoiceManagerProps> = ({
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-10 w-10 border-4 border-cyan-500/20 border-t-cyan-500"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className={`glass rounded-3xl p-6 animate-in fade-in stagger-${i}`}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="skeleton h-6 w-32"></div>
+                  <div className="skeleton h-5 w-16 rounded-full"></div>
+                </div>
+                <div className="skeleton h-4 w-48 mb-3"></div>
+                <div className="flex items-center justify-between">
+                  <div className="skeleton h-3 w-24"></div>
+                  <div className="flex gap-2">
+                    <div className="skeleton h-8 w-12 rounded-lg"></div>
+                    <div className="skeleton h-8 w-8 rounded-lg"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : voices.length === 0 ? (
           <GlassCard className="text-center py-16">

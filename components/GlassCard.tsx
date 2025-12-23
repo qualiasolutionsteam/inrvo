@@ -8,6 +8,7 @@ interface GlassCardProps {
   onClick?: () => void;
   hover?: boolean;
   variant?: GlassCardVariant;
+  animate?: boolean;
 }
 
 const GlassCard: React.FC<GlassCardProps> = memo(({
@@ -15,7 +16,8 @@ const GlassCard: React.FC<GlassCardProps> = memo(({
   className = "",
   onClick,
   hover = true,
-  variant = 'default'
+  variant = 'default',
+  animate = false
 }) => {
   const variantStyles: Record<GlassCardVariant, string> = {
     default: 'glass',
@@ -29,8 +31,10 @@ const GlassCard: React.FC<GlassCardProps> = memo(({
       onClick={onClick}
       className={`
         ${variantStyles[variant]}
-        rounded-3xl p-6 transition-all duration-300 ease-out
-        ${hover ? 'hover:scale-[1.01] hover:bg-white/5 cursor-pointer hover:border-cyan-500/30 hover-lift btn-press' : ''}
+        rounded-3xl p-6
+        transition-all duration-200 ease-out
+        ${hover ? 'hover:scale-[1.01] hover:bg-white/[0.04] cursor-pointer hover:border-cyan-500/20 btn-press' : ''}
+        ${animate ? 'animate-in fade-in slide-in-from-bottom-2' : ''}
         ${className}
       `}
     >
