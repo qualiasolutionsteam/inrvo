@@ -540,18 +540,43 @@
   letter-spacing: 0.01em;
 }
 
-/* Audio tag styles - purple accent for voice AI */
+/* Audio tag styles - premium purple accent for voice AI */
 .audio-tag {
-  display: inline-block;
-  padding: 2px 8px;
-  margin: 0 2px;
-  border-radius: 6px;
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(139, 92, 246, 0.15));
-  color: #d8b4fe;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  margin: 0 3px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(139, 92, 246, 0.15) 50%, rgba(192, 132, 252, 0.1) 100%);
+  color: #c4b5fd;
   font-weight: 500;
-  font-size: 0.875em;
-  border: 1px solid rgba(168, 85, 247, 0.3);
+  font-size: 0.8em;
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(168, 85, 247, 0.35);
   user-select: none;
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.audio-tag::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), transparent);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.audio-tag:hover {
+  border-color: rgba(168, 85, 247, 0.5);
+  color: #ddd6fe;
+  transform: translateY(-1px);
+}
+
+.audio-tag:hover::before {
+  opacity: 1;
 }
 
 /* Subtle animation for audio tag - NO excessive glow */
@@ -597,4 +622,281 @@
     opacity: 1;
     transform: scale(1);
   }
+}
+
+/* Premium sidebar styles */
+.sidebar-premium {
+  background: linear-gradient(135deg, #0a0f1a 0%, #0d1525 50%, #0a0f1a 100%);
+  position: relative;
+}
+
+.sidebar-premium::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(6, 182, 212, 0.3) 20%,
+    rgba(168, 85, 247, 0.3) 50%,
+    rgba(6, 182, 212, 0.3) 80%,
+    transparent 100%
+  );
+}
+
+/* History item premium hover */
+.history-item {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.history-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, rgb(6, 182, 212), rgb(168, 85, 247));
+  transform: scaleY(0);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.history-item:hover::before {
+  transform: scaleY(1);
+}
+
+.history-item:hover {
+  transform: translateX(4px);
+}
+
+/* Stagger animation delays for lists */
+.stagger-item:nth-child(1) { animation-delay: 30ms; }
+.stagger-item:nth-child(2) { animation-delay: 60ms; }
+.stagger-item:nth-child(3) { animation-delay: 90ms; }
+.stagger-item:nth-child(4) { animation-delay: 120ms; }
+.stagger-item:nth-child(5) { animation-delay: 150ms; }
+.stagger-item:nth-child(6) { animation-delay: 180ms; }
+.stagger-item:nth-child(7) { animation-delay: 210ms; }
+.stagger-item:nth-child(8) { animation-delay: 240ms; }
+.stagger-item:nth-child(9) { animation-delay: 270ms; }
+.stagger-item:nth-child(10) { animation-delay: 300ms; }
+
+@keyframes slideInStagger {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.slide-in-stagger {
+  animation: slideInStagger 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 0;
+}
+
+/* How it Works step card animations */
+@keyframes stepReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.step-card {
+  animation: stepReveal 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 0;
+}
+
+.step-card:nth-child(1) { animation-delay: 100ms; }
+.step-card:nth-child(2) { animation-delay: 250ms; }
+.step-card:nth-child(3) { animation-delay: 400ms; }
+
+/* Premium number badge */
+.step-number {
+  position: relative;
+  overflow: hidden;
+}
+
+.step-number::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 70%
+  );
+  animation: shimmerNumber 3s ease-in-out infinite;
+}
+
+@keyframes shimmerNumber {
+  0% { transform: translateX(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) rotate(45deg); }
+}
+
+/* Icon float animation */
+@keyframes iconFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.icon-float {
+  animation: iconFloat 3s ease-in-out infinite;
+}
+
+.icon-float:nth-child(1) { animation-delay: 0s; }
+.icon-float:nth-child(2) { animation-delay: 0.5s; }
+.icon-float:nth-child(3) { animation-delay: 1s; }
+
+/* Pro tip hover effect */
+.pro-tip {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pro-tip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(6, 182, 212, 0.1) 0%,
+    rgba(168, 85, 247, 0.1) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.pro-tip:hover::before {
+  opacity: 1;
+}
+
+.pro-tip:hover {
+  transform: translateY(-2px);
+}
+
+.pro-tip:hover .tip-icon {
+  transform: scale(1.15);
+}
+
+.tip-icon {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Sidebar enter animation */
+@keyframes sidebarEnter {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.sidebar-content-enter {
+  animation: sidebarEnter 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Premium divider */
+.divider-premium {
+  position: relative;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 20%,
+    rgba(6, 182, 212, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 80%,
+    transparent 100%
+  );
+}
+
+/* Sign out button hover */
+.signout-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.signout-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.1) 0%, rgba(251, 113, 133, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.signout-btn:hover::before {
+  opacity: 1;
+}
+
+/* Footer links subtle animation */
+.footer-link {
+  position: relative;
+}
+
+.footer-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 0;
+  height: 1px;
+  background: rgba(6, 182, 212, 0.5);
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translateX(-50%);
+}
+
+.footer-link:hover::after {
+  width: 100%;
+}
+
+/* Generate audio button premium style */
+.generate-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.generate-btn::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.15) 50%,
+    transparent 60%
+  );
+  transform: translateX(-100%) rotate(45deg);
+  transition: transform 0.6s ease;
+}
+
+.generate-btn:hover::before {
+  transform: translateX(100%) rotate(45deg);
 }

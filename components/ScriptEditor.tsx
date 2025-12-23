@@ -387,13 +387,13 @@ export const ScriptEditor: React.FC<ScriptEditorProps> = ({
             <button
               onClick={handleGenerate}
               disabled={isGenerating || !editableScript.trim()}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-xl font-medium
-                       transition-all duration-200
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2.5 px-5 sm:px-7 py-2.5 rounded-xl font-medium
+                       transition-all duration-300 ease-out
                        ${isGenerating || !editableScript.trim()
-                         ? 'bg-white/10 text-white/40 cursor-not-allowed'
+                         ? 'bg-white/[0.06] text-white/30 cursor-not-allowed border border-white/[0.04]'
                          : selectedVoice
-                           ? 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-400 hover:to-purple-500 shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50'
-                           : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:from-amber-400 hover:to-orange-500 shadow-lg shadow-amber-500/30'
+                           ? 'generate-btn bg-gradient-to-r from-cyan-500 via-cyan-400 to-purple-500 text-white hover:from-cyan-400 hover:via-cyan-300 hover:to-purple-400 hover:scale-[1.02] active:scale-[0.98]'
+                           : 'bg-gradient-to-r from-purple-500/80 to-purple-600/80 text-white hover:from-purple-400 hover:to-purple-500 border border-purple-400/30'
                        }`}
             >
               {isGenerating ? (

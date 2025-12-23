@@ -2487,76 +2487,94 @@ const App: React.FC = () => {
         )}
 
         {/* Sidebar Drawer - Slides in from left */}
-        <div className={`fixed inset-y-0 left-0 z-[95] w-[280px] md:w-[320px] h-[100dvh] bg-[#0a0f1a] border-r border-white/10 flex flex-col overflow-hidden transition-transform duration-300 ${showBurgerMenu ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className={`fixed inset-y-0 left-0 z-[95] w-[280px] md:w-[320px] h-[100dvh] sidebar-premium border-r border-white/[0.06] flex flex-col overflow-hidden transition-all duration-300 ease-out ${showBurgerMenu ? 'translate-x-0' : '-translate-x-full'}`}>
               {/* Sidebar Header with Logo and Close Button */}
-              <div className="flex-shrink-0 p-3 md:p-4 border-b border-white/5 flex items-center justify-between">
+              <div className="flex-shrink-0 p-4 md:p-5 flex items-center justify-between sidebar-content-enter">
                 {/* Logo */}
                 <div
-                  className="flex items-center gap-2 cursor-pointer group opacity-90 hover:opacity-100 transition-opacity"
+                  className="flex items-center gap-2.5 cursor-pointer group"
                   onClick={() => { setCurrentView(View.HOME); setShowBurgerMenu(false); }}
                 >
-                  <ICONS.Logo className="h-5 md:h-6 text-white" />
+                  <ICONS.Logo className="h-5 md:h-6 text-white opacity-90 group-hover:opacity-100 transition-opacity" />
                 </div>
 
                 {/* Close Button */}
                 <button
                   onClick={() => setShowBurgerMenu(false)}
-                  className="p-2 md:p-2.5 min-w-[40px] min-h-[40px] md:min-w-[44px] md:min-h-[44px]
-                             rounded-lg md:rounded-xl bg-white/5 hover:bg-white/10
-                             text-slate-400 hover:text-white transition-all flex items-center justify-center
-                             border border-white/5 hover:border-cyan-500/30
-                             "
+                  className="p-2.5 min-w-[40px] min-h-[40px] md:min-w-[44px] md:min-h-[44px]
+                             rounded-xl bg-white/[0.03] hover:bg-white/[0.08]
+                             text-slate-500 hover:text-white transition-all flex items-center justify-center
+                             border border-white/[0.04] hover:border-cyan-500/20"
                   title="Close sidebar"
                 >
                   <ICONS.SidebarToggle className="w-5 h-5" />
                 </button>
               </div>
 
+              {/* Premium divider */}
+              <div className="divider-premium mx-4" />
+
+              {/* History Header */}
+              <div className="px-4 pt-4 pb-2 sidebar-content-enter" style={{ animationDelay: '50ms' }}>
+                <h3 className="text-[10px] font-semibold text-slate-500 uppercase tracking-[0.2em]">History</h3>
+              </div>
+
               {/* History Content - scrollable area */}
-              <div className="flex-1 min-h-0 overflow-y-auto p-4">
+              <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 no-scrollbar">
 
                 {user ? (
                   <>
                     {isLoadingHistory ? (
                       <div className="flex justify-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-cyan-500/30 border-t-cyan-500"></div>
+                        <div className="animate-spin rounded-full h-7 w-7 border-2 border-cyan-500/20 border-t-cyan-500"></div>
                       </div>
                     ) : meditationHistory.length > 0 ? (
-                      <div className="space-y-2">
-                        {meditationHistory.slice(0, 10).map((item) => (
+                      <div className="space-y-1.5">
+                        {meditationHistory.slice(0, 10).map((item, index) => (
                           <button
                             key={item.id}
                             onClick={() => {
                               setScript(item.prompt);
                               setShowBurgerMenu(false);
                             }}
-                            className="w-full text-left p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all group"
+                            className="history-item stagger-item slide-in-stagger w-full text-left p-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] group"
+                            style={{ animationDelay: `${100 + index * 40}ms` }}
                           >
-                            <p className="text-sm text-white truncate mb-1">{item.prompt}</p>
-                            <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                              {item.voice_name && <span>{item.voice_name}</span>}
-                              <span>•</span>
+                            <p className="text-[13px] text-slate-300 group-hover:text-white truncate mb-1.5 transition-colors">{item.prompt}</p>
+                            <div className="flex items-center gap-2 text-[10px] text-slate-600">
+                              {item.voice_name && <span className="text-slate-500">{item.voice_name}</span>}
+                              {item.voice_name && <span className="text-slate-700">•</span>}
                               <span>{new Date(item.created_at).toLocaleDateString()}</span>
                             </div>
                           </button>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-8">
-                        <p className="text-slate-500 text-sm">No history yet</p>
-                        <p className="text-slate-600 text-xs mt-1">Create your first meditation</p>
+                      <div className="text-center py-10 sidebar-content-enter" style={{ animationDelay: '100ms' }}>
+                        <div className="w-12 h-12 rounded-2xl bg-white/[0.03] flex items-center justify-center mx-auto mb-3">
+                          <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <p className="text-slate-500 text-sm font-medium">No history yet</p>
+                        <p className="text-slate-600 text-xs mt-1">Your meditations will appear here</p>
                       </div>
                     )}
                   </>
                 ) : (
-                  <div className="text-center py-8">
-                    <p className="text-slate-400 text-sm mb-3">Sign in to view history</p>
+                  <div className="text-center py-10 sidebar-content-enter" style={{ animationDelay: '100ms' }}>
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-purple-500/10 flex items-center justify-center mx-auto mb-3">
+                      <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+                      </svg>
+                    </div>
+                    <p className="text-slate-400 text-sm font-medium mb-4">Sign in to view history</p>
                     <button
                       onClick={() => {
                         setShowBurgerMenu(false);
                         setShowAuthModal(true);
                       }}
-                      className="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-sm transition-colors"
+                      className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600/90 to-cyan-500/90 hover:from-cyan-500 hover:to-cyan-400 text-white text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
                     >
                       Sign In
                     </button>
@@ -2566,16 +2584,17 @@ const App: React.FC = () => {
 
               {/* Sign Out Button */}
               {user && (
-                <div className="flex-shrink-0 p-3 border-t border-white/5">
+                <div className="flex-shrink-0 px-4 pb-3">
+                  <div className="divider-premium mb-3" />
                   <button
                     onClick={() => {
                       setShowBurgerMenu(false);
                       handleSignOut();
                     }}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/5 hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 transition-all"
+                    className="signout-btn w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-white/[0.02] text-slate-500 hover:text-rose-400 transition-all"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
                     <span className="text-sm font-medium">Sign Out</span>
                   </button>
@@ -2583,25 +2602,26 @@ const App: React.FC = () => {
               )}
 
               {/* Footer */}
-              <div className="flex-shrink-0 p-4 border-t border-white/5 space-y-2">
-                <div className="flex items-center justify-center gap-4 text-[10px] text-slate-600 uppercase tracking-widest">
+              <div className="flex-shrink-0 p-4 space-y-3">
+                <div className="divider-premium" />
+                <div className="flex items-center justify-center gap-4 text-[10px] text-slate-600 uppercase tracking-[0.15em] pt-1">
                   <button
                     onClick={() => { setShowBurgerMenu(false); setShowAboutUs(true); }}
-                    className="hover:text-slate-400 transition-colors"
+                    className="footer-link hover:text-cyan-400 transition-colors"
                   >
                     About
                   </button>
-                  <span className="text-slate-700">•</span>
+                  <span className="text-slate-700/50">•</span>
                   <button
                     onClick={() => { setShowBurgerMenu(false); setShowTerms(true); }}
-                    className="hover:text-slate-400 transition-colors"
+                    className="footer-link hover:text-cyan-400 transition-colors"
                   >
                     Terms
                   </button>
-                  <span className="text-slate-700">•</span>
+                  <span className="text-slate-700/50">•</span>
                   <button
                     onClick={() => { setShowBurgerMenu(false); setShowPrivacy(true); }}
-                    className="hover:text-slate-400 transition-colors"
+                    className="footer-link hover:text-cyan-400 transition-colors"
                   >
                     Privacy
                   </button>
@@ -2610,82 +2630,98 @@ const App: React.FC = () => {
                   href="https://qualiasolutions.net"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[10px] text-slate-600 hover:text-slate-400 text-center uppercase tracking-widest block transition-colors"
+                  className="text-[10px] text-slate-600 hover:text-cyan-400 text-center uppercase tracking-[0.15em] block transition-colors"
                 >
                   Powered by Qualia Solutions
                 </a>
-                <p className="text-[9px] text-slate-700 text-center">
-                  © {new Date().getFullYear()} INrVO. All rights reserved.
+                <p className="text-[9px] text-slate-700 text-center opacity-60">
+                  © {new Date().getFullYear()} INrVO
                 </p>
               </div>
             </div>
 
         {/* MODAL: How It Works */}
         {showHowItWorks && (
-          <div className="fixed inset-0 z-[80] bg-[#020617]/95 backdrop-blur-3xl flex flex-col p-6 animate-in fade-in zoom-in duration-500 overflow-y-auto">
+          <div className="fixed inset-0 z-[80] bg-[#020617]/98 backdrop-blur-3xl flex flex-col p-6 animate-in fade-in zoom-in duration-500 overflow-y-auto">
             <Starfield />
 
             <button
               onClick={() => setShowHowItWorks(false)}
               className="fixed top-6 left-6 md:top-8 md:left-8 text-slate-600 hover:text-white transition-all flex items-center gap-3 group btn-press focus-ring rounded-full z-[100]"
             >
-              <div className="w-12 h-12 min-w-[44px] min-h-[44px] rounded-full border border-white/5 flex items-center justify-center group-hover:bg-white/10 group-hover:scale-110 transition-all">
+              <div className="w-12 h-12 min-w-[44px] min-h-[44px] rounded-full border border-white/[0.06] bg-white/[0.02] flex items-center justify-center group-hover:bg-white/[0.08] group-hover:scale-105 group-hover:border-cyan-500/20 transition-all">
                 <ICONS.ArrowBack className="w-5 h-5" />
               </div>
-              <span className="hidden md:inline text-[11px] font-bold uppercase tracking-[0.3em]">Back</span>
+              <span className="hidden md:inline text-[11px] font-medium uppercase tracking-[0.25em] text-slate-500 group-hover:text-white transition-colors">Back</span>
             </button>
 
-            <div className="flex-1 flex flex-col items-center justify-center pt-16 md:pt-0 relative z-10 max-w-4xl mx-auto">
-              <div className="inline-block px-4 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-6">Guide</div>
-              <h2 className="text-3xl md:text-5xl font-extralight text-center mb-4 tracking-tight">
-                <span className="bg-gradient-to-r from-cyan-300 via-purple-200 to-pink-300 bg-clip-text text-transparent">How INrVO Works</span>
-              </h2>
-              <p className="text-slate-500 text-center mb-12 max-w-lg">Create personalized meditations in seconds with AI</p>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
-                <GlassCard className="!p-6 !rounded-2xl text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4">
-                    <span className="text-2xl font-bold text-cyan-400">1</span>
-                  </div>
-                  <h3 className="text-lg font-bold text-white mb-2">Write Your Intention</h3>
-                  <p className="text-sm text-slate-400">Type a short phrase like "calm my anxiety" or "help me sleep" - or use voice input</p>
-                </GlassCard>
-
-                <GlassCard className="!p-6 !rounded-2xl text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center mx-auto mb-4">
-                    <span className="text-2xl font-bold text-purple-400">2</span>
-                  </div>
-                  <h3 className="text-lg font-bold text-white mb-2">Customize</h3>
-                  <p className="text-sm text-slate-400">Choose a voice, select background music, or browse templates for inspiration</p>
-                </GlassCard>
-
-                <GlassCard className="!p-6 !rounded-2xl text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500/20 to-rose-500/20 flex items-center justify-center mx-auto mb-4">
-                    <span className="text-2xl font-bold text-pink-400">3</span>
-                  </div>
-                  <h3 className="text-lg font-bold text-white mb-2">Listen & Relax</h3>
-                  <p className="text-sm text-slate-400">AI generates a full meditation script and reads it aloud with your chosen voice</p>
-                </GlassCard>
+            <div className="flex-1 flex flex-col items-center justify-center pt-16 md:pt-0 relative z-10 max-w-4xl mx-auto w-full">
+              {/* Badge */}
+              <div className="inline-block px-4 py-1.5 rounded-full bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-semibold uppercase tracking-[0.35em] mb-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                Guide
               </div>
 
-              <div className="mt-12 text-center">
-                <h4 className="text-lg font-semibold text-white mb-4">Pro Tips</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                  <div className="flex items-start gap-3 p-4 rounded-xl bg-white/5">
-                    <ICONS.Sparkle className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-slate-400"><span className="text-white font-medium">Be specific:</span> "5-minute morning energy boost" works better than just "energy"</p>
+              {/* Title */}
+              <h2 className="text-3xl md:text-5xl font-extralight text-center mb-3 tracking-tight animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: '100ms' }}>
+                <span className="bg-gradient-to-r from-cyan-300 via-white to-purple-300 bg-clip-text text-transparent">How INrVO Works</span>
+              </h2>
+              <p className="text-slate-500 text-center mb-14 max-w-md text-sm animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: '150ms' }}>Create personalized meditations in seconds with AI</p>
+
+              {/* Step Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full">
+                {/* Step 1 */}
+                <div className="step-card group">
+                  <GlassCard className="!p-7 !rounded-2xl text-center h-full border-white/[0.04] hover:border-cyan-500/20 transition-all duration-300" hover={false}>
+                    <div className="step-number w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/15 to-cyan-400/5 border border-cyan-500/20 flex items-center justify-center mx-auto mb-5 group-hover:scale-105 transition-transform duration-300">
+                      <span className="text-2xl font-bold bg-gradient-to-br from-cyan-300 to-cyan-500 bg-clip-text text-transparent">1</span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-white mb-2.5">Write Your Intention</h3>
+                    <p className="text-sm text-slate-500 leading-relaxed">Type a short phrase like "calm my anxiety" or "help me sleep" - or use voice input</p>
+                  </GlassCard>
+                </div>
+
+                {/* Step 2 */}
+                <div className="step-card group">
+                  <GlassCard className="!p-7 !rounded-2xl text-center h-full border-white/[0.04] hover:border-purple-500/20 transition-all duration-300" hover={false}>
+                    <div className="step-number w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/15 to-purple-400/5 border border-purple-500/20 flex items-center justify-center mx-auto mb-5 group-hover:scale-105 transition-transform duration-300">
+                      <span className="text-2xl font-bold bg-gradient-to-br from-purple-300 to-purple-500 bg-clip-text text-transparent">2</span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-white mb-2.5">Customize</h3>
+                    <p className="text-sm text-slate-500 leading-relaxed">Choose a voice, select background music, or browse templates for inspiration</p>
+                  </GlassCard>
+                </div>
+
+                {/* Step 3 */}
+                <div className="step-card group">
+                  <GlassCard className="!p-7 !rounded-2xl text-center h-full border-white/[0.04] hover:border-pink-500/20 transition-all duration-300" hover={false}>
+                    <div className="step-number w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500/15 to-pink-400/5 border border-pink-500/20 flex items-center justify-center mx-auto mb-5 group-hover:scale-105 transition-transform duration-300">
+                      <span className="text-2xl font-bold bg-gradient-to-br from-pink-300 to-pink-500 bg-clip-text text-transparent">3</span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-white mb-2.5">Listen & Relax</h3>
+                    <p className="text-sm text-slate-500 leading-relaxed">AI generates a full meditation script and reads it aloud with your chosen voice</p>
+                  </GlassCard>
+                </div>
+              </div>
+
+              {/* Pro Tips */}
+              <div className="mt-14 w-full animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: '600ms' }}>
+                <h4 className="text-sm font-semibold text-slate-400 uppercase tracking-[0.2em] text-center mb-6">Pro Tips</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="pro-tip flex items-start gap-3.5 p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+                    <ICONS.Sparkle className="tip-icon w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-slate-500"><span className="text-slate-300 font-medium">Be specific:</span> "5-minute morning energy boost" works better than just "energy"</p>
                   </div>
-                  <div className="flex items-start gap-3 p-4 rounded-xl bg-white/5">
-                    <ICONS.Microphone className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-slate-400"><span className="text-white font-medium">Clone your voice:</span> Record yourself to hear meditations in your own voice</p>
+                  <div className="pro-tip flex items-start gap-3.5 p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+                    <ICONS.Microphone className="tip-icon w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-slate-500"><span className="text-slate-300 font-medium">Clone your voice:</span> Record yourself to hear meditations in your own voice</p>
                   </div>
-                  <div className="flex items-start gap-3 p-4 rounded-xl bg-white/5">
-                    <ICONS.Music className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-slate-400"><span className="text-white font-medium">Add emotion:</span> Include feelings like "warm", "peaceful", or "empowering"</p>
+                  <div className="pro-tip flex items-start gap-3.5 p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+                    <ICONS.Music className="tip-icon w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-slate-500"><span className="text-slate-300 font-medium">Add emotion:</span> Include feelings like "warm", "peaceful", or "empowering"</p>
                   </div>
-                  <div className="flex items-start gap-3 p-4 rounded-xl bg-white/5">
-                    <ICONS.Book className="w-5 h-5 text-pink-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-slate-400"><span className="text-white font-medium">Use templates:</span> Browse pre-made prompts for quick inspiration</p>
+                  <div className="pro-tip flex items-start gap-3.5 p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+                    <ICONS.Book className="tip-icon w-5 h-5 text-pink-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-slate-500"><span className="text-slate-300 font-medium">Use templates:</span> Browse pre-made prompts for quick inspiration</p>
                   </div>
                 </div>
               </div>
