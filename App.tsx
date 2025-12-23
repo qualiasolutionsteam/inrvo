@@ -1623,17 +1623,17 @@ const App: React.FC = () => {
             <div className="w-full flex flex-col h-full animate-in fade-in duration-1000">
               {/* Conditional: Show tagline OR script reader */}
               {!isInlineMode ? (
-                // Tagline at top - hidden when chat has started
-                <div className="flex-1 flex flex-col px-4 pb-[calc(200px+env(safe-area-inset-bottom,0px))] md:pb-[calc(240px+env(safe-area-inset-bottom,0px))]">
+                <>
+                  {/* Tagline - fixed at top, independent of chat */}
                   {!chatStarted && (
-                    <div className="pt-20 md:pt-28 text-center animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="fixed top-24 md:top-32 left-0 right-0 text-center z-10 px-4 animate-in fade-in slide-in-from-top-4 duration-500">
                       <p className="text-2xl md:text-4xl font-light tracking-wide text-white/70">
                         {tagline.main} <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-cyan-500 font-semibold">{tagline.highlight}</span>
                       </p>
                       <p className="text-base md:text-2xl text-slate-500 mt-1 md:mt-2 hidden sm:block">{tagline.sub}</p>
                     </div>
                   )}
-                </div>
+                </>
               ) : (
                 // Script Reader (takes full space above player)
                 <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="animate-pulse text-white/50">Loading...</div></div>}>
