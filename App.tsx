@@ -2602,7 +2602,7 @@ const App: React.FC = () => {
               )}
 
               {/* Footer */}
-              <div className="flex-shrink-0 p-4 space-y-3">
+              <div className="flex-shrink-0 mt-auto p-4 pb-6 space-y-3 safe-bottom">
                 <div className="divider-premium" />
                 <div className="flex items-center justify-center gap-4 text-[10px] text-slate-600 uppercase tracking-[0.15em] pt-1">
                   <button
