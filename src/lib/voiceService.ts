@@ -71,9 +71,10 @@ export const voiceService = {
     };
 
     // Use ElevenLabs for cloned voices with meditation settings
+    // Pass voice profile ID (not ElevenLabs ID) - edge function verifies ownership
     const base64 = await elevenlabsService.generateSpeech(
       meditationText,
-      voice.elevenlabsVoiceId,
+      voice.id, // Profile ID for ownership verification
       meditationTTSOptions
     );
 
