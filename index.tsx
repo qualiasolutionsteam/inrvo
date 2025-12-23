@@ -2,10 +2,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import * as Sentry from '@sentry/react';
+import { Analytics } from '@vercel/analytics/react';
 import { onCLS, onFCP, onLCP, onTTFB, onINP, type Metric } from 'web-vitals';
 import './index.css';
 import App from './App';
 import { ModalProvider } from './src/contexts/ModalContext';
+import { AudioProvider } from './src/contexts/AudioContext';
+import { VoiceProvider } from './src/contexts/VoiceContext';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Initialize Sentry for error tracking
@@ -60,7 +63,12 @@ root.render(
   <React.StrictMode>
     <ErrorBoundary>
       <ModalProvider>
-        <App />
+        <AudioProvider>
+          <VoiceProvider>
+            <App />
+            <Analytics />
+          </VoiceProvider>
+        </AudioProvider>
       </ModalProvider>
     </ErrorBoundary>
   </React.StrictMode>

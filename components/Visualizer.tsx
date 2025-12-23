@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback, memo, useMemo } from 'react';
-import * as d3 from 'd3';
+import { range, createRadialLine } from '@/src/lib/svgUtils';
 
 interface VisualizerProps {
   isActive: boolean;
@@ -7,18 +7,10 @@ interface VisualizerProps {
 }
 
 const Visualizer: React.FC<VisualizerProps> = memo(({ isActive, intensity = 0.5 }) => {
-  const svgRef = useRef<SVGSVGElement>(null);
+  const pathRef = useRef<SVGPathElement>(null);
+  const path2Ref = useRef<SVGPathElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState(400);
-
-  // Cache D3 selections to avoid re-querying the DOM
-  const d3SelectionsRef = useRef<{
-    path: d3.Selection<SVGPathElement, any, null, undefined> | null;
-    path2: d3.Selection<SVGPathElement, any, null, undefined> | null;
-    g: d3.Selection<SVGGElement, unknown, null, undefined> | null;
-    initialized: boolean;
-    lastSize: number;
-  }>({ path: null, path2: null, g: null, initialized: false, lastSize: 0 });
 
   // Responsive sizing
   const updateSize = useCallback(() => {
@@ -57,8 +49,8 @@ const Visualizer: React.FC<VisualizerProps> = memo(({ isActive, intensity = 0.5 
     };
   }, [updateSize]);
 
-  // Memoize line generator and points to avoid recreation
-  const { line, points, radius, numPoints } = useMemo(() => {
+  // Memoize base points configuration
+  const { points, radius, numPoints } = useMemo(() => {
     const np = size < 300 ? 80 : 120;
     const angleStep = (Math.PI * 2) / np;
     const r = size * 0.25;
@@ -66,57 +58,15 @@ const Visualizer: React.FC<VisualizerProps> = memo(({ isActive, intensity = 0.5 
     return {
       numPoints: np,
       radius: r,
-      points: d3.range(np).map(i => ({ angle: i * angleStep, r })),
-      line: d3.lineRadial<{ angle: number; r: number }>()
-        .angle(d => d.angle)
-        .radius(d => d.r)
-        .curve(d3.curveBasisClosed)
+      points: range(np).map(i => ({ angle: i * angleStep, r }))
     };
   }, [size]);
 
-  // Initialize SVG structure only once, or when size changes significantly
+  // Animation loop using refs for direct DOM manipulation
   useEffect(() => {
-    if (!svgRef.current) return;
-
-    const svg = d3.select(svgRef.current)
-      .attr('viewBox', `0 0 ${size} ${size}`)
-      .style('overflow', 'visible');
-
-    // Only rebuild DOM structure if size changed or not initialized
-    const selections = d3SelectionsRef.current;
-    if (!selections.initialized || selections.lastSize !== size) {
-      svg.selectAll('g').remove();
-
-      const g = svg.append('g')
-        .attr('transform', `translate(${size / 2}, ${size / 2})`);
-
-      const path = g.append('path')
-        .datum(points)
-        .attr('d', line)
-        .attr('fill', 'none')
-        .attr('stroke', 'url(#auraGradient)')
-        .attr('stroke-width', size < 300 ? 1.5 : 2)
-        .attr('filter', 'blur(1px)');
-
-      const path2 = g.append('path')
-        .datum(points)
-        .attr('d', line)
-        .attr('fill', 'url(#centerGradient)')
-        .attr('stroke', 'none')
-        .attr('opacity', 0.4);
-
-      selections.g = g;
-      selections.path = path;
-      selections.path2 = path2;
-      selections.initialized = true;
-      selections.lastSize = size;
-    }
-  }, [size, points, line]);
-
-  // Animation loop - separate from DOM structure initialization
-  useEffect(() => {
-    const selections = d3SelectionsRef.current;
-    if (!selections.path || !selections.path2) return;
+    const pathEl = pathRef.current;
+    const path2El = path2Ref.current;
+    if (!pathEl || !path2El) return;
 
     let t = 0;
     let animId: number;
@@ -137,16 +87,16 @@ const Visualizer: React.FC<VisualizerProps> = memo(({ isActive, intensity = 0.5 
         };
       });
 
-      // Update paths using cached selections (no DOM queries)
-      selections.path!.attr('d', line(newPoints));
-      selections.path2!.attr('d', line(newPoints));
+      const pathD = createRadialLine(newPoints);
+      pathEl.setAttribute('d', pathD);
+      path2El.setAttribute('d', pathD);
 
       animId = requestAnimationFrame(animate);
     };
 
     animId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animId);
-  }, [isActive, size, points, radius, line]);
+  }, [isActive, size, points, radius]);
 
   return (
     <div
@@ -154,7 +104,11 @@ const Visualizer: React.FC<VisualizerProps> = memo(({ isActive, intensity = 0.5 
       className="relative flex items-center justify-center"
       style={{ width: size, height: size }}
     >
-      <svg ref={svgRef} className="w-full h-full">
+      <svg
+        viewBox={`0 0 ${size} ${size}`}
+        className="w-full h-full"
+        style={{ overflow: 'visible' }}
+      >
         <defs>
           <linearGradient id="auraGradient" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#22d3ee" />
@@ -166,6 +120,21 @@ const Visualizer: React.FC<VisualizerProps> = memo(({ isActive, intensity = 0.5 
             <stop offset="100%" stopColor="transparent" stopOpacity="0" />
           </radialGradient>
         </defs>
+        <g transform={`translate(${size / 2}, ${size / 2})`}>
+          <path
+            ref={pathRef}
+            fill="none"
+            stroke="url(#auraGradient)"
+            strokeWidth={size < 300 ? 1.5 : 2}
+            style={{ filter: 'blur(1px)' }}
+          />
+          <path
+            ref={path2Ref}
+            fill="url(#centerGradient)"
+            stroke="none"
+            opacity={0.4}
+          />
+        </g>
       </svg>
     </div>
   );

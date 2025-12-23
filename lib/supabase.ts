@@ -1,4 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { trackAuth, setUserContext, clearUserContext } from '../src/lib/tracking';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key';
@@ -8,9 +9,98 @@ if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KE
 }
 
 // Only create client if we have real credentials
-export const supabase = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY 
+export const supabase = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
+
+// ============================================================================
+// Retry utility with exponential backoff for database operations
+// ============================================================================
+
+interface RetryOptions {
+  maxRetries?: number;
+  baseDelayMs?: number;
+  maxDelayMs?: number;
+  retryableErrors?: string[];
+}
+
+const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
+  maxRetries: 3,
+  baseDelayMs: 500,
+  maxDelayMs: 5000,
+  retryableErrors: [
+    'network_error',
+    'PGRST301', // Connection error
+    'ETIMEDOUT',
+    'ECONNRESET',
+    'ECONNREFUSED',
+    'fetch failed',
+    'Failed to fetch',
+    'NetworkError',
+  ],
+};
+
+/**
+ * Check if an error is retryable (network/connection issues)
+ */
+function isRetryableError(error: any, retryableErrors: string[]): boolean {
+  if (!error) return false;
+  const errorString = String(error.message || error.code || error);
+  return retryableErrors.some(e => errorString.includes(e));
+}
+
+/**
+ * Sleep for a specified duration
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Execute a database operation with retry logic and exponential backoff
+ */
+export async function withRetry<T>(
+  operation: () => Promise<T>,
+  options?: RetryOptions
+): Promise<T> {
+  const opts = { ...DEFAULT_RETRY_OPTIONS, ...options };
+  let lastError: any;
+
+  for (let attempt = 0; attempt <= opts.maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error: any) {
+      lastError = error;
+
+      // Don't retry non-retryable errors (auth errors, validation errors, etc.)
+      if (!isRetryableError(error, opts.retryableErrors)) {
+        throw error;
+      }
+
+      // Don't retry on last attempt
+      if (attempt === opts.maxRetries) {
+        break;
+      }
+
+      // Calculate delay with exponential backoff + jitter
+      const delay = Math.min(
+        opts.baseDelayMs * Math.pow(2, attempt) + Math.random() * 100,
+        opts.maxDelayMs
+      );
+
+      console.warn(
+        `Database operation failed (attempt ${attempt + 1}/${opts.maxRetries + 1}), ` +
+        `retrying in ${Math.round(delay)}ms:`,
+        error.message || error
+      );
+
+      await sleep(delay);
+    }
+  }
+
+  // All retries exhausted
+  throw lastError;
+}
 
 // Database types matching the existing schema
 export type UserRole = 'USER' | 'ADMIN' | 'ENTERPRISE';
@@ -106,44 +196,78 @@ export const signUp = async (email: string, password: string, firstName?: string
   // Combine names for the trigger and also keep separate fields
   const fullName = [firstName, lastName].filter(Boolean).join(' ') || undefined;
 
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        full_name: fullName,
-        first_name: firstName,
-        last_name: lastName,
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+          first_name: firstName,
+          last_name: lastName,
+        }
       }
-    }
-  });
+    });
 
-  if (error) throw error;
-  return data;
+    if (error) {
+      trackAuth.signInFailed(error.message);
+      throw error;
+    }
+
+    // Track successful signup and set user context
+    if (data.user) {
+      trackAuth.signUpCompleted(data.user.id);
+      setUserContext({ id: data.user.id, email: data.user.email });
+    }
+
+    return data;
+  } catch (error: any) {
+    trackAuth.signInFailed(error.message || 'Unknown signup error');
+    throw error;
+  }
 };
 
 export const signIn = async (email: string, password: string) => {
   if (!supabase) throw new Error('Supabase not configured');
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
 
-  if (error) throw error;
+  trackAuth.signInStarted();
 
-  // Update last login
-  if (data.user && supabase) {
-    await supabase
-      .from('users')
-      .update({ last_login_at: new Date().toISOString() })
-      .eq('id', data.user.id);
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      trackAuth.signInFailed(error.message);
+      throw error;
+    }
+
+    // Update last login
+    if (data.user && supabase) {
+      await supabase
+        .from('users')
+        .update({ last_login_at: new Date().toISOString() })
+        .eq('id', data.user.id);
+
+      // Track successful sign in and set user context
+      trackAuth.signInCompleted(data.user.id);
+      setUserContext({ id: data.user.id, email: data.user.email });
+    }
+
+    return data;
+  } catch (error: any) {
+    trackAuth.signInFailed(error.message || 'Unknown sign-in error');
+    throw error;
   }
-
-  return data;
 };
 
 export const signOut = async () => {
   if (!supabase) return;
+
+  trackAuth.signOut();
+  clearUserContext();
+
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 };
@@ -231,14 +355,16 @@ export const getUserVoiceProfiles = async (): Promise<VoiceProfile[]> => {
   const user = await getCurrentUser();
   if (!user || !supabase) return [];
 
-  const { data, error } = await supabase
-    .from('voice_profiles')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
+  return withRetry(async () => {
+    const { data, error } = await supabase
+      .from('voice_profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
 
-  if (error) throw error;
-  return data || [];
+    if (error) throw error;
+    return data || [];
+  });
 };
 
 export const getVoiceProfileById = async (id: string): Promise<VoiceProfile | null> => {
@@ -411,15 +537,17 @@ export const getUserVoiceClones = async (): Promise<VoiceClone[]> => {
   const user = await getCurrentUser();
   if (!user || !supabase) return [];
 
-  const { data, error } = await supabase
-    .from('voice_clones')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('is_active', true)
-    .order('created_at', { ascending: false });
+  return withRetry(async () => {
+    const { data, error } = await supabase
+      .from('voice_clones')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
 
-  if (error) throw error;
-  return data || [];
+    if (error) throw error;
+    return data || [];
+  });
 };
 
 // Meditation History operations
@@ -463,18 +591,20 @@ export const getMeditationHistory = async (limit = 50): Promise<MeditationHistor
   const user = await getCurrentUser();
   if (!user || !supabase) return [];
 
-  const { data, error } = await supabase
-    .from('meditation_history')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(limit);
+  return withRetry(async () => {
+    const { data, error } = await supabase
+      .from('meditation_history')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
-  if (error) {
-    console.error('Error fetching meditation history:', error);
-    return [];
-  }
-  return data || [];
+    if (error) {
+      console.error('Error fetching meditation history:', error);
+      throw error;
+    }
+    return data || [];
+  });
 };
 
 export const deleteMeditationHistory = async (id: string): Promise<boolean> => {

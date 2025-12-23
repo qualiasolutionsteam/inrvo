@@ -9,6 +9,77 @@ import { VoiceMetadata } from '../../types';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
+// ============================================================================
+// Request ID generation for distributed tracing
+// ============================================================================
+
+/**
+ * Generate a unique request ID for tracing requests across frontend and backend
+ * Format: timestamp-randomhex (e.g., "1703347200000-a1b2c3d4")
+ */
+function generateRequestId(): string {
+  const timestamp = Date.now();
+  const randomPart = Math.random().toString(16).slice(2, 10);
+  return `${timestamp}-${randomPart}`;
+}
+
+// ============================================================================
+// Retry logic with exponential backoff
+// ============================================================================
+
+interface RetryOptions {
+  maxRetries?: number;
+  baseDelayMs?: number;
+  maxDelayMs?: number;
+}
+
+const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
+  maxRetries: 3,
+  baseDelayMs: 500,
+  maxDelayMs: 5000,
+};
+
+/**
+ * Check if an error is retryable (network issues, server errors)
+ */
+function isRetryableError(error: any, status?: number): boolean {
+  // Network errors are retryable
+  if (error?.isNetworkError) return true;
+  if (error?.name === 'TypeError' && error?.message === 'Failed to fetch') return true;
+
+  // Server errors (5xx) are retryable, except 501
+  if (status && status >= 500 && status !== 501) return true;
+
+  // Rate limit errors (429) are retryable
+  if (status === 429) return true;
+
+  // Auth errors (401, 403) and client errors (4xx) are NOT retryable
+  return false;
+}
+
+/**
+ * Sleep for a given number of milliseconds
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Calculate delay with exponential backoff and jitter
+ */
+function calculateBackoffDelay(
+  attempt: number,
+  baseDelayMs: number,
+  maxDelayMs: number
+): number {
+  // Exponential backoff: base * 2^attempt
+  const exponentialDelay = baseDelayMs * Math.pow(2, attempt);
+  // Add jitter (random 0-25% of delay)
+  const jitter = Math.random() * 0.25 * exponentialDelay;
+  // Cap at maxDelay
+  return Math.min(exponentialDelay + jitter, maxDelayMs);
+}
+
 /**
  * Get the current session token for authenticated requests
  */
@@ -27,19 +98,22 @@ async function getAuthToken(): Promise<string> {
 }
 
 /**
- * Call an Edge Function with authentication
+ * Call an Edge Function with authentication, request tracing, and retry logic
  */
 async function callEdgeFunction<T>(
   functionName: string,
   body: Record<string, any>,
-  options?: { isFormData?: boolean }
+  options?: { isFormData?: boolean; timeout?: number; retry?: RetryOptions }
 ): Promise<T> {
   const token = await getAuthToken();
+  const requestId = generateRequestId();
+  const retryOpts = { ...DEFAULT_RETRY_OPTIONS, ...options?.retry };
 
   const url = `${SUPABASE_URL}/functions/v1/${functionName}`;
 
   const headers: Record<string, string> = {
     'Authorization': `Bearer ${token}`,
+    'X-Request-ID': requestId,
   };
 
   let requestBody: BodyInit;
@@ -52,19 +126,106 @@ async function callEdgeFunction<T>(
     requestBody = JSON.stringify(body);
   }
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: requestBody,
-  });
+  const timeoutMs = options?.timeout || 60000;
+  let lastError: Error | null = null;
+  let lastStatus: number | undefined;
 
-  const data = await response.json();
+  // Retry loop with exponential backoff
+  for (let attempt = 0; attempt <= retryOpts.maxRetries; attempt++) {
+    // Add timeout with AbortController
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  if (!response.ok) {
-    throw new Error(data.error || `Edge function error: ${response.status}`);
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: requestBody,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      lastStatus = response.status;
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const errorMessage = data.error || `Edge function error: ${response.status}`;
+        const error = new Error(errorMessage);
+        (error as any).requestId = requestId;
+        (error as any).status = response.status;
+
+        // Check if we should retry
+        if (attempt < retryOpts.maxRetries && isRetryableError(error, response.status)) {
+          lastError = error;
+          const delay = calculateBackoffDelay(attempt, retryOpts.baseDelayMs, retryOpts.maxDelayMs);
+          await sleep(delay);
+          continue;
+        }
+
+        throw error;
+      }
+
+      return data as T;
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+
+      // Handle abort/timeout errors
+      if (error.name === 'AbortError') {
+        const timeoutError = new Error(`Request timeout after ${timeoutMs}ms`);
+        (timeoutError as any).requestId = requestId;
+        lastError = timeoutError;
+
+        // Retry on timeout
+        if (attempt < retryOpts.maxRetries) {
+          const delay = calculateBackoffDelay(attempt, retryOpts.baseDelayMs, retryOpts.maxDelayMs);
+          await sleep(delay);
+          continue;
+        }
+
+        throw timeoutError;
+      }
+
+      // Handle network/offline errors with user-friendly message
+      if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+        const offlineError = new Error(
+          navigator.onLine
+            ? 'Unable to reach the server. Please check your connection and try again.'
+            : 'You appear to be offline. Please check your internet connection.'
+        );
+        (offlineError as any).requestId = requestId;
+        (offlineError as any).isNetworkError = true;
+        lastError = offlineError;
+
+        // Retry on network errors
+        if (attempt < retryOpts.maxRetries && navigator.onLine) {
+          const delay = calculateBackoffDelay(attempt, retryOpts.baseDelayMs, retryOpts.maxDelayMs);
+          await sleep(delay);
+          continue;
+        }
+
+        throw offlineError;
+      }
+
+      // Preserve request ID on other errors
+      if (!error.requestId) {
+        error.requestId = requestId;
+      }
+
+      // Check if we should retry this error
+      if (attempt < retryOpts.maxRetries && isRetryableError(error, lastStatus)) {
+        lastError = error;
+        const delay = calculateBackoffDelay(attempt, retryOpts.baseDelayMs, retryOpts.maxDelayMs);
+        await sleep(delay);
+        continue;
+      }
+
+      throw error;
+    }
   }
 
-  return data as T;
+  // Should never reach here, but throw last error if we do
+  throw lastError || new Error('Unknown error in retry loop');
 }
 
 // ============================================================================

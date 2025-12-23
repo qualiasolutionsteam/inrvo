@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, memo, useMemo } from 'react';
-import * as d3 from 'd3';
+import { range, createRadialLine } from '@/src/lib/svgUtils';
 
 interface MiniVisualizerProps {
   isActive: boolean;
@@ -10,9 +10,8 @@ const MiniVisualizer: React.FC<MiniVisualizerProps> = memo(({
   isActive,
   size = 40
 }) => {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const pathRef = useRef<d3.Selection<SVGPathElement, { angle: number; r: number }[], null, undefined> | null>(null);
-  const path2Ref = useRef<d3.Selection<SVGPathElement, { angle: number; r: number }[], null, undefined> | null>(null);
+  const pathRef = useRef<SVGPathElement>(null);
+  const path2Ref = useRef<SVGPathElement>(null);
   const isActiveRef = useRef(isActive);
 
   // Update ref when isActive changes (no re-render needed)
@@ -22,56 +21,20 @@ const MiniVisualizer: React.FC<MiniVisualizerProps> = memo(({
   const angleStep = (Math.PI * 2) / numPoints;
   const radius = size * 0.28;
 
-  // Memoize line generator and base points
-  const { line, points } = useMemo(() => ({
-    line: d3.lineRadial<{ angle: number; r: number }>()
-      .angle(d => d.angle)
-      .radius(d => d.r)
-      .curve(d3.curveBasisClosed),
-    points: d3.range(numPoints).map(i => ({
+  // Memoize base points
+  const points = useMemo(() =>
+    range(numPoints).map(i => ({
       angle: i * angleStep,
       r: radius
-    }))
-  }), [numPoints, angleStep, radius]);
+    })),
+  [numPoints, angleStep, radius]);
 
-  // Setup SVG structure only when size changes
+  // Animation loop - uses refs for direct DOM manipulation
   useEffect(() => {
-    if (!svgRef.current) return;
+    const pathEl = pathRef.current;
+    const path2El = path2Ref.current;
+    if (!pathEl || !path2El) return;
 
-    const svg = d3.select(svgRef.current)
-      .attr('viewBox', `0 0 ${size} ${size}`)
-      .style('overflow', 'visible');
-
-    // Only clear and rebuild if paths don't exist
-    const existingG = svg.select<SVGGElement>('g.vis-group');
-    let g: d3.Selection<SVGGElement, unknown, null, undefined>;
-
-    if (existingG.empty()) {
-      svg.selectAll('g.vis-group').remove();
-      g = svg.append('g')
-        .attr('class', 'vis-group')
-        .attr('transform', `translate(${size / 2}, ${size / 2})`);
-
-      pathRef.current = g.append('path')
-        .datum(points)
-        .attr('d', line)
-        .attr('fill', 'none')
-        .attr('stroke', 'url(#miniAuraGrad)')
-        .attr('stroke-width', 1.5);
-
-      path2Ref.current = g.append('path')
-        .datum(points)
-        .attr('d', line)
-        .attr('fill', 'url(#miniCenterGrad)')
-        .attr('opacity', 0.5);
-    } else {
-      g = existingG;
-      g.attr('transform', `translate(${size / 2}, ${size / 2})`);
-    }
-  }, [size, line, points]);
-
-  // Animation loop - separate from SVG setup
-  useEffect(() => {
     let t = 0;
     let animId: number;
 
@@ -91,26 +54,24 @@ const MiniVisualizer: React.FC<MiniVisualizerProps> = memo(({
         };
       });
 
-      if (pathRef.current) {
-        pathRef.current.attr('d', line(newPoints));
-      }
-      if (path2Ref.current) {
-        path2Ref.current.attr('d', line(newPoints));
-      }
+      const pathD = createRadialLine(newPoints);
+      pathEl.setAttribute('d', pathD);
+      path2El.setAttribute('d', pathD);
 
       animId = requestAnimationFrame(animate);
     };
 
     animId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animId);
-  }, [points, radius, line]);
+  }, [points, radius]);
 
   return (
     <svg
-      ref={svgRef}
       width={size}
       height={size}
+      viewBox={`0 0 ${size} ${size}`}
       className="flex-shrink-0"
+      style={{ overflow: 'visible' }}
     >
       <defs>
         <linearGradient id="miniAuraGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -123,6 +84,19 @@ const MiniVisualizer: React.FC<MiniVisualizerProps> = memo(({
           <stop offset="100%" stopColor="transparent" stopOpacity="0" />
         </radialGradient>
       </defs>
+      <g transform={`translate(${size / 2}, ${size / 2})`}>
+        <path
+          ref={pathRef}
+          fill="none"
+          stroke="url(#miniAuraGrad)"
+          strokeWidth={1.5}
+        />
+        <path
+          ref={path2Ref}
+          fill="url(#miniCenterGrad)"
+          opacity={0.5}
+        />
+      </g>
     </svg>
   );
 });

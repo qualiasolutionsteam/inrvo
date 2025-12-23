@@ -26,10 +26,10 @@ export default defineConfig(({ mode }) => {
             manualChunks: {
               // Split vendor chunks for better caching
               'react-vendor': ['react', 'react-dom'],
-              'd3-vendor': ['d3'],
               'supabase-vendor': ['@supabase/supabase-js'],
               'sentry-vendor': ['@sentry/react'],
-              // Note: @google/genai is now dynamically imported and will be code-split automatically
+              // Google GenAI in separate chunk for better caching (large dependency)
+              'genai-vendor': ['@google/genai'],
             },
           },
         },

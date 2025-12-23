@@ -69,7 +69,7 @@ Your `.mcp.json` already includes the Supabase MCP server:
       "command": "npx",
       "args": ["-y", "@elevenlabs/mcp-server"],
       "env": {
-        "ELEVENLABS_API_KEY": "sk_4d5789f31cb5bc48f403a4d7e11a6b59c586f1a5ab84cafa"
+        "ELEVENLABS_API_KEY": "sk_your_elevenlabs_api_key_here"
       }
     }
   }
@@ -110,7 +110,7 @@ Update your `.mcp.json` file to include all recommended servers:
       "command": "npx",
       "args": ["-y", "@elevenlabs/mcp-server"],
       "env": {
-        "ELEVENLABS_API_KEY": "sk_4d5789f31cb5bc48f403a4d7e11a6b59c586f1a5ab84cafa"
+        "ELEVENLABS_API_KEY": "sk_your_elevenlabs_api_key_here"
       }
     },
     "web-reader": {

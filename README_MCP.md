@@ -24,7 +24,7 @@ deno run --allow-net --allow-read --allow-write scripts/deploy-mcp.ts
 
 ### 4. Set Environment Variables
 In your Supabase dashboard, go to Settings > Edge Functions and add:
-- `ELEVENLABS_API_KEY=sk_4d5789f31cb5bc48f403a4d7e11a6b59c586f1a5ab84cafa`
+- `ELEVENLABS_API_KEY=sk_your_elevenlabs_api_key_here`
 - `GEMINI_API_KEY=your_gemini_api_key`
 
 ## 🧪 Test MCP Integration

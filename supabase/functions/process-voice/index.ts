@@ -1,19 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-
-const ALLOWED_ORIGINS = [
-  'https://www.inrvo.com',
-  'https://inrvo.com',
-  'https://inrvo.vercel.app',
-  'http://localhost:5173',
-  'http://localhost:3000',
-];
-
-const getCorsHeaders = (origin: string | null) => ({
-  'Access-Control-Allow-Origin': origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-});
+import { getCorsHeaders } from "../_shared/compression.ts";
+import { getRequestId, createLogger, getTracingHeaders } from "../_shared/tracing.ts";
+import { checkRateLimit, createRateLimitResponse, RATE_LIMITS } from "../_shared/rateLimit.ts";
 
 interface VoiceMetadata {
   language?: string;        // ISO code: 'en', 'es', 'fr', etc.
@@ -45,11 +34,17 @@ interface ProcessVoiceResponse {
 serve(async (req) => {
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
+  const requestId = getRequestId(req);
+  const tracingHeaders = getTracingHeaders(requestId);
+  const allHeaders = { ...corsHeaders, ...tracingHeaders };
 
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: allHeaders });
   }
+
+  // Create logger with request context
+  const log = createLogger({ requestId, operation: 'process-voice' });
 
   try {
     // Initialize Supabase client
@@ -60,29 +55,43 @@ serve(async (req) => {
     // Validate user from JWT token (not from request body)
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      log.warn('Missing authorization header');
       return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Missing authorization header', requestId }),
+        { status: 401, headers: { ...allHeaders, 'Content-Type': 'application/json' } }
       );
     }
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
+      log.warn('Invalid or expired token', { authError: authError?.message });
       return new Response(
-        JSON.stringify({ error: 'Invalid or expired token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Invalid or expired token', requestId }),
+        { status: 401, headers: { ...allHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    log.info('Request authenticated', { userId: user.id });
+
+    // Check rate limit - voice cloning is expensive, strict limit
+    const rateLimitResult = checkRateLimit(user.id, RATE_LIMITS.voiceClone);
+    if (!rateLimitResult.allowed) {
+      log.warn('Rate limit exceeded for voice cloning', { userId: user.id, remaining: rateLimitResult.remaining });
+      return createRateLimitResponse(rateLimitResult, allHeaders);
     }
 
     // Parse request body - use verified user.id instead of userId from body
     const { audioBase64, voiceName, description, metadata, removeBackgroundNoise }: Omit<ProcessVoiceRequest, 'userId'> = await req.json();
     const userId = user.id; // Use verified user ID from JWT
 
+    log.info('Starting voice cloning', { voiceName, audioSize: audioBase64?.length || 0 });
+
     // Validate input
     if (!audioBase64 || !voiceName) {
+      log.warn('Missing required fields', { hasAudio: !!audioBase64, hasVoiceName: !!voiceName });
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...allHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -94,7 +103,7 @@ serve(async (req) => {
     //   console.error('Credit check error:', creditError);
     //   return new Response(
     //     JSON.stringify({ error: 'Failed to check credits' }),
-    //     { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    //     { status: 500, headers: { ...allHeaders, 'Content-Type': 'application/json' } }
     //   );
     // }
     //
@@ -105,7 +114,7 @@ serve(async (req) => {
     //     : 'Monthly clone limit reached';
     //   return new Response(
     //     JSON.stringify({ error: errorMessage }),
-    //     { status: status?.credits_remaining < 5000 ? 402 : 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    //     { status: status?.credits_remaining < 5000 ? 402 : 429, headers: { ...allHeaders, 'Content-Type': 'application/json' } }
     //   );
     // }
 
@@ -125,7 +134,7 @@ serve(async (req) => {
     if (estimatedDuration < 10) {
       return new Response(
         JSON.stringify({ error: `Audio appears too short. Please record at least 30 seconds for best quality.` }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...allHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -134,7 +143,7 @@ serve(async (req) => {
     if (!elevenlabsApiKey) {
       return new Response(
         JSON.stringify({ error: 'ElevenLabs API key not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...allHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -238,7 +247,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify(response),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...allHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
@@ -251,7 +260,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify(response),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...allHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
