@@ -238,12 +238,12 @@ const MeditationPanel = memo<MeditationPanelProps>(({
   const estimatedDuration = Math.ceil(wordCount / 100);
 
   return (
-    <div className="fixed inset-0 z-[60] animate-in fade-in duration-300">
-      {/* Full screen meditation editor - transparent to show stars */}
+    <div className="fixed inset-0 z-[60] bg-[#020617] animate-in fade-in duration-300">
+      {/* Full screen meditation editor */}
       <div className="h-full flex flex-col">
 
         {/* Header - frosted glass effect */}
-        <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/30 backdrop-blur-md">
+        <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/30 backdrop-blur-md safe-area-top">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center">
               <SparkleIcon className="w-4 h-4 text-white" />
@@ -255,14 +255,14 @@ const MeditationPanel = memo<MeditationPanelProps>(({
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/20 transition-all"
+            className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/20 transition-all"
           >
-            <CloseIcon className="w-4 h-4" />
+            <CloseIcon className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Scrollable Script Area - transparent with text shadow for readability */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Scrollable Script Area */}
+        <div className="flex-1 overflow-y-auto min-h-0">
           <textarea
             ref={textareaRef}
             value={editedScript}
@@ -270,16 +270,16 @@ const MeditationPanel = memo<MeditationPanelProps>(({
             onSelect={handleTextareaSelect}
             onClick={handleTextareaSelect}
             onKeyUp={handleTextareaSelect}
-            className="w-full min-h-full bg-transparent text-white leading-relaxed
-                       resize-none outline-none p-5 pb-32
+            className="w-full h-full bg-transparent text-white leading-relaxed
+                       resize-none outline-none p-4 md:p-6
                        placeholder:text-white/30"
-            style={{ fontSize: '16px' }}
+            style={{ fontSize: '16px', minHeight: '200px' }}
             placeholder="Your meditation script..."
           />
         </div>
 
-        {/* Fixed Bottom Bar - frosted glass effect */}
-        <div className="flex-shrink-0 fixed bottom-0 left-0 right-0 bg-black/40 backdrop-blur-md border-t border-white/10 p-4 space-y-3">
+        {/* Bottom Bar - part of flex layout, not fixed */}
+        <div className="flex-shrink-0 bg-black/60 backdrop-blur-xl border-t border-white/10 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] space-y-3">
 
           {/* Options Row */}
           <div className="flex items-center gap-2">
@@ -388,7 +388,6 @@ const MeditationPanel = memo<MeditationPanelProps>(({
                           hover:from-violet-500/30 hover:to-purple-500/30
                           border border-violet-500/30 hover:border-violet-400/50
                           text-violet-200 font-medium
-                          
                           active:scale-95"
                         title={`Insert ${tag.label} at cursor`}
                       >
