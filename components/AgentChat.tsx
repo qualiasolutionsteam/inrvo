@@ -653,7 +653,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
 
       {/* Input Area - Fixed at bottom, hidden when meditation panel is open */}
       {!showMeditationPanel && (
-        <div className={`flex-shrink-0 px-4 pb-6 ${hasMessages ? 'pt-2' : 'pt-[500px] md:pt-[1000px]'}`}>
+        <div className={`flex-shrink-0 px-4 pb-6 ${hasMessages ? 'pt-2' : 'pt-[1000px] md:pt-[1500px]'}`}>
         <div className="max-w-3xl mx-auto">
           <form onSubmit={handleSubmit}>
             <div className={`relative flex items-center bg-white/[0.06] border
