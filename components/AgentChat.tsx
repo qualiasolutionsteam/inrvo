@@ -670,10 +670,12 @@ export const AgentChat: React.FC<AgentChatProps> = ({
         </div>
       )}
 
-      {/* Input Area - Fixed at center position (-375px offset), hidden when meditation panel is open */}
+      {/* Input Area - Centered when no messages, fixed at bottom when has messages */}
       {!showMeditationPanel && (
-        <div className="fixed left-0 right-0 top-1/2 translate-y-[400px] px-4 z-50">
-        <div className="max-w-3xl mx-auto">
+        <div className={`${hasMessages
+          ? 'fixed bottom-0 left-0 right-0 pb-6 pt-4 bg-gradient-to-t from-[#020617] via-[#020617]/95 to-transparent'
+          : 'flex-1 flex items-center justify-center'} px-4 z-50`}>
+        <div className="max-w-3xl mx-auto w-full">
           <form onSubmit={handleSubmit}>
             <div className={`relative flex items-center bg-white/[0.06] border
                           rounded-full px-4 md:px-6 py-2.5
