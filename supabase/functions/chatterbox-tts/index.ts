@@ -32,7 +32,7 @@ function getSupabaseClient() {
 
 // Replicate API for Chatterbox
 const REPLICATE_API_URL = 'https://api.replicate.com/v1/predictions';
-const CHATTERBOX_MODEL = 'resemble-ai/chatterbox:55ae2ceb2206973ed3795c8c99c93cc87a8f25434cf5ac09fce8eb0bf9de7a74';
+const CHATTERBOX_MODEL = 'resemble-ai/chatterbox:1b8422bc49635c20d0a84e387ed20879c0dd09254ecdb4e75dc4bec10ff94e97';
 
 async function runChatterboxTTS(
   text: string,
@@ -41,9 +41,9 @@ async function runChatterboxTTS(
   apiKey: string,
   log: ReturnType<typeof createLogger>
 ): Promise<string> {
-  // Create prediction
+  // Create prediction - Chatterbox uses 'prompt' not 'text'
   const input: Record<string, unknown> = {
-    text,
+    prompt: text,
     exaggeration: options.exaggeration ?? 0.5,
     cfg_weight: options.cfgWeight ?? 0.5,
   };

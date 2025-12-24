@@ -39,7 +39,7 @@ function getSupabaseClient() {
 
 // Replicate API for Chatterbox (supports audio_prompt for voice cloning)
 const REPLICATE_API_URL = 'https://api.replicate.com/v1/predictions';
-const CHATTERBOX_MODEL = 'resemble-ai/chatterbox:676f4f148b9a009bac4bd7abd6a9e391743b25fccad7e82d447f4abcf90abc16';
+const CHATTERBOX_MODEL = 'resemble-ai/chatterbox:1b8422bc49635c20d0a84e387ed20879c0dd09254ecdb4e75dc4bec10ff94e97';
 
 async function runChatterboxTTS(
   text: string,
