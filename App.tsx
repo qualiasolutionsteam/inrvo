@@ -2474,7 +2474,7 @@ const App: React.FC = () => {
         )}
 
         {/* Sidebar Drawer - Slides in from left */}
-        <div className={`fixed top-0 bottom-0 left-0 z-[95] w-[280px] md:w-[320px] sidebar-premium border-r border-white/[0.06] flex flex-col overflow-hidden transition-all duration-300 ease-out ${showBurgerMenu ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className={`fixed top-0 bottom-0 left-0 z-[95] w-[280px] md:w-[320px] bg-[#0a0f1a] sidebar-premium border-r border-white/[0.06] flex flex-col overflow-hidden transition-all duration-300 ease-out ${showBurgerMenu ? 'translate-x-0' : '-translate-x-full'}`}>
               {/* Sidebar Header with Logo and Close Button */}
               <div className="flex-shrink-0 p-4 md:p-5 flex items-center justify-between sidebar-content-enter">
                 {/* Logo */}
