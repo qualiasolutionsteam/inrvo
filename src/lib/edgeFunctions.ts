@@ -292,32 +292,11 @@ async function blobToBase64(blob: Blob): Promise<string> {
 }
 
 // ============================================================================
-// Gemini Edge Function Wrappers
+// Gemini Script Generation (TTS removed - not implemented)
 // ============================================================================
-
-export interface GeminiTTSResponse {
-  audio: string; // base64 encoded PCM
-  format: string;
-}
 
 export interface GeminiScriptResponse {
   script: string;
-}
-
-/**
- * Generate speech using Gemini TTS via Edge Function
- * API key is stored server-side
- */
-export async function geminiTTS(
-  text: string,
-  voiceName: string = 'Zephyr'
-): Promise<string> {
-  const response = await callEdgeFunction<GeminiTTSResponse>('gemini-tts', {
-    text,
-    voiceName,
-  });
-
-  return response.audio;
 }
 
 /**

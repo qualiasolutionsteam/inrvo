@@ -1,19 +1,17 @@
 // Lazy import for GoogleGenAI - only load when needed (fallback for unauthenticated users)
 // This reduces initial bundle size by ~250KB
-import { geminiTTS, geminiGenerateScript, geminiExtendScript, isEdgeFunctionAvailable } from './src/lib/edgeFunctions';
+import { geminiGenerateScript, geminiExtendScript, isEdgeFunctionAvailable } from './src/lib/edgeFunctions';
 
 // Feature flag: Use Edge Functions for all API calls (secure, API key server-side)
 const USE_EDGE_FUNCTIONS = true;
 
-// Lazy load GoogleGenAI only when needed (deprecated fallback)
+// Lazy load GoogleGenAI only when needed (deprecated fallback for script generation)
 let GoogleGenAI: any = null;
-let Modality: any = null;
 
 async function getAI() {
   if (!GoogleGenAI) {
     const genai = await import('@google/genai');
     GoogleGenAI = genai.GoogleGenAI;
-    Modality = genai.Modality;
   }
   return new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 }
@@ -212,71 +210,8 @@ OUTPUT: The complete expanded meditation script only, no explanations or labels.
     }
   },
 
-  /**
-   * TTS Generation using gemini-2.5-flash-preview-tts.
-   * Uses Edge Functions for secure API key handling
-   * Returns base64 encoded PCM audio data.
-   */
-  async generateSpeech(text: string, voiceName: string = 'Zephyr'): Promise<string> {
-    try {
-      if (!text || text.trim() === '') {
-        throw new Error('Text is required for speech generation.');
-      }
-
-      // Use Edge Functions if available (secure, API key server-side)
-      if (USE_EDGE_FUNCTIONS && await isEdgeFunctionAvailable()) {
-        return geminiTTS(text, voiceName);
-      }
-
-      // Legacy fallback for unauthenticated users (dynamically loads 250KB SDK)
-      if (!import.meta.env.VITE_GEMINI_API_KEY) {
-        throw new Error('Please sign in to generate speech.');
-      }
-
-      const ai = await getAI();
-
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-preview-tts",
-        contents: [{ parts: [{ text }] }],
-        config: {
-          responseModalities: [Modality.AUDIO],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName },
-            },
-          },
-        },
-      });
-
-      const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-      if (!audioData || audioData.trim() === '') {
-        throw new Error('Empty audio response from API. Please try again.');
-      }
-
-      return audioData;
-    } catch (error: any) {
-      console.error('Error in generateSpeech:', error);
-      throw new Error(error?.message || 'Failed to generate speech. Please try again.');
-    }
-  },
-
-  /**
-   * Audio Transcription using gemini-3-flash-preview.
-   * Processes recorded audio blob converted to base64.
-   */
-  async transcribeAudio(base64Audio: string): Promise<string> {
-    const ai = getAI();
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: {
-        parts: [
-          { inlineData: { data: base64Audio, mimeType: 'audio/webm' } },
-          { text: "Please transcribe this audio. Only return the transcribed text, nothing else." }
-        ]
-      },
-    });
-    return response.text || "";
-  }
+  // NOTE: TTS is now handled by voiceService using Chatterbox via Replicate
+  // Gemini TTS was removed as there's no backend implementation
 };
 
 /**

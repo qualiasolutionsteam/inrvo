@@ -103,7 +103,7 @@ All tables have RLS policies - users can only access their own data.
 **Voice Providers** (`types.ts:VoiceProvider`):
 - `browser` - Web Speech API (free, lower quality, works offline)
 - `chatterbox` - Chatterbox via Replicate (~$0.03/run, high quality, voice cloning)
-- `Gemini` - Built-in Gemini voices
+Note: Legacy providers ('ElevenLabs', 'Gemini') in database are treated as browser fallback.
 
 ## Key Files
 

@@ -73,13 +73,27 @@ export const voiceService = {
 
   /**
    * Detect provider from voice profile
+   * Legacy providers ('ElevenLabs', 'Gemini') fall back to browser TTS
+   * Chatterbox requires a cloned voice with providerVoiceId or isCloned flag
    */
   detectProvider(voice: VoiceProfile): VoiceProvider {
-    if (voice.provider) return voice.provider;
+    // Check for browser voices first
     if (voice.id.startsWith('browser-')) return 'browser';
-    // All cloned voices use Chatterbox
-    if (voice.providerVoiceId || voice.isCloned) return 'chatterbox';
-    return 'browser'; // Default to free browser TTS
+
+    // Only use chatterbox if the voice is properly set up for it
+    // This requires either providerVoiceId (from cloning) or isCloned flag
+    if (voice.provider === 'chatterbox' && (voice.providerVoiceId || voice.isCloned)) {
+      return 'chatterbox';
+    }
+
+    // For any cloned voice with proper data, use chatterbox
+    if (voice.providerVoiceId || voice.isCloned) {
+      return 'chatterbox';
+    }
+
+    // Legacy providers ('ElevenLabs', 'Gemini') or voices without proper setup
+    // fall back to free browser TTS
+    return 'browser';
   },
 
   /**

@@ -23,8 +23,9 @@ export interface ScriptTemplate {
   prompt: string;
 }
 
-// Voice providers
-export type VoiceProvider = 'browser' | 'chatterbox' | 'Gemini';
+// Voice providers (only browser and chatterbox are implemented)
+// Legacy providers ('ElevenLabs', 'Gemini') are treated as browser fallback
+export type VoiceProvider = 'browser' | 'chatterbox';
 
 export interface VoiceProfile {
   id: string;

@@ -22,7 +22,7 @@ import InlinePlayer from './components/InlinePlayer';
 import { AgentChat } from './components/AgentChat';
 import OfflineIndicator from './components/OfflineIndicator';
 import { buildTimingMap, getCurrentWordIndex } from './src/lib/textSync';
-import { geminiService, decodeAudioBuffer, blobToBase64 } from './geminiService';
+import { geminiService, blobToBase64 } from './geminiService';
 import { voiceService } from './src/lib/voiceService';
 import { chatterboxCloneVoice } from './src/lib/edgeFunctions';
 import { creditService } from './src/lib/credits';
