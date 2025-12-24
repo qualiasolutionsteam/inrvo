@@ -5,10 +5,14 @@
  * Includes inline meditation panel with music, voice, and audio tag controls.
  */
 
-import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
+import React, { useState, useRef, useEffect, useCallback, memo, lazy, Suspense } from 'react';
 import { useMeditationAgent, type ChatMessage, type AgentAction } from '../src/hooks/useMeditationAgent';
-import type { VoiceProfile, BackgroundTrack } from '../types';
+import type { VoiceProfile } from '../types';
+import type { BackgroundTrack } from '../constants';
 import type { MeditationType } from '../src/lib/agent/knowledgeBase';
+
+// Lazy load MeditationEditor for bundle optimization
+const MeditationEditor = lazy(() => import('../src/components/MeditationEditor'));
 
 // ============================================================================
 // ICONS
@@ -37,59 +41,6 @@ const WaveIcon = () => (
 const SparkleIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
-  </svg>
-);
-
-const MusicIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <path d="M9 18V5l12-2v13" />
-    <circle cx="6" cy="18" r="3" />
-    <circle cx="18" cy="16" r="3" />
-  </svg>
-);
-
-const VoiceIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
-    <path d="M19 10v2a7 7 0 01-14 0v-2" />
-    <path d="M12 19v4M8 23h8" />
-  </svg>
-);
-
-const TagIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
-    <circle cx="7" cy="7" r="1" fill="currentColor" />
-  </svg>
-);
-
-const PlayIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M8 5v14l11-7z" />
-  </svg>
-);
-
-const ChevronIcon = ({ className = "w-4 h-4", direction = "down" }: { className?: string; direction?: "up" | "down" }) => (
-  <svg className={`${className} transition-transform ${direction === "up" ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M6 9l6 6 6-6" />
-  </svg>
-);
-
-const CheckIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M20 6L9 17l-5-5" />
-  </svg>
-);
-
-const PlusIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <path d="M12 5v14M5 12h14" />
-  </svg>
-);
-
-const CloseIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <path d="M18 6L6 18M6 6l12 12" />
   </svg>
 );
 
@@ -150,391 +101,6 @@ const MessageBubble = memo<MessageBubbleProps>(({ message, isLast }) => {
 });
 
 MessageBubble.displayName = 'MessageBubble';
-
-// ============================================================================
-// AUDIO TAG REGEX - matches [tag name] patterns
-// ============================================================================
-const AUDIO_TAG_REGEX = /\[([^\]]+)\]/g;
-
-// ============================================================================
-// INLINE MEDITATION PANEL - Mobile-optimized full-screen experience
-// ============================================================================
-
-interface MeditationPanelProps {
-  script: string;
-  meditationType: MeditationType;
-  selectedVoice: VoiceProfile | null;
-  selectedMusic: BackgroundTrack | null;
-  selectedTags: string[];
-  availableMusic: BackgroundTrack[];
-  availableTags: { id: string; name: string; color: string; tags: { id: string; label: string }[] }[];
-  onVoiceSelect: () => void;
-  onMusicSelect: (track: BackgroundTrack) => void;
-  onTagToggle: (tagId: string) => void;
-  onGenerate: (editedScript: string) => void;
-  isGenerating: boolean;
-  onClose: () => void;
-}
-
-const MeditationPanel = memo<MeditationPanelProps>(({
-  script,
-  meditationType,
-  selectedVoice,
-  selectedMusic,
-  selectedTags,
-  availableMusic,
-  availableTags,
-  onVoiceSelect,
-  onMusicSelect,
-  onTagToggle,
-  onGenerate,
-  isGenerating,
-  onClose,
-}) => {
-  const [showControls, setShowControls] = useState(false);
-  const [activeTab, setActiveTab] = useState<'voice' | 'music' | 'tags'>('voice');
-  const [editedScript, setEditedScript] = useState(script);
-  const editorRef = useRef<HTMLDivElement>(null);
-  const [cursorPosition, setCursorPosition] = useState<number>(script.length);
-
-  // Save cursor position in contenteditable
-  const saveCursorPosition = useCallback(() => {
-    const selection = window.getSelection();
-    if (!selection || !selection.rangeCount || !editorRef.current) return null;
-
-    const range = selection.getRangeAt(0);
-    const preCaretRange = range.cloneRange();
-    preCaretRange.selectNodeContents(editorRef.current);
-    preCaretRange.setEnd(range.startContainer, range.startOffset);
-    return preCaretRange.toString().length;
-  }, []);
-
-  // Restore cursor position in contenteditable
-  const restoreCursorPosition = useCallback((pos: number) => {
-    if (!editorRef.current) return;
-
-    const selection = window.getSelection();
-    if (!selection) return;
-
-    let charCount = 0;
-    const nodeStack: Node[] = [editorRef.current];
-    let foundNode: Node | null = null;
-    let foundOffset = 0;
-
-    while (nodeStack.length > 0) {
-      const node = nodeStack.pop()!;
-
-      if (node.nodeType === Node.TEXT_NODE) {
-        const textLength = node.textContent?.length || 0;
-        if (charCount + textLength >= pos) {
-          foundNode = node;
-          foundOffset = pos - charCount;
-          break;
-        }
-        charCount += textLength;
-      } else {
-        const children = node.childNodes;
-        for (let i = children.length - 1; i >= 0; i--) {
-          nodeStack.push(children[i]);
-        }
-      }
-    }
-
-    if (foundNode) {
-      const range = document.createRange();
-      range.setStart(foundNode, foundOffset);
-      range.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-  }, []);
-
-  // Insert audio tag at cursor position
-  const insertTagAtCursor = useCallback((tagLabel: string) => {
-    const pos = saveCursorPosition();
-    const insertPos = pos ?? editedScript.length;
-    const text = editedScript;
-
-    // Add space before tag if needed (not at start, not after space/newline)
-    const needSpaceBefore = insertPos > 0 && !/[\s\n]$/.test(text.substring(0, insertPos));
-    // Add space after tag if needed (not at end, not before space/newline)
-    const needSpaceAfter = insertPos < text.length && !/^[\s\n]/.test(text.substring(insertPos));
-
-    const tagWithSpacing = (needSpaceBefore ? ' ' : '') + tagLabel + (needSpaceAfter ? ' ' : '');
-    const newText = text.substring(0, insertPos) + tagWithSpacing + text.substring(insertPos);
-    const newCursorPos = insertPos + tagWithSpacing.length;
-
-    setEditedScript(newText);
-    setCursorPosition(newCursorPos);
-
-    // Restore focus and cursor position after state update
-    requestAnimationFrame(() => {
-      if (editorRef.current) {
-        editorRef.current.focus();
-        restoreCursorPosition(newCursorPos);
-      }
-    });
-  }, [editedScript, saveCursorPosition, restoreCursorPosition]);
-
-  // Restore cursor position after state update
-  useEffect(() => {
-    if (cursorPosition !== null && editorRef.current) {
-      editorRef.current.focus();
-      restoreCursorPosition(cursorPosition);
-    }
-  }, [cursorPosition, restoreCursorPosition]);
-
-  // Render script with styled audio tags (purple)
-  const renderStyledContent = React.useMemo(() => {
-    const parts: React.ReactNode[] = [];
-    let lastIndex = 0;
-    let match;
-
-    const regex = new RegExp(AUDIO_TAG_REGEX.source, 'g');
-
-    while ((match = regex.exec(editedScript)) !== null) {
-      // Add text before the tag
-      if (match.index > lastIndex) {
-        parts.push(editedScript.slice(lastIndex, match.index));
-      }
-
-      // Add styled tag with purple color
-      parts.push(
-        <span
-          key={match.index}
-          className="audio-tag"
-          contentEditable={false}
-          data-tag={match[0]}
-        >
-          {match[0]}
-        </span>
-      );
-
-      lastIndex = match.index + match[0].length;
-    }
-
-    // Add remaining text
-    if (lastIndex < editedScript.length) {
-      parts.push(editedScript.slice(lastIndex));
-    }
-
-    return parts;
-  }, [editedScript]);
-
-  // Calculate stats
-  const wordCount = editedScript.replace(/\[.*?\]/g, '').split(/\s+/).filter(Boolean).length;
-  const estimatedDuration = Math.ceil(wordCount / 100);
-
-  return (
-    <div className="fixed inset-0 z-[100] bg-[#020617] animate-in fade-in duration-300">
-      {/* Full screen meditation editor - z-[100] to be above sidebar (z-[95]) */}
-      <div className="h-full flex flex-col overflow-hidden">
-
-        {/* Close button - top right (square like sidebar toggle) */}
-        <button
-          onClick={(e) => { e.stopPropagation(); onClose(); }}
-          className="absolute top-3 right-3 md:top-4 md:right-4 z-10 w-11 h-11 md:w-12 md:h-12 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-all flex items-center justify-center border border-white/10 hover:border-cyan-500/30 active:scale-95 cursor-pointer touch-manipulation"
-          aria-label="Close"
-          type="button"
-        >
-          <CloseIcon className="w-5 h-5 md:w-6 md:h-6" />
-        </button>
-
-        {/* Scrollable Script Area - starts below X button */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pt-16 md:pt-18">
-          <div
-            ref={editorRef}
-            contentEditable
-            suppressContentEditableWarning
-            onInput={(e) => {
-              const target = e.currentTarget;
-              // Extract text content, preserving the actual tag text
-              const text = target.innerText;
-              setEditedScript(text);
-            }}
-            onKeyDown={(e) => {
-              // Handle backspace/delete on tag spans
-              if (e.key === 'Backspace' || e.key === 'Delete') {
-                const selection = window.getSelection();
-                if (selection && selection.rangeCount > 0) {
-                  const range = selection.getRangeAt(0);
-                  const node = range.startContainer;
-                  // Check if we're at the edge of a tag span
-                  if (node.parentElement?.hasAttribute('data-tag')) {
-                    // Let default behavior handle it
-                  }
-                }
-              }
-            }}
-            className="w-full min-h-full bg-transparent text-white leading-relaxed
-                       outline-none px-4 pb-4 md:px-6 md:pb-6 whitespace-pre-wrap break-words"
-            style={{ fontSize: '16px', minHeight: '200px', wordBreak: 'break-word' }}
-            data-placeholder="Your meditation script..."
-          >
-            {renderStyledContent}
-          </div>
-        </div>
-
-        {/* Bottom Bar - part of flex layout, not fixed */}
-        <div className="flex-shrink-0 bg-black/60 backdrop-blur-xl border-t border-white/10 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] space-y-3">
-
-          {/* Options Row */}
-          <div className="flex items-center gap-2">
-            {/* + Button to expand controls - matches voice chip height */}
-            <button
-              onClick={() => setShowControls(!showControls)}
-              className={`flex-shrink-0 h-8 px-3 rounded-full flex items-center justify-center gap-1.5 text-xs font-medium border transition-all
-                ${showControls
-                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'
-                  : 'bg-white/10 text-white/50 border-white/10 hover:bg-white/15 hover:text-white/70 hover:border-white/20'
-                }`}
-            >
-              <PlusIcon className={`w-3.5 h-3.5 transition-transform duration-200 ${showControls ? 'rotate-45' : ''}`} />
-              <span className="hidden sm:inline">{showControls ? 'Close' : 'Options'}</span>
-            </button>
-
-            {/* Status chips */}
-            <div className="flex-1 flex items-center gap-2 overflow-x-auto no-scrollbar">
-              <button
-                onClick={onVoiceSelect}
-                className={`flex-shrink-0 h-8 px-3 rounded-full text-xs font-medium flex items-center gap-1.5 border transition-all
-                  ${selectedVoice
-                    ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'
-                    : 'bg-white/10 text-white/50 border-white/10 animate-pulse'
-                  }`}
-              >
-                <VoiceIcon className="w-3.5 h-3.5" />
-                {selectedVoice ? selectedVoice.name : 'Select Voice'}
-              </button>
-
-              {selectedMusic && selectedMusic.id !== 'none' && (
-                <span className="flex-shrink-0 h-8 px-3 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-medium border border-emerald-500/30 flex items-center">
-                  🎵 {selectedMusic.name}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Expandable Controls */}
-          {showControls && (
-            <div className="animate-in slide-in-from-bottom-2 duration-200 bg-white/10 backdrop-blur-sm rounded-xl p-3">
-              {/* Tab Buttons */}
-              <div className="flex gap-1 mb-3">
-                <button
-                  onClick={() => setActiveTab('voice')}
-                  className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all
-                    ${activeTab === 'voice' ? 'bg-cyan-500/30 text-cyan-300' : 'text-white/50'}`}
-                >
-                  Voice
-                </button>
-                <button
-                  onClick={() => setActiveTab('music')}
-                  className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all
-                    ${activeTab === 'music' ? 'bg-emerald-500/30 text-emerald-300' : 'text-white/50'}`}
-                >
-                  Music
-                </button>
-                <button
-                  onClick={() => setActiveTab('tags')}
-                  className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all
-                    ${activeTab === 'tags' ? 'bg-violet-500/30 text-violet-300' : 'text-white/50'}`}
-                >
-                  Tags
-                </button>
-              </div>
-
-              {/* Tab Content */}
-              <div className="max-h-32 overflow-y-auto">
-                {activeTab === 'voice' && (
-                  <button
-                    onClick={onVoiceSelect}
-                    className="w-full p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all flex items-center gap-3"
-                  >
-                    <VoiceIcon className={`w-5 h-5 ${selectedVoice ? 'text-cyan-400' : 'text-white/40'}`} />
-                    <span className="text-white/80 text-sm">
-                      {selectedVoice ? `Change from ${selectedVoice.name}` : 'Tap to select a voice'}
-                    </span>
-                  </button>
-                )}
-
-                {activeTab === 'music' && (
-                  <div className="grid grid-cols-2 gap-2">
-                    {availableMusic.slice(0, 6).map((track) => (
-                      <button
-                        key={track.id}
-                        onClick={() => onMusicSelect(track)}
-                        className={`p-2 rounded-lg text-xs transition-all ${
-                          selectedMusic?.id === track.id
-                            ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/40'
-                            : 'bg-white/5 text-white/60 hover:bg-white/10'
-                        }`}
-                      >
-                        {track.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {activeTab === 'tags' && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {availableTags.flatMap(cat => cat.tags).slice(0, 10).map((tag) => (
-                      <button
-                        key={tag.id}
-                        onClick={() => insertTagAtCursor(tag.label)}
-                        className="px-2.5 py-1 rounded-md text-xs transition-all
-                          bg-gradient-to-r from-violet-500/20 to-purple-500/20
-                          hover:from-violet-500/30 hover:to-purple-500/30
-                          border border-violet-500/30 hover:border-violet-400/50
-                          text-violet-200 font-medium
-                          active:scale-95"
-                        title={`Insert ${tag.label} at cursor`}
-                      >
-                        <span className="text-violet-400 mr-1">+</span>
-                        {tag.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Big Generate Button */}
-          <button
-            onClick={() => onGenerate(editedScript)}
-            disabled={!selectedVoice || isGenerating}
-            className={`w-full py-4 rounded-2xl font-semibold text-base flex items-center justify-center gap-3 transition-all
-              ${!selectedVoice
-                ? 'bg-white/10 text-white/40'
-                : isGenerating
-                  ? 'bg-cyan-500/60 text-white'
-                  : 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white shadow-lg shadow-cyan-500/30 active:scale-[0.98]'
-              }`}
-          >
-            {isGenerating ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white" />
-                Generating Audio...
-              </>
-            ) : !selectedVoice ? (
-              <>
-                <VoiceIcon className="w-5 h-5" />
-                Select a Voice First
-              </>
-            ) : (
-              <>
-                <PlayIcon className="w-5 h-5" />
-                Generate & Play
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-});
-
-MeditationPanel.displayName = 'MeditationPanel';
 
 // ============================================================================
 // MAIN COMPONENT
@@ -917,23 +483,30 @@ export const AgentChat: React.FC<AgentChatProps> = ({
       </div>
       )}
 
-      {/* Meditation Panel - Full screen on mobile, inline on desktop */}
+      {/* Meditation Editor - Unified editing experience */}
       {showMeditationPanel && (currentMeditation?.script || restoredMeditationScript) && (
-        <MeditationPanel
-          script={currentMeditation?.script || restoredMeditationScript || ''}
-          meditationType={currentMeditation?.meditationType || 'general'}
-          selectedVoice={selectedVoice || null}
-          selectedMusic={selectedMusic || null}
-          selectedTags={selectedTags}
-          availableMusic={availableMusic}
-          availableTags={availableTags}
-          onVoiceSelect={onRequestVoiceSelection || (() => {})}
-          onMusicSelect={onMusicChange || (() => {})}
-          onTagToggle={handleTagToggle}
-          onGenerate={handleGenerate}
-          onClose={handleCloseMeditationPanel}
-          isGenerating={isGeneratingAudio}
-        />
+        <Suspense fallback={
+          <div className="fixed inset-0 z-[60] bg-[#020617] flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-cyan-500 border-t-transparent" />
+          </div>
+        }>
+          <MeditationEditor
+            script={currentMeditation?.script || restoredMeditationScript || ''}
+            meditationType={currentMeditation?.meditationType || 'general'}
+            selectedVoice={selectedVoice || null}
+            selectedMusic={selectedMusic || null}
+            selectedTags={selectedTags}
+            availableMusic={availableMusic}
+            availableTags={availableTags}
+            onVoiceSelect={onRequestVoiceSelection || (() => {})}
+            onMusicSelect={onMusicChange || (() => {})}
+            onTagToggle={handleTagToggle}
+            onGenerate={handleGenerate}
+            onClose={handleCloseMeditationPanel}
+            isGenerating={isGeneratingAudio}
+            source="agent"
+          />
+        </Suspense>
       )}
     </div>
   );

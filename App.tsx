@@ -17,6 +17,7 @@ const AuthModal = lazy(() => import('./components/AuthModal'));
 const VoiceManager = lazy(() => import('./components/VoiceManager'));
 const SimpleVoiceClone = lazy(() => import('./components/SimpleVoiceClone').then(m => ({ default: m.SimpleVoiceClone })));
 const ScriptReader = lazy(() => import('./components/ScriptReader'));
+const MeditationEditor = lazy(() => import('./src/components/MeditationEditor'));
 import InlinePlayer from './components/InlinePlayer';
 import { AgentChat } from './components/AgentChat';
 import OfflineIndicator from './components/OfflineIndicator';
@@ -2328,119 +2329,36 @@ const App: React.FC = () => {
           </>
         )}
 
-        {/* MODAL: Script Preview & Edit */}
+        {/* MODAL: Script Preview & Edit - Using unified MeditationEditor */}
         {showScriptPreview && (
-          <>
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4">
-              {/* Backdrop */}
-              <div
-                className="absolute inset-0 bg-black/80 backdrop-blur-md"
-                onClick={() => !(isGenerating || isExtending) && setShowScriptPreview(false)}
-              />
-
-              {/* Modal Content */}
-              <div className="relative z-10 w-full max-w-2xl glass rounded-2xl md:rounded-3xl border border-white/10 shadow-2xl shadow-indigo-900/20 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-300">
-                {/* Header - Minimal */}
-                <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center">
-                      <ICONS.Sparkle className="w-4 h-4 text-cyan-400" />
-                    </div>
-                    <span className="text-sm md:text-base font-medium text-white">Preview</span>
-                  </div>
-                  <button
-                    onClick={() => !(isGenerating || isExtending) && setShowScriptPreview(false)}
-                    disabled={isGenerating || isExtending}
-                    className="p-2 rounded-lg hover:bg-white/10 text-slate-500 hover:text-white transition-all disabled:opacity-50"
-                  >
-                    <ICONS.Close className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Loading Overlay */}
-                {(isGenerating || isExtending) && (
-                  <div className="absolute inset-0 z-20 bg-black/60 backdrop-blur-sm rounded-2xl md:rounded-3xl flex flex-col items-center justify-center gap-4">
-                    <div className="relative">
-                      <div className="w-16 h-16 rounded-full border-2 border-cyan-500/20 border-t-cyan-500 animate-spin"></div>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        {isExtending ? (
-                          <ICONS.Sparkle className="w-6 h-6 text-cyan-400 animate-pulse" />
-                        ) : (
-                          <ICONS.Waveform className="w-6 h-6 text-cyan-400 animate-pulse" />
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-white font-medium">
-                        {isExtending ? 'Extending Script' : 'Generating Voice'}
-                      </p>
-                      <p className="text-sm text-slate-400 mt-1">
-                        {isExtending ? 'Creating a longer version...' : 'Creating your meditation...'}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Script Editor */}
-                <div className="flex-1 overflow-y-auto px-4 pb-4 md:px-6 md:pb-6">
-                  {/* Audio Tags - Inline above textarea */}
-                  <div className="flex flex-wrap gap-1.5 mb-3">
-                    {AUDIO_TAG_CATEGORIES.flatMap(cat => cat.tags).slice(0, 6).map(tag => (
-                      <button
-                        key={tag.id}
-                        onClick={() => insertAudioTag(tag.label)}
-                        disabled={isGenerating || isExtending}
-                        className="px-2.5 py-1 rounded-full bg-white/5 hover:bg-violet-500/20 text-slate-400 hover:text-violet-300 text-[10px] md:text-xs font-medium transition-all border border-white/5 hover:border-violet-500/30 disabled:opacity-50"
-                      >
-                        {tag.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <textarea
-                    ref={scriptTextareaRef}
-                    value={editableScript}
-                    onChange={(e) => setEditableScript(e.target.value)}
-                    disabled={isGenerating || isExtending}
-                    className="w-full h-56 md:h-72 p-4 rounded-xl bg-white/[0.03] border border-white/10 text-slate-200 text-sm md:text-base leading-relaxed font-serif resize-none focus:outline-none focus:border-cyan-500/40 focus:bg-white/[0.05] transition-all placeholder:text-slate-600 disabled:opacity-50"
-                    placeholder="Your meditation script..."
-                  />
-
-                  <p className="text-[10px] md:text-xs text-slate-600 mt-2 text-center">
-                    Click where you want to insert, then tap a tag above
-                  </p>
-                </div>
-
-                {/* Footer - Compact */}
-                <div className="px-4 py-3 md:px-6 md:py-4 border-t border-white/5 flex gap-2">
-                  <button
-                    onClick={() => setShowScriptPreview(false)}
-                    disabled={isGenerating || isExtending}
-                    className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 text-sm font-medium transition-all disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleExtendScript}
-                    disabled={!editableScript.trim() || isGenerating || isExtending}
-                    className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-emerald-500/20 text-slate-400 hover:text-emerald-300 text-sm font-medium transition-all border border-white/5 hover:border-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    title="Extend script to a longer version"
-                  >
-                    <ICONS.Sparkle className="w-4 h-4" />
-                    Extend
-                  </button>
-                  <button
-                    onClick={throttledPlayEditedScript}
-                    disabled={!editableScript.trim() || isGenerating || isExtending}
-                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-purple-600 text-white text-sm font-medium transition-all hover:shadow-lg hover:shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    <ICONS.Player className="w-4 h-4" />
-                    Play
-                  </button>
-                </div>
-              </div>
+          <Suspense fallback={
+            <div className="fixed inset-0 z-[60] bg-[#020617] flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-cyan-500 border-t-transparent" />
             </div>
-          </>
+          }>
+            <MeditationEditor
+              script={editableScript}
+              selectedVoice={selectedVoice}
+              selectedMusic={selectedBackgroundTrack}
+              selectedTags={selectedAudioTags}
+              availableMusic={BACKGROUND_TRACKS}
+              availableTags={AUDIO_TAG_CATEGORIES}
+              onVoiceSelect={() => setShowVoiceManager(true)}
+              onMusicSelect={(track) => setSelectedBackgroundTrack(track)}
+              onTagToggle={(tagId) => {
+                setSelectedAudioTags(prev =>
+                  prev.includes(tagId) ? prev.filter(t => t !== tagId) : [...prev, tagId]
+                );
+              }}
+              onGenerate={(updatedScript) => {
+                setEditableScript(updatedScript);
+                throttledPlayEditedScript();
+              }}
+              onClose={() => !(isGenerating || isExtending) && setShowScriptPreview(false)}
+              isGenerating={isGenerating || isExtending}
+              source="direct"
+            />
+          </Suspense>
         )}
 
         {/* Auth Modal (lazy-loaded) */}
