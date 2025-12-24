@@ -180,6 +180,8 @@ export interface MeditationHistory {
   background_track_name?: string;
   duration_seconds?: number;
   audio_tags_used?: string[];
+  audio_url?: string;
+  is_favorite?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -551,6 +553,90 @@ export const getUserVoiceClones = async (): Promise<VoiceClone[]> => {
 };
 
 // Meditation History operations
+
+/**
+ * Convert base64 audio to a Blob
+ */
+function base64ToBlob(base64: string, mimeType: string = 'audio/wav'): Blob {
+  // Remove data URL prefix if present
+  const base64Data = base64.includes(',') ? base64.split(',')[1] : base64;
+  const byteCharacters = atob(base64Data);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  return new Blob([byteArray], { type: mimeType });
+}
+
+/**
+ * Upload meditation audio to Supabase Storage
+ */
+export const uploadMeditationAudio = async (
+  audioBase64: string,
+  meditationId: string
+): Promise<string | null> => {
+  const user = await getCurrentUser();
+  if (!user || !supabase) return null;
+
+  try {
+    // Convert base64 to blob
+    const audioBlob = base64ToBlob(audioBase64, 'audio/wav');
+
+    // Create unique filename: userId/meditationId_timestamp.wav
+    const fileName = `${user.id}/${meditationId}_${Date.now()}.wav`;
+
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('meditation-audio')
+      .upload(fileName, audioBlob, {
+        contentType: 'audio/wav',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Error uploading meditation audio:', error);
+      return null;
+    }
+
+    return data.path;
+  } catch (error) {
+    console.error('Error uploading meditation audio:', error);
+    return null;
+  }
+};
+
+/**
+ * Get public URL for meditation audio
+ */
+export const getMeditationAudioUrl = (audioPath: string): string | null => {
+  if (!supabase || !audioPath) return null;
+
+  const { data } = supabase.storage
+    .from('meditation-audio')
+    .getPublicUrl(audioPath);
+
+  return data?.publicUrl || null;
+};
+
+/**
+ * Get signed URL for meditation audio (for private buckets)
+ */
+export const getMeditationAudioSignedUrl = async (audioPath: string): Promise<string | null> => {
+  if (!supabase || !audioPath) return null;
+
+  const { data, error } = await supabase.storage
+    .from('meditation-audio')
+    .createSignedUrl(audioPath, 3600); // 1 hour expiry
+
+  if (error) {
+    console.error('Error getting signed URL:', error);
+    return null;
+  }
+
+  return data?.signedUrl || null;
+};
+
 export const saveMeditationHistory = async (
   prompt: string,
   enhancedScript?: string,
@@ -559,11 +645,13 @@ export const saveMeditationHistory = async (
   backgroundTrackId?: string,
   backgroundTrackName?: string,
   durationSeconds?: number,
-  audioTagsUsed?: string[]
+  audioTagsUsed?: string[],
+  audioBase64?: string
 ): Promise<MeditationHistory | null> => {
   const user = await getCurrentUser();
   if (!user || !supabase) return null;
 
+  // First, insert the meditation history record
   const { data, error } = await supabase
     .from('meditation_history')
     .insert({
@@ -584,6 +672,29 @@ export const saveMeditationHistory = async (
     console.error('Error saving meditation history:', error);
     return null;
   }
+
+  // If we have audio data, upload it and update the record
+  if (audioBase64 && data) {
+    const audioPath = await uploadMeditationAudio(audioBase64, data.id);
+
+    if (audioPath) {
+      // Update the record with the audio URL
+      const { data: updatedData, error: updateError } = await supabase
+        .from('meditation_history')
+        .update({ audio_url: audioPath })
+        .eq('id', data.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Error updating meditation with audio URL:', updateError);
+        return data; // Return original data even if audio update failed
+      }
+
+      return updatedData;
+    }
+  }
+
   return data;
 };
 
@@ -611,6 +722,22 @@ export const deleteMeditationHistory = async (id: string): Promise<boolean> => {
   const user = await getCurrentUser();
   if (!user || !supabase) return false;
 
+  // First, get the record to find the audio URL
+  const { data: record } = await supabase
+    .from('meditation_history')
+    .select('audio_url')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single();
+
+  // Delete audio file from storage if it exists
+  if (record?.audio_url) {
+    await supabase.storage
+      .from('meditation-audio')
+      .remove([record.audio_url]);
+  }
+
+  // Delete the database record
   const { error } = await supabase
     .from('meditation_history')
     .delete()
@@ -622,6 +749,60 @@ export const deleteMeditationHistory = async (id: string): Promise<boolean> => {
     return false;
   }
   return true;
+};
+
+/**
+ * Toggle favorite status for a meditation
+ */
+export const toggleMeditationFavorite = async (id: string): Promise<boolean> => {
+  const user = await getCurrentUser();
+  if (!user || !supabase) return false;
+
+  // Get current favorite status
+  const { data: record } = await supabase
+    .from('meditation_history')
+    .select('is_favorite')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single();
+
+  if (!record) return false;
+
+  // Toggle the favorite status
+  const { error } = await supabase
+    .from('meditation_history')
+    .update({ is_favorite: !record.is_favorite })
+    .eq('id', id)
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.error('Error toggling meditation favorite:', error);
+    return false;
+  }
+  return true;
+};
+
+/**
+ * Get favorite meditations
+ */
+export const getFavoriteMeditations = async (): Promise<MeditationHistory[]> => {
+  const user = await getCurrentUser();
+  if (!user || !supabase) return [];
+
+  return withRetry(async () => {
+    const { data, error } = await supabase
+      .from('meditation_history')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('is_favorite', true)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching favorite meditations:', error);
+      throw error;
+    }
+    return data || [];
+  });
 };
 
 // Audio Tag Preference operations
