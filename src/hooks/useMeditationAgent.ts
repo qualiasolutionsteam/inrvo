@@ -182,21 +182,48 @@ export function useMeditationAgent(): UseMeditationAgentReturn {
       // If agent is ready to generate meditation, skip showing the chat response
       // and go directly to the ScriptEditor experience
       if (response.shouldGenerateMeditation && response.meditationType) {
-        // Show brief transition message instead of agent's full response
-        // (which might contain meditation text from AI not following instructions)
-        setMessages(prev => prev.map(msg =>
-          msg.id === loadingId
-            ? {
-                ...msg,
-                content: `Creating your personalized ${response.meditationType.replace('_', ' ')} meditation...`,
-                isLoading: false,
-              }
-            : msg
-        ));
+        // Check if this is a pasted script (no AI generation needed)
+        if (response.pastedScript) {
+          // User pasted a ready-made meditation - go directly to editor
+          setMessages(prev => prev.map(msg =>
+            msg.id === loadingId
+              ? {
+                  ...msg,
+                  content: response.message,
+                  isLoading: false,
+                }
+              : msg
+          ));
 
-        // Generate the meditation - this will open ScriptEditor automatically
-        const meditationPrompt = agentRef.current.generateMeditationPrompt(response.meditationType);
-        await generateMeditation(meditationPrompt, response.meditationType);
+          // Set the meditation directly without AI generation
+          const meditation: MeditationResult = {
+            script: response.pastedScript,
+            meditationType: response.meditationType,
+            readyForReview: true,
+          };
+          setCurrentMeditation(meditation);
+          console.log("[useMeditationAgent] Pasted script ready for review:", {
+            length: meditation.script.length,
+            type: meditation.meditationType,
+          });
+        } else {
+          // Normal flow - generate script via AI
+          // Show brief transition message instead of agent's full response
+          // (which might contain meditation text from AI not following instructions)
+          setMessages(prev => prev.map(msg =>
+            msg.id === loadingId
+              ? {
+                  ...msg,
+                  content: `Creating your personalized ${response.meditationType.replace('_', ' ')} meditation...`,
+                  isLoading: false,
+                }
+              : msg
+          ));
+
+          // Generate the meditation - this will open ScriptEditor automatically
+          const meditationPrompt = agentRef.current.generateMeditationPrompt(response.meditationType);
+          await generateMeditation(meditationPrompt, response.meditationType);
+        }
       } else {
         // Normal conversational response - show the agent's message
         setMessages(prev => prev.map(msg =>

@@ -73,6 +73,8 @@ export interface AgentResponse {
   meditationType?: MeditationType;
   meditationPrompt?: string;
   quote?: { quote: string; teacher: string };
+  // When user pastes a ready-made meditation script, pass it directly without AI processing
+  pastedScript?: string;
 }
 
 export interface AgentAction {
@@ -234,6 +236,28 @@ export class MeditationAgent {
    * Process a user message and generate a response
    */
   async chat(userMessage: string): Promise<AgentResponse> {
+    // FIRST: Check if user pasted a ready-made meditation script
+    const pastedScript = this.detectReadyMeditationScript(userMessage);
+    if (pastedScript) {
+      console.log('[MeditationAgent] User pasted a ready-made meditation, skipping AI processing');
+
+      // Add to context for tracking
+      this.context.messages.push({
+        role: 'user',
+        content: userMessage,
+        timestamp: new Date(),
+      });
+      this.context.sessionState.messageCount++;
+
+      // Return immediately with the pasted script - no AI needed
+      return {
+        message: "I see you've brought your own meditation script. Let me take you to the editor where you can review and customize it.",
+        shouldGenerateMeditation: true,
+        meditationType: 'guided_visualization', // Default type for pasted scripts
+        pastedScript: pastedScript,
+      };
+    }
+
     // Add user message to context
     const userMsg: ConversationMessage = {
       role: 'user',
@@ -400,6 +424,63 @@ Guide:`;
     ];
 
     return requestPatterns.some(pattern => pattern.test(lowered));
+  }
+
+  /**
+   * Detect if user has pasted a ready-made meditation script
+   * Returns the script if detected, null otherwise
+   */
+  private detectReadyMeditationScript(message: string): string | null {
+    // Minimum length for a meditation script (at least a few paragraphs)
+    if (message.length < 300) {
+      return null;
+    }
+
+    const lowered = message.toLowerCase();
+
+    // Check for meditation script indicators
+    const meditationIndicators = [
+      // Opening/greeting patterns
+      /(?:welcome|greetings|hello|dear one|beloved)/i,
+      // Breathing instructions
+      /(?:take a (?:deep |slow )?breath|breathe (?:in|out|deeply)|inhale|exhale)/i,
+      // Body awareness
+      /(?:close your eyes|relax your|feel your body|notice your|let go of)/i,
+      // Guidance patterns
+      /(?:allow yourself|let yourself|give yourself permission|imagine|visualize|picture)/i,
+      // Meditation language
+      /(?:present moment|inner peace|calm|stillness|awareness|mindful|conscious)/i,
+      // Ending patterns
+      /(?:gently|slowly|when you're ready|return|come back|open your eyes)/i,
+    ];
+
+    // Count how many meditation indicators are present
+    let indicatorCount = 0;
+    for (const pattern of meditationIndicators) {
+      if (pattern.test(lowered)) {
+        indicatorCount++;
+      }
+    }
+
+    // Check for structural elements (multiple paragraphs, pauses, etc.)
+    const paragraphCount = message.split(/\n\s*\n/).length;
+    const hasAudioTags = /\[(?:pause|breath|deep breath|silence|music)\]/i.test(message);
+    const hasMeditationStructure = paragraphCount >= 3 || hasAudioTags;
+
+    // Consider it a ready meditation if:
+    // - At least 3 meditation indicators AND
+    // - Has meditation structure (multiple paragraphs or audio tags)
+    if (indicatorCount >= 3 && hasMeditationStructure) {
+      console.log('[MeditationAgent] Detected ready-made meditation script:', {
+        indicatorCount,
+        paragraphCount,
+        hasAudioTags,
+        length: message.length,
+      });
+      return message;
+    }
+
+    return null;
   }
 
   /**
