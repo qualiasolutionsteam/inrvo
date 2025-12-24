@@ -209,8 +209,8 @@ export const AUDIO_TAG_CATEGORIES: { id: string; name: string; color: string; bg
   {
     id: 'pauses',
     name: 'Pauses',
-    color: 'text-cyan-400',
-    bgColor: 'bg-cyan-500/10',
+    color: 'text-purple-400',
+    bgColor: 'bg-purple-500/10',
     tags: [
       { id: 'pause', label: '[pause]', description: 'A natural 2-3 second pause' },
       { id: 'short_pause', label: '[short pause]', description: 'A brief 1-2 second pause' },
@@ -221,8 +221,8 @@ export const AUDIO_TAG_CATEGORIES: { id: string; name: string; color: string; bg
   {
     id: 'breathing',
     name: 'Breathing',
-    color: 'text-emerald-400',
-    bgColor: 'bg-emerald-500/10',
+    color: 'text-purple-400',
+    bgColor: 'bg-purple-500/10',
     tags: [
       { id: 'deep_breath', label: '[deep breath]', description: 'A full deep breath cycle' },
       { id: 'inhale', label: '[inhale]', description: 'Sound of breathing in deeply' },
@@ -233,8 +233,8 @@ export const AUDIO_TAG_CATEGORIES: { id: string; name: string; color: string; bg
   {
     id: 'voice',
     name: 'Voice Style',
-    color: 'text-violet-400',
-    bgColor: 'bg-violet-500/10',
+    color: 'text-purple-400',
+    bgColor: 'bg-purple-500/10',
     tags: [
       { id: 'whisper', label: '[whisper]', description: 'Speak in a soft whisper' },
       { id: 'soft_voice', label: '[soft voice]', description: 'Speak very gently' },
@@ -243,8 +243,8 @@ export const AUDIO_TAG_CATEGORIES: { id: string; name: string; color: string; bg
   {
     id: 'sounds',
     name: 'Sounds',
-    color: 'text-rose-400',
-    bgColor: 'bg-rose-500/10',
+    color: 'text-purple-400',
+    bgColor: 'bg-purple-500/10',
     tags: [
       { id: 'gentle_giggle', label: '[gentle giggle]', description: 'A soft, warm laugh' },
       { id: 'sigh', label: '[sigh]', description: 'A relaxing sigh' },

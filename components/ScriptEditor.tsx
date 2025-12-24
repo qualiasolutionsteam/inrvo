@@ -296,14 +296,14 @@ export const ScriptEditor: React.FC<ScriptEditorProps> = ({
                   key={tag}
                   onClick={() => insertTag(tag)}
                   className="group flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full
-                           bg-gradient-to-r from-cyan-500/20 to-purple-500/20
-                           hover:from-cyan-500/30 hover:to-purple-500/30
-                           border border-cyan-500/30 hover:border-cyan-400/50
-                           text-cyan-200 text-[10px] sm:text-xs font-medium transition-all duration-200
+                           bg-gradient-to-r from-purple-500/20 to-violet-500/20
+                           hover:from-purple-500/30 hover:to-violet-500/30
+                           border border-purple-500/30 hover:border-purple-400/50
+                           text-purple-200 text-[10px] sm:text-xs font-medium transition-all duration-200
                            "
                   title={description}
                 >
-                  <span className="text-cyan-400">+</span>
+                  <span className="text-purple-400">+</span>
                   {label}
                 </button>
               ))}

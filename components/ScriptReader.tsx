@@ -95,9 +95,9 @@ const ScriptReader: React.FC<ScriptReaderProps> = memo(({
                   <span
                     key={`${pIndex}-${tIndex}`}
                     className="inline-block px-2 py-0.5 mx-1 text-xs md:text-sm rounded-full
-                               bg-gradient-to-r from-cyan-500/15 to-purple-500/15
-                               text-cyan-400/80 font-sans font-medium
-                               border border-cyan-500/20
+                               bg-gradient-to-r from-purple-500/15 to-violet-500/15
+                               text-purple-400/80 font-sans font-medium
+                               border border-purple-500/20
                                "
                   >
                     {token}
