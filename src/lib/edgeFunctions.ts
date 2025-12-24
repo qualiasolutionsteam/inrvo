@@ -426,6 +426,87 @@ export async function geminiExtendScript(
 }
 
 // ============================================================================
+// Chatterbox Edge Function Wrappers (via Replicate)
+// ============================================================================
+
+export interface ChatterboxTTSResponse {
+  audioBase64: string;
+  format: string;
+}
+
+export interface ChatterboxCloneResponse {
+  voiceProfileId: string;
+  voiceSampleUrl: string;
+}
+
+/**
+ * Generate speech using Chatterbox via Replicate Edge Function
+ * Much cheaper than ElevenLabs (~$0.03/run vs ~$0.30/1000 chars)
+ */
+export async function chatterboxTTS(
+  voiceId: string,
+  text: string,
+  options?: {
+    exaggeration?: number;  // 0-1, emotion exaggeration
+    cfgWeight?: number;     // 0-1, quality weight
+  }
+): Promise<string> {
+  const response = await callEdgeFunction<{ success: boolean; audioBase64: string; format: string }>('chatterbox-tts', {
+    voiceId,
+    text,
+    exaggeration: options?.exaggeration ?? 0.5,
+    cfgWeight: options?.cfgWeight ?? 0.5,
+  });
+
+  return response.audioBase64;
+}
+
+/**
+ * Clone a voice using Chatterbox via Replicate Edge Function
+ * Zero-shot cloning - just uploads audio sample, used at TTS time
+ */
+export async function chatterboxCloneVoice(
+  audioBlob: Blob,
+  name: string,
+  description?: string,
+  metadata?: VoiceMetadata
+): Promise<ChatterboxCloneResponse> {
+  const token = await getAuthToken();
+  const base64Audio = await blobToBase64(audioBlob);
+
+  const url = `${SUPABASE_URL}/functions/v1/chatterbox-clone`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      audioBase64: base64Audio,
+      voiceName: name,
+      description: description || 'Voice clone created with Chatterbox',
+      metadata: metadata || undefined,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || `Voice cloning failed: ${response.status}`);
+  }
+
+  if (!data.voiceProfileId) {
+    throw new Error('No voice profile ID returned from cloning service');
+  }
+
+  return {
+    voiceProfileId: data.voiceProfileId,
+    voiceSampleUrl: data.voiceSampleUrl,
+  };
+}
+
+// ============================================================================
 // Feature flags for gradual migration
 // ============================================================================
 

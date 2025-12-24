@@ -149,7 +149,48 @@ serve(async (req) => {
       );
     }
 
-    log.info('Starting TTS generation', { textLength: text.length, voiceId });
+    // Verify voice exists in ElevenLabs before attempting TTS
+    log.info('Verifying voice exists in ElevenLabs', { elevenlabsVoiceId: voiceProfile.elevenlabs_voice_id });
+
+    const voiceCheckResponse = await fetch(
+      `https://api.elevenlabs.io/v1/voices/${voiceProfile.elevenlabs_voice_id}`,
+      {
+        method: 'GET',
+        headers: {
+          'xi-api-key': elevenlabsApiKey,
+        },
+      }
+    );
+
+    if (!voiceCheckResponse.ok) {
+      if (voiceCheckResponse.status === 401) {
+        log.error('ElevenLabs API key invalid', { status: voiceCheckResponse.status });
+        return new Response(
+          JSON.stringify({ error: 'ElevenLabs API key is invalid or expired', requestId }),
+          { status: 500, headers: { ...allHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      if (voiceCheckResponse.status === 404) {
+        log.error('Voice not found in ElevenLabs', {
+          voiceId,
+          elevenlabsVoiceId: voiceProfile.elevenlabs_voice_id,
+        });
+        return new Response(
+          JSON.stringify({
+            error: 'This voice no longer exists in ElevenLabs. Please clone a new voice or select a different one.',
+            requestId,
+          }),
+          { status: 404, headers: { ...allHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      // Log but continue for other errors (might be temporary)
+      log.warn('Voice verification failed', {
+        status: voiceCheckResponse.status,
+        elevenlabsVoiceId: voiceProfile.elevenlabs_voice_id,
+      });
+    }
+
+    log.info('Starting TTS generation', { textLength: text.length, voiceId, elevenlabsVoiceId: voiceProfile.elevenlabs_voice_id });
 
     // Voice settings optimized for meditative pace
     const requestData = {
@@ -164,6 +205,14 @@ serve(async (req) => {
     };
 
     // Call ElevenLabs API with circuit breaker and timeout
+    log.info('Calling ElevenLabs TTS API', {
+      elevenlabsVoiceId: voiceProfile.elevenlabs_voice_id,
+      textLength: text.length,
+      textPreview: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
+      model: requestData.model_id,
+      voiceSettings: requestData.voice_settings,
+    });
+
     const audioBase64 = await withCircuitBreaker(
       'elevenlabs',
       CIRCUIT_CONFIGS.elevenlabs,
@@ -188,9 +237,44 @@ serve(async (req) => {
 
           clearTimeout(timeoutId);
 
+          log.info('ElevenLabs TTS response received', {
+            status: ttsResponse.status,
+            statusText: ttsResponse.statusText,
+            contentType: ttsResponse.headers.get('content-type'),
+            contentLength: ttsResponse.headers.get('content-length'),
+          });
+
           if (!ttsResponse.ok) {
-            const error = await ttsResponse.json();
-            throw new Error(`TTS generation failed: ${error.detail || error.message}`);
+            // Safely parse error response - handle various formats
+            const errorText = await ttsResponse.text();
+            let errorDetail = 'Unknown error';
+
+            try {
+              const errorJson = JSON.parse(errorText);
+              errorDetail = errorJson.detail?.message || errorJson.detail || errorJson.message || errorJson.error || JSON.stringify(errorJson);
+            } catch {
+              errorDetail = errorText || `HTTP ${ttsResponse.status}`;
+            }
+
+            log.error('ElevenLabs API error', {
+              status: ttsResponse.status,
+              statusText: ttsResponse.statusText,
+              voiceId: voiceProfile.elevenlabs_voice_id,
+              errorDetail,
+            });
+
+            // Return specific error messages based on status code
+            if (ttsResponse.status === 401) {
+              throw new Error('ElevenLabs API key is invalid or expired');
+            } else if (ttsResponse.status === 404) {
+              throw new Error('Voice not found in ElevenLabs - it may have been deleted');
+            } else if (ttsResponse.status === 429) {
+              throw new Error('ElevenLabs rate limit exceeded - please try again later');
+            } else if (ttsResponse.status === 402) {
+              throw new Error('ElevenLabs account has insufficient credits');
+            }
+
+            throw new Error(`TTS generation failed (${ttsResponse.status}): ${errorDetail}`);
           }
 
           const audioBlob = await ttsResponse.blob();

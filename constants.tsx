@@ -155,8 +155,17 @@ export const TEMPLATES: ScriptTemplate[] = TEMPLATE_CATEGORIES.flatMap(cat =>
 );
 
 // Default voices removed - users must clone their own voices
+// Browser voices are now available as FREE alternatives
 // This ensures personalized experience and reduces API costs
 export const VOICE_PROFILES: VoiceProfile[] = [];
+
+// Browser voice categories for UI grouping
+export const BROWSER_VOICE_CATEGORIES = [
+  { id: 'en-US', name: 'English (US)', langPrefix: 'en-US' },
+  { id: 'en-GB', name: 'English (UK)', langPrefix: 'en-GB' },
+  { id: 'en-AU', name: 'English (Australian)', langPrefix: 'en-AU' },
+  { id: 'en', name: 'English (Other)', langPrefix: 'en' },
+] as const;
 
 export interface BackgroundTrack {
   id: string;

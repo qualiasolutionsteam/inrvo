@@ -1,6 +1,10 @@
-import { VoiceProfile } from '../../types';
+import { VoiceProfile, VoiceProvider } from '../../types';
 import { elevenlabsService } from './elevenlabs';
-// Note: Gemini TTS removed - only cloned ElevenLabs voices are supported
+import { webSpeechService, isWebSpeechAvailable } from './webSpeechService';
+// Voice service supports multiple providers:
+// - 'browser': Free Web Speech API (built-in browser TTS)
+// - 'chatterbox': Chatterbox via Replicate (cloned voices)
+// - 'elevenlabs': Legacy ElevenLabs support (being phased out)
 
 /**
  * Strip audio tags from text before sending to TTS
@@ -33,7 +37,10 @@ function prepareMeditationText(text: string): string {
 }
 
 /**
- * Unified voice service that routes between Gemini and ElevenLabs
+ * Unified voice service that routes between providers:
+ * - 'browser': Free Web Speech API
+ * - 'chatterbox': Chatterbox via Replicate (for cloned voices)
+ * - 'elevenlabs': Legacy support
  */
 export const voiceService = {
   /**
@@ -41,26 +48,108 @@ export const voiceService = {
    * @param text - Text to synthesize
    * @param voice - Voice profile object
    * @param audioContext - AudioContext for decoding (optional)
-   * @returns Promise<{ audioBuffer: AudioBuffer, base64: string }> - Generated audio
+   * @returns Promise<{ audioBuffer: AudioBuffer | null, base64: string, usedWebSpeech?: boolean }> - Generated audio
    */
   async generateSpeech(
     text: string,
     voice: VoiceProfile,
     audioContext?: AudioContext
-  ): Promise<{ audioBuffer: AudioBuffer; base64: string }> {
+  ): Promise<{ audioBuffer: AudioBuffer | null; base64: string; usedWebSpeech?: boolean }> {
     // Strip audio tags before sending to TTS - they would be spoken literally
     const cleanText = stripAudioTags(text);
 
     // Prepare text for slower, meditation-style delivery
     const meditationText = prepareMeditationText(cleanText);
 
+    const provider = voice.provider || this.detectProvider(voice);
+
+    // Route to appropriate provider
+    switch (provider) {
+      case 'browser':
+        return this.generateWithWebSpeech(meditationText, voice);
+
+      case 'chatterbox':
+        return this.generateWithChatterbox(meditationText, voice, audioContext);
+
+      case 'elevenlabs':
+      default:
+        return this.generateWithElevenLabs(meditationText, voice, audioContext);
+    }
+  },
+
+  /**
+   * Detect provider from voice profile (for backwards compatibility)
+   */
+  detectProvider(voice: VoiceProfile): VoiceProvider {
+    if (voice.provider) return voice.provider;
+    if (voice.id.startsWith('browser-')) return 'browser';
+    if (voice.providerVoiceId) return 'chatterbox';
+    if (voice.elevenlabsVoiceId || voice.isCloned) return 'elevenlabs';
+    return 'browser'; // Default to free browser TTS
+  },
+
+  /**
+   * Generate speech using free Web Speech API
+   */
+  async generateWithWebSpeech(
+    text: string,
+    voice: VoiceProfile
+  ): Promise<{ audioBuffer: null; base64: string; usedWebSpeech: true }> {
+    if (!isWebSpeechAvailable()) {
+      throw new Error('Web Speech API is not available in this browser. Please use a cloned voice.');
+    }
+
+    // Web Speech API plays directly - we can't get audio data
+    // The caller should handle this by using webSpeechService.speak() directly
+    await webSpeechService.speak(text, voice.id, {
+      rate: 0.85,  // Slower for meditation
+      pitch: 1.0,
+      volume: 1.0,
+    });
+
+    // Return empty data since Web Speech plays directly
+    return { audioBuffer: null, base64: '', usedWebSpeech: true };
+  },
+
+  /**
+   * Generate speech using Chatterbox via Replicate
+   */
+  async generateWithChatterbox(
+    text: string,
+    voice: VoiceProfile,
+    audioContext?: AudioContext
+  ): Promise<{ audioBuffer: AudioBuffer | null; base64: string }> {
+    // Import dynamically to avoid circular dependency
+    const { chatterboxTTS } = await import('./edgeFunctions');
+
+    const voiceId = voice.providerVoiceId || voice.id;
+
+    // Call Chatterbox edge function
+    const base64 = await chatterboxTTS(voiceId, text);
+
+    // Decode to AudioBuffer if needed
+    if (audioContext) {
+      const audioBuffer = await this.decodeAudio(base64, audioContext, 'audio/wav');
+      return { audioBuffer, base64 };
+    }
+
+    return { audioBuffer: null, base64 };
+  },
+
+  /**
+   * Generate speech using ElevenLabs (legacy)
+   */
+  async generateWithElevenLabs(
+    text: string,
+    voice: VoiceProfile,
+    audioContext?: AudioContext
+  ): Promise<{ audioBuffer: AudioBuffer | null; base64: string }> {
     // Only cloned voices with ElevenLabs ID are supported
     if (!voice.isCloned || !voice.elevenlabsVoiceId) {
-      throw new Error('Please clone a voice to generate meditations. Default voices are no longer available.');
+      throw new Error('Please clone a voice to generate meditations, or use a browser voice.');
     }
 
     // Voice settings optimized for natural, human-like meditation delivery
-    // Lower stability + higher style = more natural variations in tone
     const meditationTTSOptions = {
       voice_settings: {
         stability: 0.55,           // Lower = more natural variation in delivery
@@ -71,9 +160,8 @@ export const voiceService = {
     };
 
     // Use ElevenLabs for cloned voices with meditation settings
-    // Pass voice profile ID (not ElevenLabs ID) - edge function verifies ownership
     const base64 = await elevenlabsService.generateSpeech(
-      meditationText,
+      text,
       voice.id, // Profile ID for ownership verification
       meditationTTSOptions
     );
@@ -84,24 +172,25 @@ export const voiceService = {
       return { audioBuffer, base64 };
     }
 
-    return { audioBuffer: null as any, base64 };
+    return { audioBuffer: null, base64 };
   },
 
   /**
-   * Decodes ElevenLabs MP3 audio to AudioBuffer
-   * ElevenLabs returns MP3, need to decode it
-   * Uses Blob + Object URL for better memory efficiency (avoids data URL overhead)
+   * Generic audio decoder for base64 audio data
+   * Supports MP3, WAV, and other formats
    */
-  async decodeElevenLabsAudio(base64: string, audioContext: AudioContext): Promise<AudioBuffer> {
-    // Convert base64 to binary using atob (avoids data URL memory bloat)
+  async decodeAudio(
+    base64: string,
+    audioContext: AudioContext,
+    mimeType: string = 'audio/mpeg'
+  ): Promise<AudioBuffer> {
     const binaryString = atob(base64);
     const bytes = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i++) {
       bytes[i] = binaryString.charCodeAt(i);
     }
 
-    // Create blob and object URL (more memory efficient than data URL)
-    const blob = new Blob([bytes], { type: 'audio/mpeg' });
+    const blob = new Blob([bytes], { type: mimeType });
     const objectUrl = URL.createObjectURL(blob);
 
     try {
@@ -109,27 +198,47 @@ export const voiceService = {
       const arrayBuffer = await response.arrayBuffer();
       return audioContext.decodeAudioData(arrayBuffer);
     } finally {
-      // Clean up object URL to free memory
       URL.revokeObjectURL(objectUrl);
     }
   },
 
   /**
+   * Decodes ElevenLabs MP3 audio to AudioBuffer (legacy)
+   * Uses Blob + Object URL for better memory efficiency
+   */
+  async decodeElevenLabsAudio(base64: string, audioContext: AudioContext): Promise<AudioBuffer> {
+    return this.decodeAudio(base64, audioContext, 'audio/mpeg');
+  },
+
+  /**
    * Checks if a voice is ready for TTS generation
-   * Only cloned voices are supported
+   * Supports multiple providers
    */
   async isVoiceReady(voice: VoiceProfile): Promise<boolean> {
-    // Only cloned voices with ElevenLabs ID are supported
-    if (!voice.isCloned || !voice.elevenlabsVoiceId) {
-      return false;
-    }
+    const provider = voice.provider || this.detectProvider(voice);
 
-    try {
-      const status = await elevenlabsService.getVoiceStatus(voice.elevenlabsVoiceId);
-      return status === 'ready' || status === 'complete';
-    } catch (error) {
-      console.error('Failed to check voice status:', error);
-      return false;
+    switch (provider) {
+      case 'browser':
+        // Browser voices are always ready if Web Speech API is available
+        return isWebSpeechAvailable();
+
+      case 'chatterbox':
+        // Chatterbox voices are ready if they have a provider voice ID
+        return !!voice.providerVoiceId;
+
+      case 'elevenlabs':
+      default:
+        // Only cloned voices with ElevenLabs ID are supported
+        if (!voice.isCloned || !voice.elevenlabsVoiceId) {
+          return false;
+        }
+        try {
+          const status = await elevenlabsService.getVoiceStatus(voice.elevenlabsVoiceId);
+          return status === 'ready' || status === 'complete';
+        } catch (error) {
+          console.error('Failed to check voice status:', error);
+          return false;
+        }
     }
   },
 
