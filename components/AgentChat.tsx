@@ -583,28 +583,30 @@ export const AgentChat: React.FC<AgentChatProps> = ({
       let finalTranscript = '';
       let interimTranscript = '';
 
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      // Build transcript from ALL results (not just new ones)
+      // The results array contains the complete history
+      for (let i = 0; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          finalTranscript += transcript;
+          finalTranscript += transcript + ' ';
         } else {
-          interimTranscript += transcript;
+          interimTranscript += transcript + ' ';
         }
       }
 
-      // Update accumulated transcript with final results
-      if (finalTranscript) {
-        accumulatedTranscript = (accumulatedTranscript + ' ' + finalTranscript).trim();
-        setTranscribedText(accumulatedTranscript);
-        console.log('Final transcript received:', finalTranscript);
+      finalTranscript = finalTranscript.trim();
+      interimTranscript = interimTranscript.trim();
 
-        // Start/reset silence timer after receiving final transcript
-        if (accumulatedTranscript.trim()) {
-          startSilenceTimer();
-        }
-      } else if (interimTranscript) {
-        // Show interim results but don't start timer yet
-        setTranscribedText((accumulatedTranscript + ' ' + interimTranscript).trim());
+      // Update accumulated transcript to be the complete final transcript
+      accumulatedTranscript = finalTranscript;
+
+      // Display final + interim together for real-time feedback
+      const displayText = (finalTranscript + ' ' + interimTranscript).trim();
+      setTranscribedText(displayText);
+
+      // Start silence timer when we have final content
+      if (finalTranscript) {
+        startSilenceTimer();
       }
     };
 
