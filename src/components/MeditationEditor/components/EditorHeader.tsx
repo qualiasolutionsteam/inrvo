@@ -75,16 +75,18 @@ export const EditorHeader = memo<EditorHeaderProps>(
         aria-label="Meditation editor header"
         className="flex-shrink-0 flex items-center px-3 py-3 md:px-6 md:py-4 border-b border-white/10 safe-top"
       >
-        {/* Left: Back Button */}
+        {/* Left: Back Button - Hidden on mobile */}
         <button
           onClick={onClose}
           aria-label="Go back"
-          className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/5 hover:bg-white/10
-                     text-white/70 hover:text-white transition-all flex items-center justify-center
+          className="hidden md:flex w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/5 hover:bg-white/10
+                     text-white/70 hover:text-white transition-all items-center justify-center
                      active:scale-95 cursor-pointer touch-manipulation flex-shrink-0"
         >
           <BackArrowIcon className="w-5 h-5" />
         </button>
+        {/* Spacer for mobile to keep title centered */}
+        <div className="w-10 h-10 md:hidden flex-shrink-0" />
 
         {/* Center: Title & Type */}
         <div className="flex-1 flex flex-col items-center justify-center min-w-0 px-3">

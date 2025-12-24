@@ -1617,10 +1617,10 @@ const App: React.FC = () => {
               <button
                 onClick={() => setShowBurgerMenu(true)}
                 className="ml-1 md:ml-2 p-2 md:p-2.5 min-w-[40px] min-h-[40px] md:min-w-[44px] md:min-h-[44px]
-                           rounded-lg md:rounded-xl bg-white/5 hover:bg-white/10
-                           text-slate-400 hover:text-white transition-all flex items-center justify-center
-                           border border-white/5 hover:border-cyan-500/30
-                           "
+                           rounded-lg md:rounded-xl bg-gradient-to-r from-cyan-600/20 to-purple-600/20
+                           hover:from-cyan-600/30 hover:to-purple-600/30
+                           text-cyan-400 hover:text-cyan-300 transition-all flex items-center justify-center
+                           border border-cyan-500/20 hover:border-cyan-500/40"
                 title="Open sidebar"
               >
                 <ICONS.SidebarToggle className="w-5 h-5" />
