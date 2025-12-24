@@ -672,7 +672,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
 
       {/* Input Area - Always fixed at bottom */}
       {!showMeditationPanel && (
-        <div className={`fixed left-0 right-0 bottom-0 px-4 z-50 pb-4 ${hasMessages
+        <div className={`fixed left-0 right-0 bottom-0 px-4 z-50 pb-14 ${hasMessages
           ? 'bg-gradient-to-t from-[#020617] via-[#020617]/95 to-transparent'
           : ''}`}>
         <div className="max-w-3xl mx-auto w-full">
