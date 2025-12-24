@@ -152,6 +152,11 @@ const MessageBubble = memo<MessageBubbleProps>(({ message, isLast }) => {
 MessageBubble.displayName = 'MessageBubble';
 
 // ============================================================================
+// AUDIO TAG REGEX - matches [tag name] patterns
+// ============================================================================
+const AUDIO_TAG_REGEX = /\[([^\]]+)\]/g;
+
+// ============================================================================
 // INLINE MEDITATION PANEL - Mobile-optimized full-screen experience
 // ============================================================================
 
@@ -189,49 +194,132 @@ const MeditationPanel = memo<MeditationPanelProps>(({
   const [showControls, setShowControls] = useState(false);
   const [activeTab, setActiveTab] = useState<'voice' | 'music' | 'tags'>('voice');
   const [editedScript, setEditedScript] = useState(script);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
   const [cursorPosition, setCursorPosition] = useState<number>(script.length);
+
+  // Save cursor position in contenteditable
+  const saveCursorPosition = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection || !selection.rangeCount || !editorRef.current) return null;
+
+    const range = selection.getRangeAt(0);
+    const preCaretRange = range.cloneRange();
+    preCaretRange.selectNodeContents(editorRef.current);
+    preCaretRange.setEnd(range.startContainer, range.startOffset);
+    return preCaretRange.toString().length;
+  }, []);
+
+  // Restore cursor position in contenteditable
+  const restoreCursorPosition = useCallback((pos: number) => {
+    if (!editorRef.current) return;
+
+    const selection = window.getSelection();
+    if (!selection) return;
+
+    let charCount = 0;
+    const nodeStack: Node[] = [editorRef.current];
+    let foundNode: Node | null = null;
+    let foundOffset = 0;
+
+    while (nodeStack.length > 0) {
+      const node = nodeStack.pop()!;
+
+      if (node.nodeType === Node.TEXT_NODE) {
+        const textLength = node.textContent?.length || 0;
+        if (charCount + textLength >= pos) {
+          foundNode = node;
+          foundOffset = pos - charCount;
+          break;
+        }
+        charCount += textLength;
+      } else {
+        const children = node.childNodes;
+        for (let i = children.length - 1; i >= 0; i--) {
+          nodeStack.push(children[i]);
+        }
+      }
+    }
+
+    if (foundNode) {
+      const range = document.createRange();
+      range.setStart(foundNode, foundOffset);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  }, []);
 
   // Insert audio tag at cursor position
   const insertTagAtCursor = useCallback((tagLabel: string) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart ?? cursorPosition;
-    const end = textarea.selectionEnd ?? cursorPosition;
+    const pos = saveCursorPosition();
+    const insertPos = pos ?? editedScript.length;
     const text = editedScript;
 
     // Add space before tag if needed (not at start, not after space/newline)
-    const needSpaceBefore = start > 0 && !/[\s\n]$/.test(text.substring(0, start));
+    const needSpaceBefore = insertPos > 0 && !/[\s\n]$/.test(text.substring(0, insertPos));
     // Add space after tag if needed (not at end, not before space/newline)
-    const needSpaceAfter = end < text.length && !/^[\s\n]/.test(text.substring(end));
+    const needSpaceAfter = insertPos < text.length && !/^[\s\n]/.test(text.substring(insertPos));
 
     const tagWithSpacing = (needSpaceBefore ? ' ' : '') + tagLabel + (needSpaceAfter ? ' ' : '');
-    const newText = text.substring(0, start) + tagWithSpacing + text.substring(end);
-    const newCursorPos = start + tagWithSpacing.length;
+    const newText = text.substring(0, insertPos) + tagWithSpacing + text.substring(insertPos);
+    const newCursorPos = insertPos + tagWithSpacing.length;
 
     setEditedScript(newText);
     setCursorPosition(newCursorPos);
 
     // Restore focus and cursor position after state update
     requestAnimationFrame(() => {
-      if (textarea) {
-        textarea.focus();
-        textarea.setSelectionRange(newCursorPos, newCursorPos);
+      if (editorRef.current) {
+        editorRef.current.focus();
+        restoreCursorPosition(newCursorPos);
       }
     });
-  }, [editedScript, cursorPosition]);
+  }, [editedScript, saveCursorPosition, restoreCursorPosition]);
 
-  // Track cursor position when user types or clicks in textarea
-  const handleTextareaChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setEditedScript(e.target.value);
-    setCursorPosition(e.target.selectionStart ?? e.target.value.length);
-  }, []);
+  // Restore cursor position after state update
+  useEffect(() => {
+    if (cursorPosition !== null && editorRef.current) {
+      editorRef.current.focus();
+      restoreCursorPosition(cursorPosition);
+    }
+  }, [cursorPosition, restoreCursorPosition]);
 
-  const handleTextareaSelect = useCallback((e: React.SyntheticEvent<HTMLTextAreaElement>) => {
-    const textarea = e.currentTarget;
-    setCursorPosition(textarea.selectionStart ?? textarea.value.length);
-  }, []);
+  // Render script with styled audio tags (purple)
+  const renderStyledContent = React.useMemo(() => {
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match;
+
+    const regex = new RegExp(AUDIO_TAG_REGEX.source, 'g');
+
+    while ((match = regex.exec(editedScript)) !== null) {
+      // Add text before the tag
+      if (match.index > lastIndex) {
+        parts.push(editedScript.slice(lastIndex, match.index));
+      }
+
+      // Add styled tag with purple color
+      parts.push(
+        <span
+          key={match.index}
+          className="audio-tag"
+          contentEditable={false}
+          data-tag={match[0]}
+        >
+          {match[0]}
+        </span>
+      );
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text
+    if (lastIndex < editedScript.length) {
+      parts.push(editedScript.slice(lastIndex));
+    }
+
+    return parts;
+  }, [editedScript]);
 
   // Calculate stats
   const wordCount = editedScript.replace(/\[.*?\]/g, '').split(/\s+/).filter(Boolean).length;
@@ -254,19 +342,37 @@ const MeditationPanel = memo<MeditationPanelProps>(({
 
         {/* Scrollable Script Area - starts below X button */}
         <div className="flex-1 overflow-y-auto min-h-0 pt-14 md:pt-16">
-          <textarea
-            ref={textareaRef}
-            value={editedScript}
-            onChange={handleTextareaChange}
-            onSelect={handleTextareaSelect}
-            onClick={handleTextareaSelect}
-            onKeyUp={handleTextareaSelect}
-            className="w-full h-full bg-transparent text-white leading-relaxed
-                       resize-none outline-none px-4 pb-4 md:px-6 md:pb-6
-                       placeholder:text-white/30"
+          <div
+            ref={editorRef}
+            contentEditable
+            suppressContentEditableWarning
+            onInput={(e) => {
+              const target = e.currentTarget;
+              // Extract text content, preserving the actual tag text
+              const text = target.innerText;
+              setEditedScript(text);
+            }}
+            onKeyDown={(e) => {
+              // Handle backspace/delete on tag spans
+              if (e.key === 'Backspace' || e.key === 'Delete') {
+                const selection = window.getSelection();
+                if (selection && selection.rangeCount > 0) {
+                  const range = selection.getRangeAt(0);
+                  const node = range.startContainer;
+                  // Check if we're at the edge of a tag span
+                  if (node.parentElement?.hasAttribute('data-tag')) {
+                    // Let default behavior handle it
+                  }
+                }
+              }
+            }}
+            className="w-full min-h-full bg-transparent text-white leading-relaxed
+                       outline-none px-4 pb-4 md:px-6 md:pb-6 whitespace-pre-wrap"
             style={{ fontSize: '16px', minHeight: '200px' }}
-            placeholder="Your meditation script..."
-          />
+            data-placeholder="Your meditation script..."
+          >
+            {renderStyledContent}
+          </div>
         </div>
 
         {/* Bottom Bar - part of flex layout, not fixed */}
