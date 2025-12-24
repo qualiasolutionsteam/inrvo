@@ -37,9 +37,9 @@ function getSupabaseClient() {
   return supabaseClient;
 }
 
-// Replicate API for Chatterbox
+// Replicate API for Chatterbox Pro
 const REPLICATE_API_URL = 'https://api.replicate.com/v1/predictions';
-const CHATTERBOX_MODEL = 'resemble-ai/chatterbox:55ae2ceb2206973ed3795c8c99c93cc87a8f25434cf5ac09fce8eb0bf9de7a74';
+const CHATTERBOX_MODEL = 'resemble-ai/chatterbox-pro:301e12652e84fbba1524e5f2758a9a92c6bd205792304f53c057b7f9ab091342';
 
 async function runChatterboxTTS(
   text: string,
