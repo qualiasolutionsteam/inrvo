@@ -176,11 +176,7 @@ export const MeditationEditor = memo<MeditationEditorProps>(
           "
         >
           {/* Header */}
-          <EditorHeader
-            onClose={onClose}
-            stats={stats}
-            meditationType={meditationType}
-          />
+          <EditorHeader onClose={onClose} stats={stats} />
 
           {/* Script Editing Area */}
           <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-4 md:px-6 py-4">
