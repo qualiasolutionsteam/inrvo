@@ -19,6 +19,7 @@ import { useEditorCursor } from './hooks/useEditorCursor';
 import { useKeyboard } from './hooks/useKeyboard';
 import { ControlPanel } from './components/ControlPanel';
 import { GenerateButton } from './components/GenerateButton';
+import Starfield from '@/components/Starfield';
 
 // ============================================================================
 // ICONS
@@ -192,10 +193,15 @@ export const MeditationEditor = memo<MeditationEditorProps>(
         aria-modal="true"
         aria-labelledby="editor-title"
       >
+        {/* Starfield background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <Starfield />
+        </div>
+
         {/* Desktop: Centered modal container / Mobile: Full screen */}
         <div
           className="
-            h-full flex flex-col overflow-hidden
+            relative h-full flex flex-col overflow-hidden
             md:h-auto md:max-h-[90vh] md:w-full md:max-w-3xl
             md:mx-auto md:my-[5vh]
             md:rounded-3xl md:border md:border-white/10
