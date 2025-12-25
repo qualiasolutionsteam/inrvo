@@ -217,14 +217,14 @@ export const MeditationEditor = memo<MeditationEditorProps>(
               {/* Top Bar - Responsive layout */}
               <div className="flex items-center justify-between py-3 mb-2">
                 {/* Left section */}
-                <div className="flex items-center gap-2">
-                  {/* Mobile: Menu button */}
+                <div className="flex items-center gap-3">
+                  {/* Mobile: Colored menu button */}
                   <button
                     onClick={onVoiceSelect}
                     aria-label="Open options"
-                    className="md:hidden w-9 h-9 flex items-center justify-center text-white/40 hover:text-white transition-colors duration-200 active:scale-95"
+                    className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/30 transition-colors duration-200 active:scale-95"
                   >
-                    <MenuIcon className="w-5 h-5" />
+                    <MenuIcon className="w-4 h-4" />
                   </button>
 
                   {/* Desktop: Duration stat */}
