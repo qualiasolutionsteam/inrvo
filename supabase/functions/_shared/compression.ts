@@ -44,17 +44,24 @@ export async function compressToGzip(data: string): Promise<Uint8Array> {
 /**
  * Creates a compressed JSON response with proper headers
  * Falls back to uncompressed if compression fails or data is too small
+ *
+ * @param data - Data to serialize to JSON
+ * @param corsHeaders - CORS headers to include
+ * @param options.status - HTTP status code (default: 200)
+ * @param options.minSize - Minimum size to trigger compression (default: 1024)
+ * @param options.skipCompression - Skip compression entirely (e.g., for already-compressed audio)
  */
 export async function createCompressedResponse(
   data: unknown,
   corsHeaders: Record<string, string>,
-  options: { status?: number; minSize?: number } = {}
+  options: { status?: number; minSize?: number; skipCompression?: boolean } = {}
 ): Promise<Response> {
-  const { status = 200, minSize = 1024 } = options;
+  const { status = 200, minSize = 1024, skipCompression = false } = options;
   const jsonString = JSON.stringify(data);
 
-  // Skip compression for small payloads (overhead not worth it)
-  if (jsonString.length < minSize) {
+  // Skip compression if explicitly disabled (e.g., for already-compressed audio like MP3)
+  // or for small payloads (overhead not worth it)
+  if (skipCompression || jsonString.length < minSize) {
     return new Response(jsonString, {
       status,
       headers: {

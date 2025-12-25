@@ -1,8 +1,16 @@
 import { supabase } from '../../lib/supabase';
 
 // CREDIT SYSTEM DISABLED - All users have unlimited access
-const CREDITS_DISABLED = true;
+// Set to false in production to enable credit limits
+let CREDITS_DISABLED = true;
 const UNLIMITED_CREDITS = 999999999;
+
+// For testing: allow enabling/disabling credits
+export const _testing = {
+  enableCredits: () => { CREDITS_DISABLED = false; },
+  disableCredits: () => { CREDITS_DISABLED = true; },
+  isDisabled: () => CREDITS_DISABLED,
+};
 
 // Credits configuration (kept for reference but not enforced)
 const COST_CONFIG = {

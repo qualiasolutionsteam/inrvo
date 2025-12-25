@@ -176,12 +176,26 @@ If you cannot answer YES to all of these, revise your approach.`,
    * Fast response for simple edits or prompts.
    */
   async quickEdit(instruction: string, text: string): Promise<string> {
-    const ai = getAI();
+    const ai = await getAI();
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.0-flash',
       contents: `Instruction: ${instruction}\n\nContent: ${text}`,
     });
     return response.text || text;
+  },
+
+  /**
+   * Transcribe audio to text.
+   * TODO: Implement using Gemini's audio capabilities or a dedicated transcription service.
+   * @param _audioBase64 - Base64 encoded audio data (currently unused)
+   */
+  async transcribeAudio(_audioBase64: string): Promise<string> {
+    // Voice transcription feature is not yet implemented
+    // This would require either:
+    // 1. Gemini's audio input capabilities
+    // 2. A dedicated transcription service (Whisper, etc.)
+    console.warn('Voice transcription is not yet implemented. Please type your meditation prompt instead.');
+    return '';
   },
 
   /**

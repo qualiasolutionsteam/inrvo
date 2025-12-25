@@ -262,6 +262,91 @@ export const AUDIO_TAG_CATEGORIES: { id: string; name: string; color: string; bg
   },
 ];
 
+// ============================================================================
+// Static data moved from App.tsx for performance optimization
+// These were previously memoized with useMemo but recreated on every render
+// Moving them here saves memory and prevents unnecessary recalculations
+// ============================================================================
+
+/**
+ * Keyword to audio tag mapping for smart tag suggestions
+ * Used by getSuggestedTags() in App.tsx
+ */
+export const KEYWORD_TAG_MAP: Record<string, string[]> = {
+  // Breathing related
+  'breath': ['deep_breath', 'exhale'],
+  'breathing': ['deep_breath', 'exhale'],
+  'inhale': ['deep_breath'],
+  'exhale': ['exhale'],
+  // Pause/calm related
+  'pause': ['short_pause', 'long_pause'],
+  'calm': ['long_pause', 'silence'],
+  'peace': ['long_pause', 'silence'],
+  'quiet': ['silence'],
+  'silent': ['silence'],
+  'stillness': ['silence', 'long_pause'],
+  // Sound related
+  'laugh': ['giggling'],
+  'happy': ['giggling'],
+  'joy': ['giggling'],
+  'gentle': ['soft_hum'],
+  'hum': ['soft_hum'],
+  // Voice related
+  'whisper': ['whisper'],
+  'soft': ['whisper', 'soft_hum'],
+  'sigh': ['sigh'],
+  'relax': ['sigh', 'deep_breath'],
+  'release': ['sigh', 'exhale'],
+};
+
+/**
+ * Background music category styling configuration
+ */
+export const MUSIC_CATEGORY_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
+  'ambient': { label: 'Ambient', color: 'text-cyan-400', bgColor: 'bg-cyan-500/10' },
+  'nature': { label: 'Nature', color: 'text-emerald-400', bgColor: 'bg-emerald-500/10' },
+  'binaural': { label: 'Binaural', color: 'text-violet-400', bgColor: 'bg-violet-500/10' },
+  'instrumental': { label: 'Instrumental', color: 'text-purple-400', bgColor: 'bg-purple-500/10' },
+  'lofi': { label: 'Lo-Fi', color: 'text-orange-400', bgColor: 'bg-orange-500/10' },
+  'classical': { label: 'Classical', color: 'text-rose-400', bgColor: 'bg-rose-500/10' },
+};
+
+/**
+ * Pre-computed tracks grouped by category
+ * Avoids recalculating this on every render
+ */
+export const TRACKS_BY_CATEGORY: Record<string, BackgroundTrack[]> = BACKGROUND_TRACKS.reduce((acc, track) => {
+  if (!acc[track.category]) acc[track.category] = [];
+  acc[track.category].push(track);
+  return acc;
+}, {} as Record<string, BackgroundTrack[]>);
+
+/**
+ * Get suggested audio tags based on prompt content
+ * Moved from App.tsx useMemo for better performance
+ */
+export function getSuggestedTags(prompt: string): string[] {
+  const lowerPrompt = prompt.toLowerCase();
+  const suggestions: string[] = [];
+
+  Object.entries(KEYWORD_TAG_MAP).forEach(([keyword, tags]) => {
+    if (lowerPrompt.includes(keyword)) {
+      tags.forEach(tag => {
+        if (!suggestions.includes(tag)) {
+          suggestions.push(tag);
+        }
+      });
+    }
+  });
+
+  // Limit to top 4 suggestions
+  return suggestions.slice(0, 4);
+}
+
+// ============================================================================
+// Icons
+// ============================================================================
+
 export const ICONS = {
   Logo: ({ className = "h-8" }: { className?: string }) => (
     <svg viewBox="0 0 160 50" fill="none" xmlns="http://www.w3.org/2000/svg" className={`${className} transition-all duration-300`}>

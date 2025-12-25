@@ -26,7 +26,7 @@ npm run test             # Run tests in watch mode
 npm run test:run         # Run tests once
 npm run test:ui          # Run tests with Vitest UI
 npm run test:coverage    # Run tests with coverage report
-npx vitest run src/lib/credits.test.ts  # Run single test file
+npx vitest run tests/lib/credits.test.ts  # Run single test file
 
 # Supabase
 npx supabase start       # Start local Supabase
@@ -70,7 +70,7 @@ src/
       knowledgeBase.ts       # Wisdom teachers (Buddha, Rumi, Thich Nhat Hanh, etc.)
     edgeFunctions.ts  # Client for Supabase Edge Functions
     voiceService.ts   # TTS service abstraction
-    credits.ts        # Credit system for voice cloning
+    credits.ts        # Credit system (DISABLED by default - unlimited access)
 lib/
   supabase.ts         # Supabase client + database operations
 ```
@@ -188,7 +188,23 @@ The agent (`src/lib/agent/MeditationAgent.ts`) is conversational by default:
 ## Testing
 
 Tests use Vitest + React Testing Library + happy-dom:
-- Test files: `*.test.ts` or `*.spec.ts`
+- Test files: `*.test.ts` or `*.spec.ts` in `tests/` directory
 - Setup file: `tests/setup.ts`
 - Mocks: `tests/mocks/`
 - Coverage thresholds enforced for `src/lib/credits.ts` (90%)
+
+### Credit System Testing
+The credit system is disabled by default (`CREDITS_DISABLED = true`). Tests use the `_testing` helper:
+```ts
+import { creditService, _testing } from '../../src/lib/credits';
+
+beforeEach(() => _testing.enableCredits());
+afterEach(() => _testing.disableCredits());
+```
+
+## TypeScript Configuration
+
+`tsconfig.json` excludes directories with different TypeScript targets:
+- `supabase/functions/` - Uses Deno runtime (different lib)
+- `scripts/` - Node.js scripts with different module settings
+- `tests/` - Test files with Vitest globals

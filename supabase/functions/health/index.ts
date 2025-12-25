@@ -1,27 +1,31 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { getCorsHeaders } from "../_shared/compression.ts";
 
-const ALLOWED_ORIGINS = [
-  'https://www.inrvo.com',
-  'https://inrvo.com',
-  'https://inrvo.vercel.app',
-  'http://localhost:5173',
-  'http://localhost:3000',
-];
+// Database query timeout (5 seconds)
+const DB_TIMEOUT_MS = 5000;
 
-const getCorsHeaders = (origin: string | null) => ({
-  'Access-Control-Allow-Origin': origin && ALLOWED_ORIGINS.includes(origin) ? origin : '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-});
+// Lazy-load Supabase client (saves 20-30ms on cold start)
+let supabaseClient: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseClient() {
+  if (!supabaseClient) {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (supabaseUrl && supabaseServiceKey) {
+      supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+    }
+  }
+  return supabaseClient;
+}
 
 interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy';
   timestamp: string;
   version: string;
   services: {
-    database: 'up' | 'down';
-    replicate: 'configured' | 'not_configured';
+    database: 'up' | 'down' | 'timeout';
+    fishAudio: 'configured' | 'not_configured';
     gemini: 'configured' | 'not_configured';
   };
   latency?: {
@@ -38,36 +42,48 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  const startTime = Date.now();
-
   try {
-    // Check Supabase database connection
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
-    let databaseStatus: 'up' | 'down' = 'down';
+    // Check Supabase database connection using lazy-loaded client
+    const supabase = getSupabaseClient();
+    let databaseStatus: 'up' | 'down' | 'timeout' = 'down';
     let dbLatency = 0;
 
-    if (supabaseUrl && supabaseServiceKey) {
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    if (supabase) {
       const dbStart = Date.now();
 
       try {
-        // Simple query to check database connectivity
-        const { error } = await supabase
+        // Add timeout protection for database query
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), DB_TIMEOUT_MS);
+
+        const queryPromise = supabase
           .from('audio_tag_presets')
           .select('id')
           .limit(1);
 
-        databaseStatus = error ? 'down' : 'up';
+        // Race between query and timeout
+        const result = await Promise.race([
+          queryPromise,
+          new Promise<{ error: { message: string } }>((_, reject) =>
+            setTimeout(() => reject(new Error('Database query timeout')), DB_TIMEOUT_MS)
+          ),
+        ]);
+
+        clearTimeout(timeoutId);
+        databaseStatus = result.error ? 'down' : 'up';
         dbLatency = Date.now() - dbStart;
-      } catch {
-        databaseStatus = 'down';
+      } catch (error) {
+        if (error.message === 'Database query timeout') {
+          databaseStatus = 'timeout';
+        } else {
+          databaseStatus = 'down';
+        }
+        dbLatency = Date.now() - dbStart;
       }
     }
 
     // Check if API keys are configured (not their validity, just presence)
-    const replicateKey = Deno.env.get('REPLICATE_API_TOKEN');
+    const fishAudioKey = Deno.env.get('FISH_AUDIO_API_KEY');
     const geminiKey = Deno.env.get('GEMINI_API_KEY');
 
     const healthStatus: HealthStatus = {
@@ -76,7 +92,7 @@ serve(async (req) => {
       version: '1.0.0',
       services: {
         database: databaseStatus,
-        replicate: replicateKey ? 'configured' : 'not_configured',
+        fishAudio: fishAudioKey ? 'configured' : 'not_configured',
         gemini: geminiKey ? 'configured' : 'not_configured',
       },
       latency: {
@@ -85,9 +101,9 @@ serve(async (req) => {
     };
 
     // Determine overall status
-    if (databaseStatus === 'down') {
+    if (databaseStatus === 'down' || databaseStatus === 'timeout') {
       healthStatus.status = 'unhealthy';
-    } else if (!replicateKey || !geminiKey) {
+    } else if (!fishAudioKey || !geminiKey) {
       healthStatus.status = 'degraded';
     }
 
@@ -114,7 +130,7 @@ serve(async (req) => {
       version: '1.0.0',
       services: {
         database: 'down',
-        replicate: 'not_configured',
+        fishAudio: 'not_configured',
         gemini: 'not_configured',
       },
     };

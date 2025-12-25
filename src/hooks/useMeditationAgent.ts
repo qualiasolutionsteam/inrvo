@@ -62,7 +62,7 @@ export interface UseMeditationAgentReturn {
 
   // Helpers
   greeting: string;
-  quickPrompts: typeof agentTools.QUICK_PROMPTS;
+  quickPrompts: typeof QUICK_PROMPTS;
 }
 
 // Quick prompts for UI - using icon identifiers for SVG rendering
@@ -73,7 +73,7 @@ const QUICK_PROMPTS = [
   { label: "Just want to talk", icon: "heart" },
   { label: "Need some calm", icon: "lotus" },
   { label: "Create a meditation", icon: "sparkle" },
-];
+] as const;
 
 // ============================================================================
 // HOOK IMPLEMENTATION

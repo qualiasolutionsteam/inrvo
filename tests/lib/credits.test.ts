@@ -6,11 +6,13 @@ vi.mock('../../lib/supabase', () => ({
   supabase: createMockSupabase(),
 }));
 
-import { creditService } from '../../src/lib/credits';
+import { creditService, _testing } from '../../src/lib/credits';
 import { supabase } from '../../lib/supabase';
 
 describe('creditService', () => {
   beforeEach(() => {
+    // Enable credit system for testing (disabled by default in production)
+    _testing.enableCredits();
     vi.clearAllMocks();
     // Clear credit cache before each test to ensure fresh state
     creditService.clearCache();
@@ -55,6 +57,11 @@ describe('creditService', () => {
       }
       return Promise.resolve({ data: null, error: null });
     });
+  });
+
+  afterEach(() => {
+    // Restore credit system to disabled state (production default)
+    _testing.disableCredits();
   });
 
   describe('calculateTTSCost', () => {

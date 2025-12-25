@@ -18,7 +18,14 @@ const rateLimitStore = new Map<string, RateLimitEntry>();
 const CLEANUP_INTERVAL = 60000; // 1 minute
 let lastCleanup = Date.now();
 
-function cleanup(windowMs: number): void {
+// Find max window across all rate limits for cleanup
+const MAX_WINDOW_MS = 60000; // 1 minute (matches our rate limits)
+
+/**
+ * Cleanup expired entries from rate limit store
+ * Called on each request and via periodic interval
+ */
+function cleanup(windowMs: number = MAX_WINDOW_MS): void {
   const now = Date.now();
   if (now - lastCleanup < CLEANUP_INTERVAL) return;
 
@@ -31,6 +38,12 @@ function cleanup(windowMs: number): void {
     }
   }
 }
+
+// Periodic cleanup interval to prevent unbounded memory growth
+// This runs even when no requests are coming in
+setInterval(() => {
+  cleanup(MAX_WINDOW_MS);
+}, CLEANUP_INTERVAL);
 
 export interface RateLimitConfig {
   /** Maximum requests allowed in the window */

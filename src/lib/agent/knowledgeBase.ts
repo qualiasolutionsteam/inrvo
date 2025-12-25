@@ -672,7 +672,7 @@ export const EMOTIONAL_STATES: EmotionalState[] = [
   {
     id: 'anxious',
     emotions: ['anxious', 'worried', 'nervous', 'panicked', 'fearful', 'scared', 'uneasy'],
-    suggestedMeditations: ['breathwork', 'body_scan', 'presence', 'grounding'],
+    suggestedMeditations: ['breathwork', 'body_scan', 'presence', 'guided_visualization'],
     suggestedTeachers: ['Thich Nhat Hanh', 'Eckhart Tolle', 'Epictetus'],
     supportiveMessage: 'Anxiety often lives in thoughts about the future. Let\'s bring you back to this moment, where you are safe.',
   },

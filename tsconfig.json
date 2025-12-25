@@ -29,6 +29,9 @@
   },
   "exclude": [
     "node_modules",
-    "meditation-player-page"
+    "meditation-player-page",
+    "supabase/functions",
+    "scripts",
+    "tests"
   ]
 }

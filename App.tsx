@@ -10,12 +10,14 @@ import Background from './components/Background';
 import LoadingScreen from './components/LoadingScreen';
 import { AIVoiceInput } from './components/ui/ai-voice-input';
 
+// Static imports for small, frequently-used components (avoids webpack overhead for tiny chunks)
+import Visualizer from './components/Visualizer';
+import ScriptReader from './components/ScriptReader';
+
 // Lazy-loaded components for bundle optimization (~400KB saved on initial load)
-const Visualizer = lazy(() => import('./components/Visualizer'));
 const AuthModal = lazy(() => import('./components/AuthModal'));
 const VoiceManager = lazy(() => import('./components/VoiceManager'));
 const SimpleVoiceClone = lazy(() => import('./components/SimpleVoiceClone').then(m => ({ default: m.SimpleVoiceClone })));
-const ScriptReader = lazy(() => import('./components/ScriptReader'));
 const MeditationEditor = lazy(() => import('./src/components/MeditationEditor'));
 const MeditationPlayer = lazy(() => import('./components/V0MeditationPlayer'));
 // InlinePlayer removed - using only V0MeditationPlayer now
@@ -1035,15 +1037,23 @@ const App: React.FC = () => {
   };
 
   // Progress tracking for inline player
-  // Optimized: Only update currentTime on RAF, but only update wordIndex when it changes
-  // This reduces state updates from 60x/sec to only when words actually change (~2-5x/sec)
+  // Optimized: Throttle setCurrentTime to 5Hz (200ms) instead of 60Hz
+  // RAF still runs for smooth animation, but React state updates are throttled
+  const lastTimeUpdateRef = useRef<number>(0);
+  const TIME_UPDATE_INTERVAL = 200; // Update React state every 200ms (5Hz)
+
   const updateProgress = useCallback(() => {
     if (!audioContextRef.current || !isPlaying) return;
 
     const elapsed = audioContextRef.current.currentTime - playbackStartTimeRef.current;
     const newCurrentTime = Math.min(pauseOffsetRef.current + elapsed, duration);
+    const now = Date.now();
 
-    setCurrentTime(newCurrentTime);
+    // Throttle setCurrentTime to 5Hz (every 200ms) - reduces re-renders by 92%
+    if (now - lastTimeUpdateRef.current >= TIME_UPDATE_INTERVAL) {
+      setCurrentTime(newCurrentTime);
+      lastTimeUpdateRef.current = now;
+    }
 
     // Update word index only when it actually changes (reduces ~60x/sec to ~2-5x/sec)
     if (timingMap) {
