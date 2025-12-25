@@ -2491,7 +2491,7 @@ const App: React.FC = () => {
                       }}
                       className="w-full text-left p-2.5 rounded-lg hover:bg-white/5 transition-colors group"
                     >
-                      <p className="text-sm text-white group-hover:text-white truncate">{item.enhanced_script || item.prompt}</p>
+                      <p className="text-sm text-white group-hover:text-white whitespace-pre-wrap">{item.enhanced_script || item.prompt}</p>
                       <p className="text-[10px] text-white/50 mt-1">{new Date(item.created_at).toLocaleDateString()}</p>
                     </button>
                   ))
@@ -2751,7 +2751,7 @@ const App: React.FC = () => {
 
                                       {/* Content */}
                                       <div className="flex-1 min-w-0">
-                                        <p className="text-white text-sm line-clamp-2 mb-1">{meditation.prompt}</p>
+                                        <p className="text-white text-sm whitespace-pre-wrap mb-2">{meditation.enhanced_script || meditation.prompt}</p>
                                         <div className="flex items-center gap-3 text-xs text-slate-500">
                                           <span>{new Date(meditation.created_at).toLocaleDateString()}</span>
                                           {meditation.duration_seconds && (
@@ -2812,7 +2812,7 @@ const App: React.FC = () => {
                                         </svg>
                                       </div>
                                       <div className="flex-1 min-w-0">
-                                        <p className="text-slate-400 text-sm truncate">{meditation.enhanced_script || meditation.prompt}</p>
+                                        <p className="text-slate-400 text-sm whitespace-pre-wrap">{meditation.enhanced_script || meditation.prompt}</p>
                                         <p className="text-xs text-slate-600 mt-1">{new Date(meditation.created_at).toLocaleDateString()}</p>
                                       </div>
                                       <button
