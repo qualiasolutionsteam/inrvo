@@ -24,7 +24,7 @@ import OfflineIndicator from './components/OfflineIndicator';
 import { buildTimingMap, getCurrentWordIndex } from './src/lib/textSync';
 import { geminiService, blobToBase64 } from './geminiService';
 import { voiceService } from './src/lib/voiceService';
-import { chatterboxCloneVoice } from './src/lib/edgeFunctions';
+import { fishAudioCloneVoice } from './src/lib/edgeFunctions';
 import { convertToWAV } from './src/lib/audioConverter';
 import { creditService } from './src/lib/credits';
 
@@ -766,20 +766,20 @@ const App: React.FC = () => {
       // Convert to WAV for Chatterbox (required format)
       const wavBlob = await convertToWAV(blob);
 
-      setCloningStatus({ state: 'uploading_to_chatterbox' });
+      setCloningStatus({ state: 'uploading_to_fish_audio' });
 
-      // Clone with Chatterbox via Replicate
-      let cloneResult: { voiceProfileId: string; voiceSampleUrl: string };
+      // Clone with Fish Audio (primary, with Chatterbox backup storage)
+      let cloneResult: { voiceProfileId: string; fishAudioModelId: string | null; voiceSampleUrl: string | null };
       try {
-        cloneResult = await chatterboxCloneVoice(
+        cloneResult = await fishAudioCloneVoice(
           wavBlob,
           name,
           'Meditation voice clone created with INrVO',
           metadata
         );
-        console.log('Voice cloned successfully! Profile ID:', cloneResult.voiceProfileId);
+        console.log('Voice cloned successfully! Profile ID:', cloneResult.voiceProfileId, 'Fish Audio Model:', cloneResult.fishAudioModelId);
       } catch (cloneError: any) {
-        console.error('Chatterbox cloning failed:', cloneError);
+        console.error('Voice cloning failed:', cloneError);
         setCloningStatus({
           state: 'error',
           message: cloneError.message || 'Voice cloning failed',
@@ -1888,25 +1888,17 @@ const App: React.FC = () => {
                 isPlaying={isPlaying}
                 currentTime={currentTime}
                 duration={duration}
-                onPlayPause={togglePlayback}
-                onSeek={(time) => {
-                  // For Web Audio API, seeking requires restarting from a position
-                  // This is a simplified implementation - full seeking would require more work
-                  setCurrentTime(time);
-                }}
+                onPlayPause={handleInlineTogglePlayback}
+                onSeek={handleInlineSeek}
                 onSkip={(seconds) => {
+                  // Calculate new time and seek to it
                   const newTime = Math.max(0, Math.min(duration, currentTime + seconds));
-                  setCurrentTime(newTime);
+                  handleInlineSeek(newTime);
                 }}
                 onClose={() => {
-                  if (isInlineMode) {
-                    setCurrentView(View.HOME);
-                  } else {
-                    stopBackgroundMusic();
-                    audioSourceRef.current?.stop();
-                    setIsPlaying(false);
-                    setCurrentView(View.HOME);
-                  }
+                  handleInlinePause();
+                  stopBackgroundMusic();
+                  setCurrentView(View.HOME);
                 }}
                 backgroundMusicEnabled={selectedBackgroundTrack.id !== 'none' && isMusicPlaying}
                 backgroundVolume={backgroundVolume}

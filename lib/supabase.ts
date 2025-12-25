@@ -745,7 +745,7 @@ export const saveMeditationHistory = async (
 };
 
 // Fields needed for meditation history display
-const MEDITATION_HISTORY_FIELDS = 'id, user_id, prompt, voice_name, background_track_name, duration_seconds, audio_url, is_favorite, created_at' as const;
+const MEDITATION_HISTORY_FIELDS = 'id, user_id, prompt, voice_name, background_track_name, duration_seconds, audio_url, is_favorite, created_at, updated_at' as const;
 
 export const getMeditationHistory = async (limit = 50): Promise<MeditationHistory[]> => {
   const user = await getCurrentUser();
