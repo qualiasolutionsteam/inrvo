@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { VoiceProfile, CloningStatus, CreditInfo, VoiceMetadata, DEFAULT_VOICE_METADATA, VoiceProvider } from '../../types';
 import { creditService } from '../lib/credits';
-import { chatterboxCloneVoice } from '../lib/edgeFunctions';
+import { fishAudioCloneVoice, chatterboxCloneVoice } from '../lib/edgeFunctions';
 import {
   createVoiceClone,
   getUserVoiceProfiles,
@@ -10,8 +10,9 @@ import {
 import { blobToBase64 } from '../../geminiService';
 import { convertToWAV, validateAudioForCloning } from '../lib/audioConverter';
 
-// All voice cloning now uses Chatterbox via Replicate (10x cheaper than ElevenLabs)
-const DEFAULT_CLONE_PROVIDER: VoiceProvider = 'chatterbox';
+// Fish Audio is the primary provider (best quality, real-time API)
+// Chatterbox/Replicate is the fallback
+const DEFAULT_CLONE_PROVIDER: VoiceProvider = 'fish-audio';
 
 /**
  * Convert base64 audio to Blob
@@ -149,7 +150,7 @@ export function useVoiceCloning(
   }, [userId, onCreditInfoUpdated]);
 
   // Handle recording complete from SimpleVoiceClone
-  // Uses Chatterbox via Replicate (10x cheaper than ElevenLabs)
+  // Uses Fish Audio as primary (best quality), Chatterbox as fallback
   const handleCloneRecordingComplete = useCallback(async (
     blob: Blob,
     name: string,
@@ -181,37 +182,55 @@ export function useVoiceCloning(
       setCloningStatus({ state: 'processing_audio' });
       const wavBlob = await convertToWAV(blob);
 
-      setCloningStatus({ state: 'uploading_to_chatterbox' });
+      // Try Fish Audio first (primary, best quality)
+      setCloningStatus({ state: 'uploading_to_fish_audio' });
 
-      // Clone with Chatterbox via Replicate
-      // Zero-shot cloning - just uploads audio sample, used at TTS time
-      let cloneResult: { voiceProfileId: string; voiceSampleUrl: string };
+      let cloneResult: { voiceProfileId: string; fishAudioModelId?: string | null; voiceSampleUrl?: string | null };
+
       try {
-        cloneResult = await chatterboxCloneVoice(
-          wavBlob, // Use converted WAV instead of original WebM
+        // Fish Audio cloning (stores audio in both Fish Audio and Supabase for fallback)
+        cloneResult = await fishAudioCloneVoice(
+          wavBlob,
           name,
           'Meditation voice clone created with INrVO',
           voiceMetadata
         );
-      } catch (cloneError: any) {
-        console.error('Chatterbox voice cloning failed:', cloneError);
-        setCloningStatus({
-          state: 'error',
-          message: cloneError.message || 'Voice cloning failed',
-          canRetry: true,
-        });
-        return;
+      } catch (fishError: any) {
+        console.warn('Fish Audio cloning failed, trying Chatterbox fallback:', fishError.message);
+
+        // Fallback to Chatterbox
+        setCloningStatus({ state: 'uploading_to_chatterbox' });
+        try {
+          const chatterboxResult = await chatterboxCloneVoice(
+            wavBlob,
+            name,
+            'Meditation voice clone created with INrVO',
+            voiceMetadata
+          );
+          cloneResult = {
+            voiceProfileId: chatterboxResult.voiceProfileId,
+            voiceSampleUrl: chatterboxResult.voiceSampleUrl,
+          };
+        } catch (chatterboxError: any) {
+          console.error('Both Fish Audio and Chatterbox failed:', chatterboxError);
+          setCloningStatus({
+            state: 'error',
+            message: chatterboxError.message || 'Voice cloning failed',
+            canRetry: true,
+          });
+          return;
+        }
       }
 
       // Create voice profile for UI
       const newVoice: VoiceProfile = {
         id: cloneResult.voiceProfileId,
         name: name,
-        provider: 'chatterbox',
+        provider: cloneResult.fishAudioModelId ? 'fish-audio' : 'chatterbox',
         voiceName: name,
         description: 'Your personalized cloned voice',
         isCloned: true,
-        providerVoiceId: cloneResult.voiceSampleUrl,
+        providerVoiceId: cloneResult.voiceSampleUrl || undefined,
       };
 
       // Update state
@@ -237,7 +256,7 @@ export function useVoiceCloning(
   }, [userId, loadUserVoices, onVoiceCreated]);
 
   // Auto-save voice recording (from voice input)
-  // Uses Chatterbox via Replicate
+  // Uses Fish Audio (primary) with Chatterbox fallback
   const autoSaveVoiceRecording = useCallback(async (audioData: string) => {
     if (!userId) {
       onError?.('Please sign in to save your voice');
@@ -302,19 +321,32 @@ export function useVoiceCloning(
       // Convert WebM to high-quality WAV for better voice cloning
       const wavBlob = await convertToWAV(audioBlob);
 
-      // Clone voice with Chatterbox via Replicate
-      let cloneResult: { voiceProfileId: string; voiceSampleUrl: string };
+      // Clone voice with Fish Audio (primary) or Chatterbox (fallback)
+      let cloneResult: { voiceProfileId: string; fishAudioModelId?: string | null; voiceSampleUrl?: string | null };
       try {
-        cloneResult = await chatterboxCloneVoice(
-          wavBlob, // Use converted WAV instead of original WebM
+        cloneResult = await fishAudioCloneVoice(
+          wavBlob,
           finalName,
           'Voice clone created with INrVO'
         );
-      } catch (cloneError: any) {
-        console.error('Chatterbox voice clone failed:', cloneError);
-        onError?.(`Voice cloning failed: ${cloneError.message}`);
-        setIsSavingVoice(false);
-        return;
+      } catch (fishError: any) {
+        console.warn('Fish Audio failed, trying Chatterbox:', fishError.message);
+        try {
+          const chatterboxResult = await chatterboxCloneVoice(
+            wavBlob,
+            finalName,
+            'Voice clone created with INrVO'
+          );
+          cloneResult = {
+            voiceProfileId: chatterboxResult.voiceProfileId,
+            voiceSampleUrl: chatterboxResult.voiceSampleUrl,
+          };
+        } catch (cloneError: any) {
+          console.error('Both Fish Audio and Chatterbox failed:', cloneError);
+          onError?.(`Voice cloning failed: ${cloneError.message}`);
+          setIsSavingVoice(false);
+          return;
+        }
       }
 
       // Save audio sample backup (non-critical)
@@ -342,11 +374,11 @@ export function useVoiceCloning(
       const newVoice: VoiceProfile = {
         id: cloneResult.voiceProfileId,
         name: finalName,
-        provider: 'chatterbox',
+        provider: cloneResult.fishAudioModelId ? 'fish-audio' : 'chatterbox',
         voiceName: finalName,
         description: 'Your personalized cloned voice',
         isCloned: true,
-        providerVoiceId: cloneResult.voiceSampleUrl,
+        providerVoiceId: cloneResult.voiceSampleUrl || undefined,
       };
       setSelectedVoice(newVoice);
       onVoiceCreated?.(newVoice);

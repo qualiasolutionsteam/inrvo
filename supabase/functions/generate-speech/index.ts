@@ -5,10 +5,12 @@ import { getRequestId, createLogger, getTracingHeaders } from "../_shared/tracin
 import { checkRateLimit, createRateLimitResponse, RATE_LIMITS } from "../_shared/rateLimit.ts";
 
 /**
- * Generate Speech - Supports both ElevenLabs and Chatterbox TTS
+ * Generate Speech - Unified TTS endpoint with multi-provider support
  *
- * - ElevenLabs: For legacy cloned voices with elevenlabs_voice_id
- * - Chatterbox: For new clones with voice_sample_url (via Replicate API)
+ * Provider priority:
+ * 1. Fish Audio: Primary (best quality, real-time API) - uses fish_audio_model_id
+ * 2. ElevenLabs: For legacy cloned voices with elevenlabs_voice_id
+ * 3. Chatterbox: Fallback (via Replicate API) - uses voice_sample_url
  */
 
 interface GenerateSpeechRequest {
@@ -46,6 +48,7 @@ function getSupabaseClient() {
 // ============================================================================
 
 const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1';
+const FISH_AUDIO_API_URL = 'https://api.fish.audio';
 
 async function runElevenLabsTTS(
   text: string,
@@ -96,7 +99,64 @@ async function runElevenLabsTTS(
 }
 
 // ============================================================================
-// Chatterbox TTS via Replicate
+// Fish Audio TTS (Primary Provider)
+// ============================================================================
+
+async function runFishAudioTTS(
+  text: string,
+  modelId: string,
+  options: { speed?: number; temperature?: number },
+  apiKey: string,
+  log: ReturnType<typeof createLogger>
+): Promise<{ base64: string; format: string }> {
+  log.info('Generating speech with Fish Audio', { modelId, textLength: text.length });
+
+  const response = await fetch(`${FISH_AUDIO_API_URL}/v1/tts`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      reference_id: modelId,
+      text,
+      chunk_length: 200,
+      format: 'mp3',
+      mp3_bitrate: 128,
+      latency: 'normal',
+      streaming: false,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    log.error('Fish Audio API error', { status: response.status, error: errorText });
+
+    if (response.status === 402) {
+      throw new Error('Fish Audio quota exceeded');
+    }
+    if (response.status === 401) {
+      throw new Error('Fish Audio authentication failed');
+    }
+    throw new Error(`Fish Audio API error: ${response.status} - ${errorText}`);
+  }
+
+  const audioBuffer = await response.arrayBuffer();
+  const bytes = new Uint8Array(audioBuffer);
+
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+    binary += String.fromCharCode(...chunk);
+  }
+
+  log.info('Fish Audio TTS successful', { audioSize: bytes.length });
+  return { base64: btoa(binary), format: 'audio/mpeg' };
+}
+
+// ============================================================================
+// Chatterbox TTS via Replicate (Fallback)
 // ============================================================================
 
 const REPLICATE_API_URL = 'https://api.replicate.com/v1/predictions';
@@ -351,6 +411,7 @@ serve(async (req) => {
     }
 
     // Get API keys
+    const fishAudioApiKey = Deno.env.get('FISH_AUDIO_API_KEY');
     const replicateApiKey = Deno.env.get('REPLICATE_API_TOKEN');
     const elevenlabsApiKey = Deno.env.get('ELEVENLABS_API_KEY');
 
@@ -359,13 +420,14 @@ serve(async (req) => {
       voice_sample_url: string | null;
       provider_voice_id: string | null;
       elevenlabs_voice_id: string | null;
+      fish_audio_model_id: string | null;
       provider: string | null;
     } | null = null;
 
     if (voiceId) {
       const { data, error: profileError } = await supabase
         .from('voice_profiles')
-        .select('voice_sample_url, provider_voice_id, elevenlabs_voice_id, provider')
+        .select('voice_sample_url, provider_voice_id, elevenlabs_voice_id, fish_audio_model_id, provider')
         .eq('id', voiceId)
         .eq('user_id', user.id)
         .single();
@@ -377,20 +439,45 @@ serve(async (req) => {
         log.info('Found voice profile', {
           voiceId,
           provider: voiceProfile?.provider,
+          hasFishAudioId: !!voiceProfile?.fish_audio_model_id,
           hasElevenLabsId: !!voiceProfile?.elevenlabs_voice_id,
           hasVoiceSampleUrl: !!voiceProfile?.voice_sample_url,
         });
       }
     }
 
-    // Determine which provider to use
+    // Determine which provider to use (priority: Fish Audio > ElevenLabs > Chatterbox)
+    const isFishAudioVoice = voiceProfile?.fish_audio_model_id && fishAudioApiKey;
     const isElevenLabsVoice = voiceProfile?.provider === 'ElevenLabs' && voiceProfile?.elevenlabs_voice_id;
 
-    let audioBase64: string;
-    let audioFormat: string;
+    let audioBase64: string | undefined;
+    let audioFormat: string | undefined;
 
-    if (isElevenLabsVoice && elevenlabsApiKey) {
-      // Use ElevenLabs for legacy cloned voices
+    // Priority 1: Fish Audio (best quality, real-time API)
+    if (isFishAudioVoice) {
+      log.info('Using Fish Audio TTS (primary)', {
+        fishAudioModelId: voiceProfile!.fish_audio_model_id,
+        textLength: text.length,
+      });
+
+      try {
+        const result = await runFishAudioTTS(
+          text,
+          voiceProfile!.fish_audio_model_id!,
+          { speed: 1.0, temperature: 0.7 },
+          fishAudioApiKey!,
+          log
+        );
+        audioBase64 = result.base64;
+        audioFormat = result.format;
+      } catch (fishError: any) {
+        log.warn('Fish Audio failed, trying fallback', { error: fishError.message });
+        // Fall through to other providers
+      }
+    }
+
+    // Priority 2: ElevenLabs (legacy cloned voices)
+    if (!audioBase64 && isElevenLabsVoice && elevenlabsApiKey) {
       log.info('Using ElevenLabs TTS', {
         elevenlabsVoiceId: voiceProfile!.elevenlabs_voice_id,
         textLength: text.length,
@@ -408,12 +495,13 @@ serve(async (req) => {
       );
       audioBase64 = result.base64;
       audioFormat = result.format;
+    }
 
-    } else if (replicateApiKey) {
-      // Use Chatterbox for new cloned voices or default
+    // Priority 3: Chatterbox (fallback via Replicate)
+    if (!audioBase64 && replicateApiKey) {
       const audioPromptUrl = voiceProfile?.voice_sample_url || null;
 
-      log.info('Using Chatterbox TTS', {
+      log.info('Using Chatterbox TTS (fallback)', {
         textLength: text.length,
         hasVoiceSample: !!audioPromptUrl,
       });
@@ -429,11 +517,13 @@ serve(async (req) => {
         log
       );
       audioFormat = 'audio/wav';
+    }
 
-    } else {
-      log.error('No TTS service configured');
+    // No provider available
+    if (!audioBase64) {
+      log.error('No TTS service available');
       return new Response(
-        JSON.stringify({ error: 'No TTS service configured', requestId }),
+        JSON.stringify({ error: 'No TTS service configured. Please add API keys.', requestId }),
         { status: 500, headers: { ...allHeaders, 'Content-Type': 'application/json' } }
       );
     }

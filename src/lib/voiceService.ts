@@ -1,8 +1,9 @@
 import { VoiceProfile, VoiceProvider } from '../../types';
 import { webSpeechService, isWebSpeechAvailable } from './webSpeechService';
 // Voice service supports multiple providers:
+// - 'fish-audio': Fish Audio API (primary - best quality, real-time)
+// - 'chatterbox': Chatterbox via Replicate (fallback)
 // - 'browser': Free Web Speech API (built-in browser TTS)
-// - 'chatterbox': Chatterbox via Replicate (cloned voices, 10x cheaper than ElevenLabs)
 
 /**
  * Strip audio tags from text before sending to TTS
@@ -36,8 +37,9 @@ function prepareMeditationText(text: string): string {
 
 /**
  * Unified voice service that routes between providers:
+ * - 'fish-audio': Fish Audio API (primary - best quality)
+ * - 'chatterbox': Chatterbox via Replicate (fallback)
  * - 'browser': Free Web Speech API
- * - 'chatterbox': Chatterbox via Replicate (for cloned voices)
  */
 export const voiceService = {
   /**
@@ -65,6 +67,10 @@ export const voiceService = {
       case 'browser':
         return this.generateWithWebSpeech(meditationText, voice);
 
+      case 'fish-audio':
+        // Fish Audio uses unified generate-speech endpoint (handles fallback internally)
+        return this.generateWithFishAudio(meditationText, voice, audioContext);
+
       case 'chatterbox':
       default:
         return this.generateWithChatterbox(meditationText, voice, audioContext);
@@ -74,26 +80,32 @@ export const voiceService = {
   /**
    * Detect provider from voice profile
    * Routes to appropriate TTS backend:
+   * - 'fish-audio': Primary (best quality, real-time API)
+   * - 'chatterbox': Fallback (via Replicate)
    * - 'browser': Web Speech API (free, works offline)
-   * - 'chatterbox': Edge function handles both Chatterbox AND ElevenLabs
    */
   detectProvider(voice: VoiceProfile): VoiceProvider {
     // Check for browser voices first
     if (voice.id.startsWith('browser-')) return 'browser';
 
-    // ElevenLabs voices go through the edge function (which handles ElevenLabs TTS)
+    // Fish Audio voices (primary)
+    if (voice.provider === 'fish-audio') {
+      return 'fish-audio';
+    }
+
+    // ElevenLabs voices go through unified endpoint (routes internally)
     if (voice.provider === 'ElevenLabs') {
-      return 'chatterbox';  // Edge function routes to ElevenLabs internally
+      return 'fish-audio';  // Unified endpoint handles fallback
     }
 
     // Chatterbox voices with proper setup
     if (voice.provider === 'chatterbox' && (voice.providerVoiceId || voice.isCloned)) {
-      return 'chatterbox';
+      return 'fish-audio';  // Route through unified endpoint for Fish Audio fallback
     }
 
-    // Any cloned voice with voice data
+    // Any cloned voice with voice data - use unified endpoint
     if (voice.providerVoiceId || voice.isCloned) {
-      return 'chatterbox';
+      return 'fish-audio';  // Unified endpoint handles provider selection
     }
 
     // Voices without proper setup fall back to free browser TTS
@@ -124,7 +136,41 @@ export const voiceService = {
   },
 
   /**
-   * Generate speech using Chatterbox via edge function
+   * Generate speech using Fish Audio (with automatic Chatterbox fallback)
+   * Uses the unified generate-speech endpoint which handles provider selection
+   */
+  async generateWithFishAudio(
+    text: string,
+    voice: VoiceProfile,
+    audioContext?: AudioContext
+  ): Promise<{ audioBuffer: AudioBuffer | null; base64: string }> {
+    // Import dynamically to avoid circular dependency
+    const { generateSpeech } = await import('./edgeFunctions');
+
+    // Use voice profile ID - the edge function will look up the voice
+    const voiceId = voice.id;
+
+    // Call generate-speech edge function (handles Fish Audio with Chatterbox fallback)
+    const base64 = await generateSpeech(voiceId, text);
+
+    // Decode to AudioBuffer if needed (Fish Audio returns MP3, Chatterbox returns WAV)
+    if (audioContext) {
+      // Try MP3 first (Fish Audio), fall back to WAV (Chatterbox)
+      try {
+        const audioBuffer = await this.decodeAudio(base64, audioContext, 'audio/mpeg');
+        return { audioBuffer, base64 };
+      } catch {
+        // Fallback to WAV decoding
+        const audioBuffer = await this.decodeAudio(base64, audioContext, 'audio/wav');
+        return { audioBuffer, base64 };
+      }
+    }
+
+    return { audioBuffer: null, base64 };
+  },
+
+  /**
+   * Generate speech using Chatterbox via edge function (legacy/fallback)
    */
   async generateWithChatterbox(
     text: string,
@@ -187,6 +233,7 @@ export const voiceService = {
         // Browser voices are always ready if Web Speech API is available
         return isWebSpeechAvailable();
 
+      case 'fish-audio':
       case 'chatterbox':
       default:
         // Cloned voices are ready if they have a voice reference

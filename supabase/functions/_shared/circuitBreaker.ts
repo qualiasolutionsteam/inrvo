@@ -20,6 +20,11 @@ export const CIRCUIT_CONFIGS: Record<string, CircuitConfig> = {
     resetTimeoutMs: 60000,     // 60 seconds
     halfOpenRequests: 1,
   },
+  'fish-audio': {
+    failureThreshold: 3,
+    resetTimeoutMs: 45000,     // 45 seconds (faster recovery than Replicate)
+    halfOpenRequests: 1,
+  },
 };
 
 export class CircuitBreakerError extends Error {

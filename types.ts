@@ -23,9 +23,12 @@ export interface ScriptTemplate {
   prompt: string;
 }
 
-// Voice providers (only browser and chatterbox are implemented)
-// Legacy providers ('ElevenLabs', 'Gemini') are treated as browser fallback
-export type VoiceProvider = 'browser' | 'chatterbox';
+// Voice providers
+// - 'fish-audio': Primary provider (best quality, real-time API)
+// - 'chatterbox': Fallback provider (via Replicate)
+// - 'browser': Free browser TTS fallback
+// Legacy providers ('ElevenLabs', 'Gemini') are treated as chatterbox fallback
+export type VoiceProvider = 'browser' | 'chatterbox' | 'fish-audio';
 
 export interface VoiceProfile {
   id: string;
@@ -93,7 +96,8 @@ export type CloningStatus =
   | { state: 'validating' }
   | { state: 'processing_audio' }                                         // Converting WebM to WAV
   | { state: 'uploading'; progress?: number; provider?: VoiceProvider }  // Generic upload state
-  | { state: 'uploading_to_chatterbox'; progress?: number }               // Chatterbox via Replicate
+  | { state: 'uploading_to_fish_audio'; progress?: number }               // Fish Audio (primary)
+  | { state: 'uploading_to_chatterbox'; progress?: number }               // Chatterbox via Replicate (fallback)
   | { state: 'saving_to_database' }
   | { state: 'success'; voiceId: string; voiceName: string }
   | { state: 'error'; message: string; canRetry: boolean };

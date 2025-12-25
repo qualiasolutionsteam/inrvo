@@ -414,6 +414,119 @@ export async function chatterboxCloneVoice(
 }
 
 // ============================================================================
+// Fish Audio Edge Function Wrappers (Primary Provider)
+// ============================================================================
+
+export interface FishAudioTTSResponse {
+  audioBase64: string;
+  format: string;
+  usedFallback?: boolean;
+}
+
+export interface FishAudioCloneResponse {
+  voiceProfileId: string;
+  fishAudioModelId: string | null;
+  voiceSampleUrl: string | null;
+}
+
+/**
+ * Generate speech using Fish Audio (with automatic Chatterbox fallback)
+ * Fish Audio is the primary provider - best quality, real-time API
+ */
+export async function fishAudioTTS(
+  voiceId: string,
+  text: string,
+  options?: {
+    speed?: number;
+    temperature?: number;
+    format?: 'mp3' | 'wav' | 'opus';
+  }
+): Promise<FishAudioTTSResponse> {
+  const response = await callEdgeFunction<{
+    success: boolean;
+    audioBase64: string;
+    format: string;
+    usedFallback?: boolean;
+  }>('fish-audio-tts', {
+    voiceId,
+    text,
+    options,
+  }, { timeout: 60000 });
+
+  return {
+    audioBase64: response.audioBase64,
+    format: response.format,
+    usedFallback: response.usedFallback || false,
+  };
+}
+
+/**
+ * Clone a voice using Fish Audio (with Chatterbox storage for fallback)
+ * Creates both a Fish Audio model and stores sample for Chatterbox backup
+ */
+export async function fishAudioCloneVoice(
+  audioBlob: Blob,
+  name: string,
+  description?: string,
+  metadata?: VoiceMetadata
+): Promise<FishAudioCloneResponse> {
+  const token = await getAuthToken();
+  const base64Audio = await blobToBase64(audioBlob);
+
+  const url = `${SUPABASE_URL}/functions/v1/fish-audio-clone`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      audioBase64: base64Audio,
+      voiceName: name,
+      description: description || 'Voice clone created with INrVO',
+      metadata: metadata || undefined,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || `Voice cloning failed: ${response.status}`);
+  }
+
+  if (!data.voiceProfileId) {
+    throw new Error('No voice profile ID returned from cloning service');
+  }
+
+  return {
+    voiceProfileId: data.voiceProfileId,
+    fishAudioModelId: data.fishAudioModelId || null,
+    voiceSampleUrl: data.voiceSampleUrl || null,
+  };
+}
+
+/**
+ * Smart TTS that uses the unified generate-speech endpoint
+ * Automatically routes to Fish Audio (primary) or Chatterbox (fallback)
+ */
+export async function generateSpeechWithFallback(
+  voiceId: string,
+  text: string,
+  voiceSettings?: {
+    exaggeration?: number;
+    cfgWeight?: number;
+  }
+): Promise<{ audioBase64: string; format: string }> {
+  // Use the unified generate-speech endpoint which handles provider selection
+  const audioBase64 = await generateSpeech(voiceId, text, voiceSettings);
+  return {
+    audioBase64,
+    format: 'audio/mpeg', // Default format
+  };
+}
+
+// ============================================================================
 // Feature flags for gradual migration
 // ============================================================================
 
