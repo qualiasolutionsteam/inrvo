@@ -160,7 +160,7 @@ export const MeditationEditor = memo<MeditationEditorProps>(
 
     return (
       <div
-        className="fixed inset-0 z-[60] bg-[#020617] animate-in fade-in duration-300"
+        className="fixed inset-0 z-[100] bg-[#020617] animate-in fade-in duration-300"
         role="dialog"
         aria-modal="true"
         aria-labelledby="editor-title"

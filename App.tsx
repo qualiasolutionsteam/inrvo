@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { View, VoiceProfile, ScriptTimingMap, CloningStatus, CreditInfo, VoiceMetadata } from './types';
-import { TEMPLATE_CATEGORIES, VOICE_PROFILES, ICONS, BACKGROUND_TRACKS, BackgroundTrack, AUDIO_TAG_CATEGORIES } from './constants';
+import { TEMPLATE_CATEGORIES, VOICE_PROFILES, ICONS, BACKGROUND_TRACKS, BackgroundTrack, AUDIO_TAG_CATEGORIES, KEYWORD_TAG_MAP, MUSIC_CATEGORY_CONFIG, TRACKS_BY_CATEGORY, getSuggestedTags } from './constants';
 import { useModals } from './src/contexts/ModalContext';
 import { useVoice } from './src/contexts/VoiceContext';
 import GlassCard from './components/GlassCard';
@@ -19,13 +19,15 @@ const ScriptReader = lazy(() => import('./components/ScriptReader'));
 const MeditationEditor = lazy(() => import('./src/components/MeditationEditor'));
 const MeditationPlayer = lazy(() => import('./components/V0MeditationPlayer'));
 // InlinePlayer removed - using only V0MeditationPlayer now
-import { AgentChat } from './components/AgentChat';
+// AgentChat lazy-loaded to reduce initial bundle (~15KB savings)
+const AgentChat = lazy(() => import('./components/AgentChat').then(m => ({ default: m.AgentChat })));
 import OfflineIndicator from './components/OfflineIndicator';
 import { buildTimingMap, getCurrentWordIndex } from './src/lib/textSync';
 import { geminiService, blobToBase64 } from './geminiService';
 import { voiceService } from './src/lib/voiceService';
 // fishAudioCloneVoice dynamically imported to avoid bundle bloat and duplicate import warning
 // See: voiceService.ts also imports edgeFunctions dynamically
+import { chatterboxCloneVoice } from './src/lib/edgeFunctions';
 import { convertToWAV } from './src/lib/audioConverter';
 import { creditService } from './src/lib/credits';
 
@@ -108,72 +110,11 @@ const App: React.FC = () => {
   const [favoriteAudioTags, setFavoriteAudioTags] = useState<string[]>([]);
   const [suggestedAudioTags, setSuggestedAudioTags] = useState<string[]>([]);
 
-  // Keyword to tag mapping (memoized to prevent recreation)
-  const keywordTagMap = useMemo(() => ({
-    // Breathing related
-    'breath': ['deep_breath', 'exhale'],
-    'breathing': ['deep_breath', 'exhale'],
-    'inhale': ['deep_breath'],
-    'exhale': ['exhale'],
-    // Pause/calm related
-    'pause': ['short_pause', 'long_pause'],
-    'calm': ['long_pause', 'silence'],
-    'peace': ['long_pause', 'silence'],
-    'quiet': ['silence'],
-    'silent': ['silence'],
-    'stillness': ['silence', 'long_pause'],
-    // Sound related
-    'laugh': ['giggling'],
-    'happy': ['giggling'],
-    'joy': ['giggling'],
-    'gentle': ['soft_hum'],
-    'hum': ['soft_hum'],
-    // Voice related
-    'whisper': ['whisper'],
-    'soft': ['whisper', 'soft_hum'],
-    'sigh': ['sigh'],
-    'relax': ['sigh', 'deep_breath'],
-    'release': ['sigh', 'exhale'],
-  }), []);
-
-  // Smart tag suggestions based on prompt content (memoized callback)
-  const getSuggestedTags = useCallback((prompt: string): string[] => {
-    const lowerPrompt = prompt.toLowerCase();
-    const suggestions: string[] = [];
-
-    // Check each keyword
-    Object.entries(keywordTagMap).forEach(([keyword, tags]) => {
-      if (lowerPrompt.includes(keyword)) {
-        tags.forEach(tag => {
-          if (!suggestions.includes(tag)) {
-            suggestions.push(tag);
-          }
-        });
-      }
-    });
-
-    // Limit to top 4 suggestions
-    return suggestions.slice(0, 4);
-  }, [keywordTagMap]);
-
-  // Group tracks by category for music modal (memoized - static data)
-  const tracksByCategory = useMemo(() =>
-    BACKGROUND_TRACKS.reduce((acc, track) => {
-      if (!acc[track.category]) acc[track.category] = [];
-      acc[track.category].push(track);
-      return acc;
-    }, {} as Record<string, BackgroundTrack[]>),
-  []);
-
-  // Category config for styling (memoized - static data)
-  const categoryConfig = useMemo(() => ({
-    'ambient': { label: 'Ambient', color: 'text-cyan-400', bgColor: 'bg-cyan-500/10' },
-    'nature': { label: 'Nature', color: 'text-emerald-400', bgColor: 'bg-emerald-500/10' },
-    'binaural': { label: 'Binaural', color: 'text-violet-400', bgColor: 'bg-violet-500/10' },
-    'instrumental': { label: 'Instrumental', color: 'text-purple-400', bgColor: 'bg-purple-500/10' },
-    'lofi': { label: 'Lo-Fi', color: 'text-orange-400', bgColor: 'bg-orange-500/10' },
-    'classical': { label: 'Classical', color: 'text-rose-400', bgColor: 'bg-rose-500/10' },
-  } as Record<string, { label: string; color: string; bgColor: string }>), []);
+  // Static data now imported from constants.tsx for better performance:
+  // - KEYWORD_TAG_MAP: Keyword to audio tag mapping
+  // - MUSIC_CATEGORY_CONFIG: Category styling configuration
+  // - TRACKS_BY_CATEGORY: Pre-computed tracks grouped by category
+  // - getSuggestedTags(): Function to get suggested tags from prompt
 
   // Library state with pagination
   const [libraryTab, setLibraryTab] = useState<'all' | 'favorites'>('all');
@@ -1743,6 +1684,11 @@ const App: React.FC = () => {
 
               {/* AI Agent Chat - Full screen when not in inline mode */}
               {!isInlineMode && (
+                <Suspense fallback={
+                  <div className="flex items-center justify-center h-64">
+                    <div className="animate-pulse text-slate-400">Loading chat...</div>
+                  </div>
+                }>
                 <AgentChat
                       onMeditationReady={(generatedScript, meditationType, userPrompt) => {
                         // Set the user's original prompt for display
@@ -1878,6 +1824,7 @@ const App: React.FC = () => {
                       restoredScript={restoredScript}
                       onRestoredScriptClear={() => setRestoredScript(null)}
                     />
+                </Suspense>
               )}
 
               {/* InlinePlayer removed - using only V0MeditationPlayer now */}
@@ -2116,8 +2063,8 @@ const App: React.FC = () => {
               <p className="text-slate-500 text-center mb-6 md:mb-8 text-sm">Select background audio for your meditation</p>
 
               <div className="w-full space-y-6">
-                {Object.entries(tracksByCategory).map(([category, tracks]) => {
-                  const config = categoryConfig[category];
+                {Object.entries(TRACKS_BY_CATEGORY).map(([category, tracks]) => {
+                  const config = MUSIC_CATEGORY_CONFIG[category];
                   if (!config) return null;
                   return (
                     <div key={category}>
@@ -2465,7 +2412,7 @@ const App: React.FC = () => {
             </div>
             <button
               onClick={() => setShowBurgerMenu(false)}
-              className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-colors"
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-white hover:bg-white/5 transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
@@ -2477,7 +2424,7 @@ const App: React.FC = () => {
           <div className="p-4 space-y-1">
             <button
               onClick={() => { setShowBurgerMenu(false); setShowHowItWorks(true); }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors text-sm"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-white hover:bg-white/10 transition-colors text-sm"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
@@ -2486,7 +2433,7 @@ const App: React.FC = () => {
             </button>
             <button
               onClick={() => { setShowBurgerMenu(false); setShowLibrary(true); }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors text-sm"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-white hover:bg-white/10 transition-colors text-sm"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
@@ -2500,7 +2447,7 @@ const App: React.FC = () => {
 
           {/* History */}
           <div className="flex-1 flex flex-col min-h-0 p-4">
-            <p className="text-[10px] font-medium text-slate-600 uppercase tracking-wider mb-3">History</p>
+            <p className="text-[10px] font-medium text-white/70 uppercase tracking-wider mb-3">History</p>
             <div className="flex-1 overflow-y-auto space-y-1">
               {user ? (
                 isLoadingHistory ? (
@@ -2534,16 +2481,16 @@ const App: React.FC = () => {
                       }}
                       className="w-full text-left p-2.5 rounded-lg hover:bg-white/5 transition-colors group"
                     >
-                      <p className="text-sm text-slate-400 group-hover:text-white truncate">{item.enhanced_script || item.prompt}</p>
-                      <p className="text-[10px] text-slate-600 mt-1">{new Date(item.created_at).toLocaleDateString()}</p>
+                      <p className="text-sm text-white group-hover:text-white truncate">{item.enhanced_script || item.prompt}</p>
+                      <p className="text-[10px] text-white/50 mt-1">{new Date(item.created_at).toLocaleDateString()}</p>
                     </button>
                   ))
                 ) : (
-                  <p className="text-sm text-slate-600 text-center py-6">No history yet</p>
+                  <p className="text-sm text-white/60 text-center py-6">No history yet</p>
                 )
               ) : (
                 <div className="text-center py-6">
-                  <p className="text-sm text-slate-500 mb-3">Sign in to view history</p>
+                  <p className="text-sm text-white/70 mb-3">Sign in to view history</p>
                   <button
                     onClick={() => { setShowBurgerMenu(false); setShowAuthModal(true); }}
                     className="px-4 py-2 rounded-lg bg-cyan-500/20 text-cyan-400 text-sm hover:bg-cyan-500/30 transition-colors"
@@ -2560,7 +2507,7 @@ const App: React.FC = () => {
             {user && (
               <button
                 onClick={() => { setShowBurgerMenu(false); handleSignOut(); }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-white/5 transition-colors text-sm"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-white hover:text-rose-400 hover:bg-white/5 transition-colors text-sm"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -2568,14 +2515,14 @@ const App: React.FC = () => {
                 Sign Out
               </button>
             )}
-            <div className="flex items-center justify-center gap-3 text-[10px] text-slate-600">
+            <div className="flex items-center justify-center gap-3 text-[10px] text-white/70">
               <button onClick={() => { setShowBurgerMenu(false); setShowAboutUs(true); }} className="hover:text-white transition-colors">About</button>
               <span>·</span>
               <button onClick={() => { setShowBurgerMenu(false); setShowTerms(true); }} className="hover:text-white transition-colors">Terms</button>
               <span>·</span>
               <button onClick={() => { setShowBurgerMenu(false); setShowPrivacy(true); }} className="hover:text-white transition-colors">Privacy</button>
             </div>
-            <p className="text-[9px] text-slate-700 text-center">© {new Date().getFullYear()} INrVO</p>
+            <p className="text-[9px] text-white/50 text-center">© {new Date().getFullYear()} INrVO</p>
           </div>
         </div>
 
