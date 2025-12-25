@@ -81,8 +81,8 @@ function getSupabaseClient() {
 // https://docs.fish.audio/developer-guide/getting-started/quickstart
 // ============================================================================
 
-// TTS request timeout (30 seconds)
-const TTS_TIMEOUT_MS = 30000;
+// TTS request timeout (120 seconds - Fish Audio needs 35-76s for long meditations)
+const TTS_TIMEOUT_MS = 120000;
 
 async function runFishAudioTTS(
   text: string,
