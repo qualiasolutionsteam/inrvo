@@ -169,13 +169,13 @@ All edge function calls go through `src/lib/edgeFunctions.ts` which handles:
 - Timeout handling
 
 ### Meditation Player (V0MeditationPlayer)
-The player focuses on playback controls without displaying script text:
+The player is a minimal, immersive playback experience:
 - Breathing circle visualizer (4-7-8 pattern)
-- Play/pause, seek, skip controls
-- Background music toggle and volume
-- Voice volume control
-- Supabase save integration
+- Play/pause, seek, skip ±15s controls
+- Volume control with mute toggle
+- Progress bar with time display
 - Floating particle animations
+- No script text display - pure audio focus
 
 ### MeditationAgent Conversation Flow
 The agent (`src/lib/agent/MeditationAgent.ts`) is conversational by default:
