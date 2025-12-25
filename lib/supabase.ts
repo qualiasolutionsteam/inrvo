@@ -136,6 +136,7 @@ export interface VoiceProfile {
   quality_score?: number;
   provider_voice_id?: string;
   voice_sample_url?: string;
+  fish_audio_model_id?: string;  // Fish Audio model ID (primary provider)
   provider?: string;
   cloning_status?: string;
   sample_duration?: number;
@@ -354,6 +355,9 @@ export const createVoiceProfile = async (
   }
 };
 
+// Fields needed for voice profile display and TTS
+const VOICE_PROFILE_FIELDS = 'id, user_id, name, description, language, provider, provider_voice_id, voice_sample_url, fish_audio_model_id, status, cloning_status, created_at, updated_at' as const;
+
 export const getUserVoiceProfiles = async (): Promise<VoiceProfile[]> => {
   const user = await getCurrentUser();
   if (!user || !supabase) return [];
@@ -361,7 +365,7 @@ export const getUserVoiceProfiles = async (): Promise<VoiceProfile[]> => {
   return withRetry(async () => {
     const { data, error } = await supabase
       .from('voice_profiles')
-      .select('*')
+      .select(VOICE_PROFILE_FIELDS)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
@@ -407,10 +411,51 @@ export const updateVoiceProfile = async (
   return data;
 };
 
+/**
+ * Delete a voice profile and all associated resources
+ * - Deletes voice sample files from Supabase Storage
+ * - Deletes the database record
+ * Note: Fish Audio models are NOT deleted (they remain in Fish Audio cloud)
+ * as we don't have an endpoint to delete them. Consider manual cleanup if needed.
+ */
 export const deleteVoiceProfile = async (id: string): Promise<void> => {
   const user = await getCurrentUser();
   if (!user || !supabase) throw new Error('User not authenticated or Supabase not configured');
 
+  // First, fetch the voice profile to get associated resources
+  const { data: profile, error: fetchError } = await supabase
+    .from('voice_profiles')
+    .select('voice_sample_url, fish_audio_model_id')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single();
+
+  if (fetchError) {
+    console.warn('Could not fetch voice profile for cleanup:', fetchError);
+  }
+
+  // Delete voice sample from storage if it exists
+  if (profile?.voice_sample_url) {
+    try {
+      // Extract the storage path from the URL
+      // URL format: https://xxx.supabase.co/storage/v1/object/public/voice-samples/userId/filename.wav
+      const url = new URL(profile.voice_sample_url);
+      const pathMatch = url.pathname.match(/\/voice-samples\/(.+)$/);
+      if (pathMatch) {
+        const storagePath = pathMatch[1];
+        const { error: storageError } = await supabase.storage
+          .from('voice-samples')
+          .remove([storagePath]);
+        if (storageError) {
+          console.warn('Failed to delete voice sample from storage:', storageError);
+        }
+      }
+    } catch (e) {
+      console.warn('Error cleaning up voice sample:', e);
+    }
+  }
+
+  // Delete the database record
   const { error } = await supabase
     .from('voice_profiles')
     .delete()
@@ -699,6 +744,9 @@ export const saveMeditationHistory = async (
   return data;
 };
 
+// Fields needed for meditation history display
+const MEDITATION_HISTORY_FIELDS = 'id, user_id, prompt, voice_name, background_track_name, duration_seconds, audio_url, is_favorite, created_at' as const;
+
 export const getMeditationHistory = async (limit = 50): Promise<MeditationHistory[]> => {
   const user = await getCurrentUser();
   if (!user || !supabase) return [];
@@ -706,7 +754,7 @@ export const getMeditationHistory = async (limit = 50): Promise<MeditationHistor
   return withRetry(async () => {
     const { data, error } = await supabase
       .from('meditation_history')
-      .select('*')
+      .select(MEDITATION_HISTORY_FIELDS)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -716,6 +764,50 @@ export const getMeditationHistory = async (limit = 50): Promise<MeditationHistor
       throw error;
     }
     return data || [];
+  });
+};
+
+/**
+ * Get meditation history with pagination support
+ * Returns data and hasMore flag for infinite scroll / load more
+ */
+export interface PaginatedHistoryResult {
+  data: MeditationHistory[];
+  hasMore: boolean;
+  totalCount: number;
+}
+
+export const getMeditationHistoryPaginated = async (
+  page = 0,
+  pageSize = 20
+): Promise<PaginatedHistoryResult> => {
+  const user = await getCurrentUser();
+  if (!user || !supabase) return { data: [], hasMore: false, totalCount: 0 };
+
+  return withRetry(async () => {
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data, error, count } = await supabase
+      .from('meditation_history')
+      .select(MEDITATION_HISTORY_FIELDS, { count: 'exact' })
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) {
+      console.error('Error fetching paginated meditation history:', error);
+      throw error;
+    }
+
+    const totalCount = count || 0;
+    const hasMore = (page + 1) * pageSize < totalCount;
+
+    return {
+      data: data || [],
+      hasMore,
+      totalCount,
+    };
   });
 };
 
@@ -754,34 +846,60 @@ export const deleteMeditationHistory = async (id: string): Promise<boolean> => {
 
 /**
  * Toggle favorite status for a meditation
+ * Uses atomic database function to reduce 2 queries to 1
  */
 export const toggleMeditationFavorite = async (id: string): Promise<boolean> => {
   const user = await getCurrentUser();
   if (!user || !supabase) return false;
 
-  // Get current favorite status
+  try {
+    // Use atomic RPC function for single-query toggle
+    const { data, error } = await supabase.rpc('toggle_meditation_favorite', {
+      p_meditation_id: id
+    });
+
+    if (error) {
+      // Fallback to manual toggle if function doesn't exist yet
+      if (error.message?.includes('function') || error.code === '42883') {
+        console.warn('Atomic toggle not available, using fallback');
+        return toggleMeditationFavoriteFallback(id, user.id);
+      }
+      console.error('Error toggling meditation favorite:', error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error('Error toggling meditation favorite:', err);
+    return false;
+  }
+};
+
+// Fallback for environments without the RPC function
+async function toggleMeditationFavoriteFallback(id: string, userId: string): Promise<boolean> {
+  if (!supabase) return false;
+
   const { data: record } = await supabase
     .from('meditation_history')
     .select('is_favorite')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .single();
 
   if (!record) return false;
 
-  // Toggle the favorite status
   const { error } = await supabase
     .from('meditation_history')
     .update({ is_favorite: !record.is_favorite })
     .eq('id', id)
-    .eq('user_id', user.id);
+    .eq('user_id', userId);
 
   if (error) {
-    console.error('Error toggling meditation favorite:', error);
+    console.error('Error toggling meditation favorite (fallback):', error);
     return false;
   }
   return true;
-};
+}
 
 /**
  * Get favorite meditations
@@ -793,7 +911,7 @@ export const getFavoriteMeditations = async (): Promise<MeditationHistory[]> => 
   return withRetry(async () => {
     const { data, error } = await supabase
       .from('meditation_history')
-      .select('*')
+      .select(MEDITATION_HISTORY_FIELDS)
       .eq('user_id', user.id)
       .eq('is_favorite', true)
       .order('created_at', { ascending: false });
@@ -811,6 +929,7 @@ export const getAudioTagPreferences = async (): Promise<AudioTagPreference> => {
   const user = await getCurrentUser();
   if (!user || !supabase) return { enabled: false, favorite_tags: [] };
 
+  // Only select the field we need instead of the entire user row
   const { data, error } = await supabase
     .from('users')
     .select('audio_tag_preferences')
