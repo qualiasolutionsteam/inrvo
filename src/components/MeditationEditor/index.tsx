@@ -39,20 +39,6 @@ const CloseIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
   </svg>
 );
 
-const MenuIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M3 12h18M3 6h18M3 18h18" />
-  </svg>
-);
-
 const EditIcon = ({ className = 'w-4 h-4' }: { className?: string }) => (
   <svg
     className={className}
@@ -216,18 +202,8 @@ export const MeditationEditor = memo<MeditationEditorProps>(
             <div className="relative h-full">
               {/* Top Bar - Responsive layout */}
               <div className="flex items-center justify-between py-3 mb-2">
-                {/* Left section */}
+                {/* Left section - Duration stat (desktop only, mobile shows on right) */}
                 <div className="flex items-center gap-3">
-                  {/* Mobile: Colored menu button */}
-                  <button
-                    onClick={onVoiceSelect}
-                    aria-label="Open options"
-                    className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/30 transition-colors duration-200 active:scale-95"
-                  >
-                    <MenuIcon className="w-4 h-4" />
-                  </button>
-
-                  {/* Desktop: Duration stat */}
                   <div className="hidden md:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
                     <span className="text-cyan-400 font-bold text-sm">
                       {stats.estimatedMinutes}
