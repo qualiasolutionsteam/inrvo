@@ -1423,8 +1423,9 @@ const App: React.FC = () => {
     }
   };
 
-  const handlePlayEditedScript = async () => {
-    if (!editableScript.trim() || !selectedVoice) return;
+  const handlePlayEditedScript = async (scriptOverride?: string) => {
+    const scriptToPlay = scriptOverride || editableScript;
+    if (!scriptToPlay.trim() || !selectedVoice) return;
 
     setShowScriptPreview(false);
     setIsGenerating(true);
@@ -1439,7 +1440,7 @@ const App: React.FC = () => {
 
       // Generate speech with the edited script
       const { audioBuffer, base64 } = await voiceService.generateSpeech(
-        editableScript,
+        scriptToPlay,
         selectedVoice,
         audioContextRef.current
       );
@@ -1478,15 +1479,15 @@ const App: React.FC = () => {
       playbackStartTimeRef.current = audioContextRef.current.currentTime;
 
       // Update state
-      setScript(editableScript);
-      setEnhancedScript(editableScript);
+      setScript(scriptToPlay);
+      setEnhancedScript(scriptToPlay);
       setIsPlaying(true);
       setCurrentView(View.PLAYER);  // Go directly to V0MeditationPlayer
       setIsGenerating(false);
       setGenerationStage('idle');
 
       // Build timing map
-      const map = buildTimingMap(editableScript, audioBuffer.duration);
+      const map = buildTimingMap(scriptToPlay, audioBuffer.duration);
       setTimingMap(map);
 
       // Start background music
@@ -1495,7 +1496,7 @@ const App: React.FC = () => {
       // Deduct credits
       if (selectedVoice.isCloned) {
         creditService.deductCredits(
-          creditService.calculateTTSCost(editableScript),
+          creditService.calculateTTSCost(scriptToPlay),
           'TTS_GENERATE',
           selectedVoice.id,
           user?.id
@@ -1505,7 +1506,7 @@ const App: React.FC = () => {
       // Save to history (include audio for cloned voices)
       saveMeditationHistory(
         originalPrompt,
-        editableScript,
+        scriptToPlay,
         selectedVoice.id,
         selectedVoice.name,
         selectedBackgroundTrack?.id,
@@ -2380,7 +2381,7 @@ const App: React.FC = () => {
               }}
               onGenerate={(updatedScript) => {
                 setEditableScript(updatedScript);
-                throttledPlayEditedScript();
+                throttledPlayEditedScript(updatedScript);
               }}
               onClose={() => !(isGenerating || isExtending) && setShowScriptPreview(false)}
               isGenerating={isGenerating || isExtending}
@@ -2533,7 +2534,7 @@ const App: React.FC = () => {
                       }}
                       className="w-full text-left p-2.5 rounded-lg hover:bg-white/5 transition-colors group"
                     >
-                      <p className="text-sm text-slate-400 group-hover:text-white truncate">{item.prompt}</p>
+                      <p className="text-sm text-slate-400 group-hover:text-white truncate">{item.enhanced_script || item.prompt}</p>
                       <p className="text-[10px] text-slate-600 mt-1">{new Date(item.created_at).toLocaleDateString()}</p>
                     </button>
                   ))
@@ -2854,7 +2855,7 @@ const App: React.FC = () => {
                                         </svg>
                                       </div>
                                       <div className="flex-1 min-w-0">
-                                        <p className="text-slate-400 text-sm truncate">{meditation.prompt}</p>
+                                        <p className="text-slate-400 text-sm truncate">{meditation.enhanced_script || meditation.prompt}</p>
                                         <p className="text-xs text-slate-600 mt-1">{new Date(meditation.created_at).toLocaleDateString()}</p>
                                       </div>
                                       <button

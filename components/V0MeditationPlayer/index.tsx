@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Play, Pause, RotateCcw, RotateCw, Volume2, VolumeX, Music, Moon, Heart } from 'lucide-react';
-import { saveMeditationHistory } from '@/lib/supabase';
 
 /**
  * V0 Meditation Player - Clean, focused playback experience
@@ -65,7 +64,6 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
   const [isMuted, setIsMuted] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
@@ -96,28 +94,13 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
     }
   }, [isMuted, onVoiceVolumeChange]);
 
-  const handleSave = useCallback(async () => {
-    if (!userId || isSaving || isSaved) return;
-
-    setIsSaving(true);
-    try {
-      await saveMeditationHistory(
-        '', // prompt (empty for manual saves)
-        '', // enhanced_script (don't save text per user request)
-        voiceId,
-        voiceName,
-        backgroundTrackName && backgroundTrackName !== 'None' ? backgroundTrackName : undefined,
-        backgroundTrackName && backgroundTrackName !== 'None' ? backgroundTrackName : undefined,
-        Math.floor(duration),
-        [] // audio_tags_used
-      );
-      setIsSaved(true);
-    } catch (error) {
-      console.error('Failed to save meditation:', error);
-    } finally {
-      setIsSaving(false);
-    }
-  }, [userId, isSaving, isSaved, voiceId, voiceName, backgroundTrackName, duration]);
+  // Meditation is already saved when generated (in App.tsx).
+  // This button now just shows a visual confirmation that it's saved.
+  const handleSave = useCallback(() => {
+    if (!userId || isSaved) return;
+    // Just mark as saved in UI - no duplicate database entry needed
+    setIsSaved(true);
+  }, [userId, isSaved]);
 
   return (
     <div className="fixed inset-0 z-[100] w-full overflow-hidden bg-[#0f172a]">
@@ -324,14 +307,14 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleSave}
-                disabled={isSaving || isSaved}
+                disabled={isSaved}
                 className={`flex flex-col items-center gap-1 transition-colors ${
                   isSaved ? 'text-purple-400/80' : 'text-white/40 hover:text-white/70'
-                } ${isSaving ? 'opacity-50' : ''}`}
+                }`}
                 aria-label={isSaved ? 'Saved' : 'Save to library'}
               >
                 <Heart className={`h-5 w-5 ${isSaved ? 'fill-purple-400/80' : ''}`} />
-                <span className="text-[10px]">{isSaving ? 'Saving...' : isSaved ? 'Saved' : 'Save'}</span>
+                <span className="text-[10px]">{isSaved ? 'Saved' : 'Save'}</span>
               </motion.button>
             )}
           </div>
