@@ -17,13 +17,26 @@ import type { MeditationEditorProps, ScriptStats } from './types';
 import { useAudioTags } from './hooks/useAudioTags';
 import { useEditorCursor } from './hooks/useEditorCursor';
 import { useKeyboard } from './hooks/useKeyboard';
-import { EditorHeader } from './components/EditorHeader';
 import { ControlPanel } from './components/ControlPanel';
 import { GenerateButton } from './components/GenerateButton';
 
 // ============================================================================
 // ICONS
 // ============================================================================
+
+const CloseIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M18 6L6 18M6 6l12 12" />
+  </svg>
+);
 
 const EditIcon = ({ className = 'w-4 h-4' }: { className?: string }) => (
   <svg
@@ -175,20 +188,40 @@ export const MeditationEditor = memo<MeditationEditorProps>(
             md:shadow-2xl md:shadow-black/50
           "
         >
-          {/* Header */}
-          <EditorHeader onClose={onClose} stats={stats} />
-
-          {/* Script Editing Area */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-4 md:px-6 py-4">
+          {/* Script Editing Area - Contains header elements and text */}
+          <div
+            className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-4 md:px-6"
+            style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}
+          >
             <div className="relative h-full">
-              {/* Edit hint */}
-              {!readOnly && (
-                <div className="absolute top-0 right-0 flex items-center gap-1 text-[10px] md:text-xs text-white/40 z-10 pointer-events-none">
-                  <EditIcon />
-                  <span className="hidden sm:inline">Edit script below</span>
-                  <span className="sm:hidden">Tap to edit</span>
+              {/* Top Bar - Stats left, Edit hint center, Close right */}
+              <div className="flex items-center justify-between py-3 mb-2">
+                {/* Left: Duration stat */}
+                <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
+                  <span className="text-cyan-400 font-bold text-sm">
+                    {stats.estimatedMinutes}
+                  </span>
+                  <span className="text-white/50 text-xs">min</span>
                 </div>
-              )}
+
+                {/* Center: Edit hint */}
+                {!readOnly && (
+                  <div className="flex items-center gap-1 text-[10px] md:text-xs text-white/40">
+                    <EditIcon className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Tap to edit</span>
+                    <span className="sm:hidden">Tap to edit</span>
+                  </div>
+                )}
+
+                {/* Right: Close button */}
+                <button
+                  onClick={onClose}
+                  aria-label="Close editor"
+                  className="w-9 h-9 flex items-center justify-center text-white/40 hover:text-white transition-colors duration-200 active:scale-95"
+                >
+                  <CloseIcon className="w-5 h-5" />
+                </button>
+              </div>
 
               {/* Editable Area */}
               <div
@@ -203,7 +236,7 @@ export const MeditationEditor = memo<MeditationEditorProps>(
                 aria-readonly={readOnly}
                 tabIndex={0}
                 className={`
-                  w-full min-h-[200px] md:min-h-[300px] pt-6 md:pt-8
+                  w-full min-h-[200px] md:min-h-[300px]
                   bg-transparent text-white/90 text-base md:text-lg leading-relaxed
                   outline-none whitespace-pre-wrap break-words
                   ${readOnly ? 'cursor-default' : 'cursor-text'}
@@ -218,7 +251,7 @@ export const MeditationEditor = memo<MeditationEditorProps>(
 
               {/* Placeholder */}
               {!editedScript && (
-                <div className="absolute top-6 md:top-8 left-0 text-white/30 text-base md:text-lg pointer-events-none">
+                <div className="absolute top-16 left-0 text-white/30 text-base md:text-lg pointer-events-none">
                   Your meditation script...
                 </div>
               )}
