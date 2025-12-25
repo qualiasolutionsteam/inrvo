@@ -6,7 +6,8 @@
  * and uses 40% less memory for large audio files (2-8MB typical for meditations)
  */
 
-import { encodeBase64, decodeBase64 } from "https://deno.land/std@0.168.0/encoding/base64.ts";
+// Note: Deno std 0.168.0 uses encode/decode, not encodeBase64/decodeBase64
+import { encode as encodeBase64, decode as decodeBase64 } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 /**
  * Convert ArrayBuffer to base64 string using native Deno encoding
