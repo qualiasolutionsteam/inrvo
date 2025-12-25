@@ -31,15 +31,18 @@ jobs:
         with:
           version: latest
 
-      - name: Link Supabase project
-        run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-
       - name: Apply database migrations
-        run: supabase db push
+        if: ${{ vars.SKIP_MIGRATIONS != 'true' }}
+        run: |
+          if [ -n "$SUPABASE_PROJECT_REF" ] && [ -n "$SUPABASE_ACCESS_TOKEN" ]; then
+            supabase link --project-ref $SUPABASE_PROJECT_REF
+            supabase db push
+          else
+            echo "⚠️ Skipping migrations - SUPABASE_PROJECT_REF or SUPABASE_ACCESS_TOKEN not set"
+          fi
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
 
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v20
