@@ -3,7 +3,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import { useModals } from '../contexts/ModalContext';
 import Starfield from '../../components/Starfield';
-import Background from '../../components/Background';
 import { ICONS, BACKGROUND_TRACKS, AUDIO_TAG_CATEGORIES } from '../../constants';
 import { voiceService } from '../lib/voiceService';
 import { buildTimingMap } from '../lib/textSync';
@@ -289,7 +288,6 @@ const HomePage: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen w-full overflow-hidden bg-[#020617]">
       <Starfield />
-      <Background isActive={isPlaying} />
 
       {/* Navigation */}
       <nav className="sticky top-0 w-full flex items-center justify-between gap-2 p-4 md:p-5 border-b border-white/[0.03] z-50">
