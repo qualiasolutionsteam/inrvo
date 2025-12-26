@@ -11,10 +11,6 @@ import Background from './components/Background';
 import LoadingScreen from './components/LoadingScreen';
 import { AIVoiceInput } from './components/ui/ai-voice-input';
 
-// Static imports for small, frequently-used components (avoids webpack overhead for tiny chunks)
-import Visualizer from './components/Visualizer';
-import ScriptReader from './components/ScriptReader';
-
 // Lazy-loaded components for bundle optimization (~400KB saved on initial load)
 const AuthModal = lazy(() => import('./components/AuthModal'));
 const VoiceManager = lazy(() => import('./components/VoiceManager'));
@@ -28,9 +24,8 @@ import OfflineIndicator from './components/OfflineIndicator';
 import { buildTimingMap, getCurrentWordIndex } from './src/lib/textSync';
 import { geminiService, blobToBase64 } from './geminiService';
 import { voiceService } from './src/lib/voiceService';
-// fishAudioCloneVoice dynamically imported to avoid bundle bloat and duplicate import warning
+// Voice cloning functions are dynamically imported where used to avoid bundle bloat
 // See: voiceService.ts also imports edgeFunctions dynamically
-import { chatterboxCloneVoice } from './src/lib/edgeFunctions';
 import { convertToWAV } from './src/lib/audioConverter';
 import { creditService } from './src/lib/credits';
 
@@ -607,6 +602,8 @@ const App: React.FC = () => {
       const wavBlob = await convertToWAV(audioBlob);
 
       // Clone voice with Chatterbox via Replicate
+      // Dynamically import for code splitting
+      const { chatterboxCloneVoice } = await import('./src/lib/edgeFunctions');
       let cloneResult: { voiceProfileId: string; voiceSampleUrl: string };
       try {
         cloneResult = await chatterboxCloneVoice(

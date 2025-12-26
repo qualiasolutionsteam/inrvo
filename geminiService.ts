@@ -1,6 +1,6 @@
 // Lazy import for GoogleGenAI - only load when needed (fallback for unauthenticated users)
 // This reduces initial bundle size by ~250KB
-import { geminiGenerateScript, geminiExtendScript, isEdgeFunctionAvailable } from './src/lib/edgeFunctions';
+// Edge functions are dynamically imported to enable code splitting
 
 // Feature flag: Use Edge Functions for all API calls (secure, API key server-side)
 const USE_EDGE_FUNCTIONS = true;
@@ -52,6 +52,7 @@ export const geminiService = {
   async enhanceScript(thought: string, audioTags?: string[], durationMinutes?: number): Promise<string> {
     try {
       // Use Edge Functions if available (secure, API key server-side)
+      const { isEdgeFunctionAvailable, geminiGenerateScript } = await import('./src/lib/edgeFunctions');
       if (USE_EDGE_FUNCTIONS && await isEdgeFunctionAvailable()) {
         return geminiGenerateScript(thought, audioTags, durationMinutes);
       }
@@ -206,6 +207,7 @@ If you cannot answer YES to all of these, revise your approach.`,
   async extendScript(existingScript: string): Promise<string> {
     try {
       // Use Edge Functions if available (secure, API key server-side)
+      const { isEdgeFunctionAvailable, geminiExtendScript } = await import('./src/lib/edgeFunctions');
       if (USE_EDGE_FUNCTIONS && await isEdgeFunctionAvailable()) {
         return geminiExtendScript(existingScript);
       }

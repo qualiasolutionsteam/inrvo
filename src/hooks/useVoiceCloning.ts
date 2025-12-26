@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { VoiceProfile, CloningStatus, CreditInfo, VoiceMetadata, DEFAULT_VOICE_METADATA, VoiceProvider } from '../../types';
 import { creditService } from '../lib/credits';
-import { fishAudioCloneVoice, chatterboxCloneVoice } from '../lib/edgeFunctions';
+// Voice cloning functions are dynamically imported to enable code splitting
 import {
   createVoiceClone,
   getUserVoiceProfiles,
@@ -187,6 +187,9 @@ export function useVoiceCloning(
 
       let cloneResult: { voiceProfileId: string; fishAudioModelId?: string | null; voiceSampleUrl?: string | null };
 
+      // Dynamically import cloning functions for code splitting
+      const { fishAudioCloneVoice, chatterboxCloneVoice } = await import('../lib/edgeFunctions');
+
       try {
         // Fish Audio cloning (stores audio in both Fish Audio and Supabase for fallback)
         cloneResult = await fishAudioCloneVoice(
@@ -335,6 +338,9 @@ export function useVoiceCloning(
       const wavBlob = await convertToWAV(audioBlob);
 
       // Clone voice with Fish Audio (primary) or Chatterbox (fallback)
+      // Dynamically import cloning functions for code splitting
+      const { fishAudioCloneVoice, chatterboxCloneVoice } = await import('../lib/edgeFunctions');
+
       let cloneResult: { voiceProfileId: string; fishAudioModelId?: string | null; voiceSampleUrl?: string | null };
       try {
         cloneResult = await fishAudioCloneVoice(
