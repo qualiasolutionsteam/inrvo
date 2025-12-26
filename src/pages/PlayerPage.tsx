@@ -1,0 +1,264 @@
+import React, { lazy, Suspense, useRef, useCallback, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useApp } from '../contexts/AppContext';
+
+const MeditationPlayer = lazy(() => import('../../components/V0MeditationPlayer'));
+
+const PlayerPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { id } = useParams<{ id?: string }>();
+  const {
+    user,
+    selectedVoice,
+    selectedBackgroundTrack,
+    backgroundVolume,
+    setBackgroundVolume,
+    voiceVolume,
+    setVoiceVolume,
+    playbackRate,
+    setPlaybackRate,
+    isPlaying,
+    setIsPlaying,
+    currentTime,
+    setCurrentTime,
+    duration,
+    audioContextRef,
+    audioSourceRef,
+    audioBufferRef,
+    gainNodeRef,
+    backgroundAudioRef,
+  } = useApp();
+
+  const playbackStartTimeRef = useRef(0);
+  const pauseOffsetRef = useRef(0);
+  const playbackRateRef = useRef(playbackRate);
+  const animationFrameRef = useRef<number | null>(null);
+  const [isMusicPlaying, setIsMusicPlaying] = React.useState(false);
+
+  // Update time tracking
+  const updatePlaybackTime = useCallback(() => {
+    if (!audioContextRef.current || !isPlaying) return;
+
+    const elapsed = (audioContextRef.current.currentTime - playbackStartTimeRef.current) * playbackRateRef.current;
+    const newTime = pauseOffsetRef.current + elapsed;
+
+    if (newTime <= duration) {
+      setCurrentTime(newTime);
+      animationFrameRef.current = requestAnimationFrame(updatePlaybackTime);
+    }
+  }, [isPlaying, duration, audioContextRef, setCurrentTime]);
+
+  useEffect(() => {
+    if (isPlaying) {
+      animationFrameRef.current = requestAnimationFrame(updatePlaybackTime);
+    }
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [isPlaying, updatePlaybackTime]);
+
+  // Handle play/pause toggle
+  const handleTogglePlayback = useCallback(() => {
+    if (!audioContextRef.current || !audioBufferRef.current) return;
+
+    if (isPlaying) {
+      // Pause
+      if (audioSourceRef.current) {
+        try {
+          audioSourceRef.current.stop();
+        } catch (e) {}
+      }
+      pauseOffsetRef.current = currentTime;
+      setIsPlaying(false);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    } else {
+      // Resume
+      if (audioContextRef.current.state === 'suspended') {
+        audioContextRef.current.resume();
+      }
+
+      const source = audioContextRef.current.createBufferSource();
+      source.buffer = audioBufferRef.current;
+      source.playbackRate.value = playbackRate;
+      playbackRateRef.current = playbackRate;
+
+      if (gainNodeRef.current) {
+        source.connect(gainNodeRef.current);
+      } else {
+        source.connect(audioContextRef.current.destination);
+      }
+
+      source.start(0, pauseOffsetRef.current);
+      audioSourceRef.current = source;
+      playbackStartTimeRef.current = audioContextRef.current.currentTime;
+      setIsPlaying(true);
+
+      source.onended = () => {
+        if (pauseOffsetRef.current + 0.1 >= duration) {
+          setIsPlaying(false);
+          pauseOffsetRef.current = 0;
+          setCurrentTime(0);
+        }
+      };
+    }
+  }, [isPlaying, currentTime, duration, playbackRate, audioContextRef, audioSourceRef, audioBufferRef, gainNodeRef, setIsPlaying, setCurrentTime]);
+
+  // Handle seek
+  const handleSeek = useCallback((time: number) => {
+    if (!audioContextRef.current || !audioBufferRef.current) return;
+
+    const clampedTime = Math.max(0, Math.min(duration, time));
+
+    // Stop current source
+    if (audioSourceRef.current) {
+      try {
+        audioSourceRef.current.stop();
+      } catch (e) {}
+    }
+
+    pauseOffsetRef.current = clampedTime;
+    setCurrentTime(clampedTime);
+
+    if (isPlaying) {
+      // Create new source at new position
+      const source = audioContextRef.current.createBufferSource();
+      source.buffer = audioBufferRef.current;
+      source.playbackRate.value = playbackRate;
+      playbackRateRef.current = playbackRate;
+
+      if (gainNodeRef.current) {
+        source.connect(gainNodeRef.current);
+      } else {
+        source.connect(audioContextRef.current.destination);
+      }
+
+      source.start(0, clampedTime);
+      audioSourceRef.current = source;
+      playbackStartTimeRef.current = audioContextRef.current.currentTime;
+
+      source.onended = () => {
+        if (pauseOffsetRef.current + 0.1 >= duration) {
+          setIsPlaying(false);
+          pauseOffsetRef.current = 0;
+          setCurrentTime(0);
+        }
+      };
+    }
+  }, [duration, isPlaying, playbackRate, audioContextRef, audioSourceRef, audioBufferRef, gainNodeRef, setIsPlaying, setCurrentTime]);
+
+  // Handle skip
+  const handleSkip = useCallback((seconds: number) => {
+    const newTime = Math.max(0, Math.min(duration, currentTime + seconds));
+    handleSeek(newTime);
+  }, [currentTime, duration, handleSeek]);
+
+  // Handle close
+  const handleClose = useCallback(() => {
+    // Stop playback
+    if (audioSourceRef.current) {
+      try {
+        audioSourceRef.current.stop();
+      } catch (e) {}
+    }
+    setIsPlaying(false);
+
+    // Stop background music
+    if (backgroundAudioRef.current) {
+      backgroundAudioRef.current.pause();
+      backgroundAudioRef.current.currentTime = 0;
+    }
+    setIsMusicPlaying(false);
+
+    // Navigate back home
+    navigate('/');
+  }, [navigate, audioSourceRef, backgroundAudioRef, setIsPlaying]);
+
+  // Update voice volume
+  const updateVoiceVolume = useCallback((volume: number) => {
+    setVoiceVolume(volume);
+    if (gainNodeRef.current) {
+      gainNodeRef.current.gain.value = volume;
+    }
+  }, [setVoiceVolume, gainNodeRef]);
+
+  // Update background volume
+  const updateBackgroundVolume = useCallback((volume: number) => {
+    setBackgroundVolume(volume);
+    if (backgroundAudioRef.current) {
+      backgroundAudioRef.current.volume = volume;
+    }
+  }, [setBackgroundVolume, backgroundAudioRef]);
+
+  // Update playback rate
+  const updatePlaybackRate = useCallback((rate: number) => {
+    setPlaybackRate(rate);
+    playbackRateRef.current = rate;
+    if (audioSourceRef.current) {
+      audioSourceRef.current.playbackRate.value = rate;
+    }
+  }, [setPlaybackRate, audioSourceRef]);
+
+  // Toggle background music
+  const handleBackgroundMusicToggle = useCallback(() => {
+    if (isMusicPlaying) {
+      if (backgroundAudioRef.current) {
+        backgroundAudioRef.current.pause();
+      }
+      setIsMusicPlaying(false);
+    } else if (selectedBackgroundTrack.id !== 'none' && selectedBackgroundTrack.url) {
+      if (!backgroundAudioRef.current) {
+        backgroundAudioRef.current = new Audio();
+        backgroundAudioRef.current.loop = true;
+      }
+      backgroundAudioRef.current.src = selectedBackgroundTrack.url;
+      backgroundAudioRef.current.volume = backgroundVolume;
+      backgroundAudioRef.current.play()
+        .then(() => setIsMusicPlaying(true))
+        .catch(err => console.warn('Failed to play background music:', err));
+    }
+  }, [isMusicPlaying, selectedBackgroundTrack, backgroundVolume, backgroundAudioRef]);
+
+  // If no audio buffer, redirect home
+  useEffect(() => {
+    if (!audioBufferRef.current && !id) {
+      navigate('/');
+    }
+  }, [audioBufferRef, id, navigate]);
+
+  return (
+    <Suspense fallback={
+      <div className="fixed inset-0 z-[100] bg-[#0f172a] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <MeditationPlayer
+        isPlaying={isPlaying}
+        currentTime={currentTime}
+        duration={duration}
+        onPlayPause={handleTogglePlayback}
+        onSeek={handleSeek}
+        onSkip={handleSkip}
+        onClose={handleClose}
+        backgroundMusicEnabled={selectedBackgroundTrack.id !== 'none' && isMusicPlaying}
+        backgroundVolume={backgroundVolume}
+        onBackgroundVolumeChange={updateBackgroundVolume}
+        onBackgroundMusicToggle={handleBackgroundMusicToggle}
+        backgroundTrackName={selectedBackgroundTrack.name}
+        voiceVolume={voiceVolume}
+        onVoiceVolumeChange={updateVoiceVolume}
+        playbackRate={playbackRate}
+        onPlaybackRateChange={updatePlaybackRate}
+        userId={user?.id}
+        voiceId={selectedVoice?.id}
+        voiceName={selectedVoice?.name}
+        meditationType="custom"
+      />
+    </Suspense>
+  );
+};
+
+export default PlayerPage;

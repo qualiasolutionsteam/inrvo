@@ -4,10 +4,11 @@ import ReactDOM from 'react-dom/client';
 import * as Sentry from '@sentry/react';
 import { Analytics } from '@vercel/analytics/react';
 import './index.css';
-import App from './App';
+import { AppRouter } from './src/router';
 import { ModalProvider } from './src/contexts/ModalContext';
 import { AudioProvider } from './src/contexts/AudioContext';
 import { VoiceProvider } from './src/contexts/VoiceContext';
+import { AppProvider } from './src/contexts/AppContext';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Web vitals types for lazy-loaded module
@@ -73,8 +74,10 @@ root.render(
       <ModalProvider>
         <AudioProvider>
           <VoiceProvider>
-            <App />
-            <Analytics />
+            <AppProvider>
+              <AppRouter />
+              <Analytics />
+            </AppProvider>
           </VoiceProvider>
         </AudioProvider>
       </ModalProvider>

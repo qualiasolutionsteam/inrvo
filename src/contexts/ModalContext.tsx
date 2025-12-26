@@ -18,7 +18,8 @@ export type ModalType =
   | 'privacy'
   | 'promptMenu'
   | 'auth'
-  | 'voiceManager';
+  | 'voiceManager'
+  | 'scriptPreview';
 
 /**
  * Modal state interface - tracks which modals are open
@@ -38,6 +39,7 @@ interface ModalState {
   promptMenu: boolean;
   auth: boolean;
   voiceManager: boolean;
+  scriptPreview: boolean;
 }
 
 // Action types for reducer
@@ -64,6 +66,7 @@ const initialState: ModalState = {
   promptMenu: false,
   auth: false,
   voiceManager: false,
+  scriptPreview: false,
 };
 
 // Reducer for modal state - more efficient than useState with object
@@ -177,6 +180,7 @@ interface ModalContextValue {
   showPromptMenu: boolean;
   showAuthModal: boolean;
   showVoiceManager: boolean;
+  showScriptPreview: boolean;
 
   // Convenience setters (for backwards compatibility)
   setShowCloneModal: (show: boolean) => void;
@@ -193,6 +197,7 @@ interface ModalContextValue {
   setShowPromptMenu: (show: boolean) => void;
   setShowAuthModal: (show: boolean) => void;
   setShowVoiceManager: (show: boolean) => void;
+  setShowScriptPreview: (show: boolean) => void;
 }
 
 /**
@@ -235,6 +240,7 @@ export const useModals = (): ModalContextValue => {
   const setShowPromptMenu = useCallback((show: boolean) => dispatch({ type: 'SET', modal: 'promptMenu', value: show }), [dispatch]);
   const setShowAuthModal = useCallback((show: boolean) => dispatch({ type: 'SET', modal: 'auth', value: show }), [dispatch]);
   const setShowVoiceManager = useCallback((show: boolean) => dispatch({ type: 'SET', modal: 'voiceManager', value: show }), [dispatch]);
+  const setShowScriptPreview = useCallback((show: boolean) => dispatch({ type: 'SET', modal: 'scriptPreview', value: show }), [dispatch]);
 
   // Memoize the full value object
   return useMemo(() => ({
@@ -259,6 +265,7 @@ export const useModals = (): ModalContextValue => {
     showPromptMenu: modals.promptMenu,
     showAuthModal: modals.auth,
     showVoiceManager: modals.voiceManager,
+    showScriptPreview: modals.scriptPreview,
 
     // Convenience setters (stable references)
     setShowCloneModal,
@@ -275,6 +282,7 @@ export const useModals = (): ModalContextValue => {
     setShowPromptMenu,
     setShowAuthModal,
     setShowVoiceManager,
+    setShowScriptPreview,
   }), [
     modals,
     openModal,
@@ -295,6 +303,7 @@ export const useModals = (): ModalContextValue => {
     setShowPromptMenu,
     setShowAuthModal,
     setShowVoiceManager,
+    setShowScriptPreview,
   ]);
 };
 
