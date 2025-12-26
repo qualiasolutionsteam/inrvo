@@ -104,7 +104,7 @@ export const ChronosEngine: React.FC<ChronosEngineProps> = ({
           width: sizeConfig.core,
           height: sizeConfig.core,
           background: 'radial-gradient(circle, #fbbf24 0%, #f59e0b 40%, #d97706 70%, transparent 100%)',
-          animation: variant === 'loading' ? 'core-pulse 2s ease-in-out infinite' : 'core-pulse 3s ease-in-out infinite',
+          animation: variant === 'loading' ? 'core-pulse 4s ease-in-out infinite' : 'core-pulse 6s ease-in-out infinite',
           boxShadow: variant === 'loading'
             ? '0 0 20px #fbbf24, 0 0 40px #f59e0b, 0 0 60px #d97706'
             : `0 0 ${6 * scale}px #fbbf24, 0 0 ${12 * scale}px #f59e0b`,
@@ -118,7 +118,7 @@ export const ChronosEngine: React.FC<ChronosEngineProps> = ({
           width: sizeConfig.gear1,
           height: sizeConfig.gear1,
           border: `${Math.max(2, 4 * scale)}px solid rgba(251, 191, 36, 0.3)`,
-          animation: 'rotate 20s linear infinite',
+          animation: 'rotate 60s linear infinite',
           opacity: 0.6,
         }}
       >
@@ -187,7 +187,7 @@ export const ChronosEngine: React.FC<ChronosEngineProps> = ({
           width: sizeConfig.gear2,
           height: sizeConfig.gear2,
           border: `${Math.max(2, 4 * scale)}px solid rgba(245, 158, 11, 0.3)`,
-          animation: 'rotate 15s linear infinite reverse',
+          animation: 'rotate 45s linear infinite reverse',
           opacity: 0.5,
         }}
       >
@@ -227,7 +227,7 @@ export const ChronosEngine: React.FC<ChronosEngineProps> = ({
           width: sizeConfig.gear3,
           height: sizeConfig.gear3,
           border: `${Math.max(1, 3 * scale)}px solid rgba(251, 191, 36, 0.35)`,
-          animation: 'rotate 10s linear infinite',
+          animation: 'rotate 30s linear infinite',
           opacity: 0.7,
         }}
       >
