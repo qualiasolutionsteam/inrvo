@@ -201,7 +201,7 @@ export const MeditationEditor = memo<MeditationEditorProps>(
           >
             <div className="relative h-full">
               {/* Top Bar - Responsive layout */}
-              <div className="flex items-center justify-between py-3 mb-2">
+              <div className="flex items-center justify-between py-3 mb-2 relative z-10">
                 {/* Left section - Duration stat (desktop only, mobile shows on right) */}
                 <div className="flex items-center gap-3">
                   <div className="hidden md:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
@@ -230,11 +230,11 @@ export const MeditationEditor = memo<MeditationEditorProps>(
                     <span className="text-white/50 text-[10px]">min</span>
                   </div>
 
-                  {/* Close button */}
+                  {/* Close button - larger touch target for mobile */}
                   <button
                     onClick={onClose}
                     aria-label="Close editor"
-                    className="w-9 h-9 flex items-center justify-center text-white/40 hover:text-white transition-colors duration-200 active:scale-95"
+                    className="w-11 h-11 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 rounded-xl transition-colors duration-200 active:scale-95 relative z-20"
                   >
                     <CloseIcon className="w-5 h-5" />
                   </button>
