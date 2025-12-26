@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 /* Qualia Solutions - Clean & Professional Theme */
 /* Primary: Teal #06B6D4 | Accent: Purple #A855F7 */
@@ -928,33 +929,28 @@
 
 /* ============================================================================
    CHRONOS ENGINE - Animated Gear Component
-   Used for agent avatar and loading states
    ============================================================================ */
 
-/* Core pulse animation - the central glowing element */
 @keyframes core-pulse {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 8px rgba(6, 182, 212, 0.8), 0 0 16px rgba(6, 182, 212, 0.5), 0 0 24px rgba(168, 85, 247, 0.3);
+    box-shadow: 0 0 20px #fbbf24, 0 0 40px #f59e0b, 0 0 60px #d97706;
   }
   50% {
-    transform: scale(1.15);
-    box-shadow: 0 0 12px rgba(6, 182, 212, 1), 0 0 24px rgba(6, 182, 212, 0.7), 0 0 36px rgba(168, 85, 247, 0.5);
+    transform: scale(1.2);
+    box-shadow: 0 0 30px #fbbf24, 0 0 60px #f59e0b, 0 0 90px #d97706;
   }
 }
 
-/* Gear rotation animation */
-@keyframes gear-rotate {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(360deg); }
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-@keyframes gear-rotate-reverse {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(-360deg); }
-}
-
-/* Spark particle travel animation */
 @keyframes spark-travel {
   0% {
     transform: translate(calc(var(--spawn-x) * 1px), calc(var(--spawn-y) * 1px));
@@ -966,118 +962,104 @@
   }
 }
 
-/* Chronos Engine container */
-.chronos-engine {
+/* Hero section */
+.hero-section {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #1a1a2e 0%, #0f0f1a 50%, #050510 100%);
+  overflow: hidden;
+}
+
+/* Engine container */
+.engine-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Power Core - Central element */
+/* Power core - central glowing orb */
 .power-core {
-  background: radial-gradient(circle, rgba(6, 182, 212, 0.9) 0%, rgba(168, 85, 247, 0.7) 50%, rgba(6, 182, 212, 0.4) 100%);
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fbbf24 0%, #f59e0b 40%, #d97706 70%, transparent 100%);
   animation: core-pulse 2s ease-in-out infinite;
   z-index: 10;
 }
 
 /* Base gear styles */
 .gear {
+  position: absolute;
   border-radius: 50%;
-  position: relative;
+  border: 4px solid rgba(251, 191, 36, 0.3);
+  background: transparent;
+  animation: rotate linear infinite;
 }
 
-/* Gear teeth pattern using conic gradient */
+/* Gear teeth using box-shadow */
 .gear::before {
   content: '';
   position: absolute;
-  inset: -3px;
+  inset: -20px;
   border-radius: 50%;
   background: conic-gradient(
     from 0deg,
-    transparent 0deg,
-    rgba(6, 182, 212, 0.6) 15deg,
-    transparent 30deg,
-    transparent 45deg,
-    rgba(168, 85, 247, 0.5) 60deg,
-    transparent 75deg,
-    transparent 90deg,
-    rgba(6, 182, 212, 0.6) 105deg,
-    transparent 120deg,
-    transparent 135deg,
-    rgba(168, 85, 247, 0.5) 150deg,
-    transparent 165deg,
-    transparent 180deg,
-    rgba(6, 182, 212, 0.6) 195deg,
-    transparent 210deg,
-    transparent 225deg,
-    rgba(168, 85, 247, 0.5) 240deg,
-    transparent 255deg,
-    transparent 270deg,
-    rgba(6, 182, 212, 0.6) 285deg,
-    transparent 300deg,
-    transparent 315deg,
-    rgba(168, 85, 247, 0.5) 330deg,
-    transparent 345deg,
+    transparent 0deg, rgba(251, 191, 36, 0.4) 10deg, transparent 20deg,
+    transparent 30deg, rgba(251, 191, 36, 0.4) 40deg, transparent 50deg,
+    transparent 60deg, rgba(251, 191, 36, 0.4) 70deg, transparent 80deg,
+    transparent 90deg, rgba(251, 191, 36, 0.4) 100deg, transparent 110deg,
+    transparent 120deg, rgba(251, 191, 36, 0.4) 130deg, transparent 140deg,
+    transparent 150deg, rgba(251, 191, 36, 0.4) 160deg, transparent 170deg,
+    transparent 180deg, rgba(251, 191, 36, 0.4) 190deg, transparent 200deg,
+    transparent 210deg, rgba(251, 191, 36, 0.4) 220deg, transparent 230deg,
+    transparent 240deg, rgba(251, 191, 36, 0.4) 250deg, transparent 260deg,
+    transparent 270deg, rgba(251, 191, 36, 0.4) 280deg, transparent 290deg,
+    transparent 300deg, rgba(251, 191, 36, 0.4) 310deg, transparent 320deg,
+    transparent 330deg, rgba(251, 191, 36, 0.4) 340deg, transparent 350deg,
     transparent 360deg
   );
-  z-index: -1;
 }
 
-/* Gear inner ring */
+/* Inner ring decoration */
 .gear::after {
   content: '';
   position: absolute;
-  inset: 15%;
+  inset: 20%;
   border-radius: 50%;
-  border: 1px solid rgba(6, 182, 212, 0.4);
-  background: radial-gradient(circle, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
+  border: 2px solid rgba(251, 191, 36, 0.2);
 }
 
-/* Gear 1 - Main gear, clockwise rotation */
+/* Gear 1 - Large, slow rotation */
 .gear-1 {
-  animation: gear-rotate 8s linear infinite;
-  border: 2px solid rgba(6, 182, 212, 0.5);
-  background: radial-gradient(circle, rgba(2, 6, 23, 0.9) 0%, rgba(6, 182, 212, 0.1) 100%);
+  width: 400px;
+  height: 400px;
+  animation-duration: 20s;
+  opacity: 0.6;
 }
 
-/* Gear 2 - Counter-clockwise, faster */
+/* Gear 2 - Medium, counter-rotation */
 .gear-2 {
-  animation: gear-rotate-reverse 5s linear infinite;
-  border: 1.5px solid rgba(168, 85, 247, 0.5);
-  background: radial-gradient(circle, rgba(2, 6, 23, 0.9) 0%, rgba(168, 85, 247, 0.1) 100%);
+  width: 300px;
+  height: 300px;
+  animation-duration: 15s;
+  animation-direction: reverse;
+  opacity: 0.5;
+  border-color: rgba(245, 158, 11, 0.3);
 }
 
-.gear-2::before {
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    rgba(168, 85, 247, 0.6) 20deg,
-    transparent 40deg,
-    transparent 60deg,
-    rgba(6, 182, 212, 0.5) 80deg,
-    transparent 100deg,
-    transparent 120deg,
-    rgba(168, 85, 247, 0.6) 140deg,
-    transparent 160deg,
-    transparent 180deg,
-    rgba(6, 182, 212, 0.5) 200deg,
-    transparent 220deg,
-    transparent 240deg,
-    rgba(168, 85, 247, 0.6) 260deg,
-    transparent 280deg,
-    transparent 300deg,
-    rgba(6, 182, 212, 0.5) 320deg,
-    transparent 340deg,
-    transparent 360deg
-  );
-}
-
-/* Gear 3 - Clockwise, medium speed */
+/* Gear 3 - Small, fast rotation */
 .gear-3 {
-  animation: gear-rotate 6s linear infinite;
-  border: 1.5px solid rgba(6, 182, 212, 0.4);
-  background: radial-gradient(circle, rgba(2, 6, 23, 0.9) 0%, rgba(6, 182, 212, 0.08) 100%);
+  width: 250px;
+  height: 250px;
+  animation-duration: 10s;
+  opacity: 0.7;
 }
 
 /* Spark emitter container */
@@ -1085,32 +1067,17 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
+  width: 0;
+  height: 0;
 }
 
-/* Individual spark particles */
+/* Individual spark particle */
 .spark {
   position: absolute;
-  width: 3px;
-  height: 3px;
-  background: radial-gradient(circle, rgba(6, 182, 212, 1) 0%, rgba(168, 85, 247, 0.8) 50%, transparent 100%);
+  width: 4px;
+  height: 4px;
+  background: #fbbf24;
   border-radius: 50%;
+  box-shadow: 0 0 6px #fbbf24, 0 0 12px #f59e0b;
   animation: spark-travel linear infinite;
-  box-shadow: 0 0 4px rgba(6, 182, 212, 0.8), 0 0 8px rgba(168, 85, 247, 0.5);
-}
-
-/* Reduced motion preference */
-@media (prefers-reduced-motion: reduce) {
-  .power-core,
-  .gear,
-  .gear-1,
-  .gear-2,
-  .gear-3,
-  .spark {
-    animation: none !important;
-  }
-  .power-core {
-    box-shadow: 0 0 8px rgba(6, 182, 212, 0.8);
-  }
 }
