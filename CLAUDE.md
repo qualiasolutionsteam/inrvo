@@ -123,12 +123,26 @@ import { supabase } from '@/lib/supabase';
 ## Bundle Optimization
 
 Vite config includes manual chunks for:
-- `react-vendor` - React/ReactDOM
-- `supabase-vendor` - Supabase client
-- `framer-motion-vendor` - Animation library (~120KB)
-- `sentry-vendor` - Error tracking
+- `react-vendor` - React/ReactDOM (~12KB)
+- `supabase-vendor` - Supabase client (~169KB)
+- `framer-motion-vendor` - Animation library (~116KB)
+- `sentry-vendor` - Error tracking (~11KB)
+- `edgeFunctions` - Voice cloning and Gemini API (~4KB, dynamically loaded)
 
-Lazy-loaded components via `React.lazy()` save ~400KB on initial load.
+**Code Splitting Strategy:**
+- All page components lazy-loaded via `React.lazy()` in `src/router.tsx`
+- Heavy components (AuthModal, VoiceManager, SimpleVoiceClone, MeditationEditor, MeditationPlayer, AgentChat) lazy-loaded in App.tsx
+- Edge function imports are dynamic to defer voice cloning/AI code until needed
+- Initial bundle ~321KB gzipped, with ~400KB deferred via lazy loading
+
+**Important:** Always use dynamic imports for `edgeFunctions.ts` to maintain code splitting:
+```typescript
+// ✅ Good - dynamic import
+const { fishAudioCloneVoice } = await import('./src/lib/edgeFunctions');
+
+// ❌ Bad - static import pulls into main bundle
+import { fishAudioCloneVoice } from './src/lib/edgeFunctions';
+```
 
 ## Testing
 
