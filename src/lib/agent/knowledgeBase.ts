@@ -469,6 +469,140 @@ export const WISDOM_TEACHERS: WisdomTeacher[] = [
     ],
     meditationStyles: ['guided_visualization', 'presence', 'loving_kindness', 'gratitude'],
   },
+
+  // ========== HYPNOSIS & SUBCONSCIOUS WORK ==========
+  {
+    name: 'Milton Erickson',
+    tradition: 'psychology_healing',
+    themes: ['hypnotherapy', 'indirect suggestion', 'unconscious mind', 'therapeutic metaphor', 'trance states'],
+    coreTeaching: 'Your unconscious mind is far wiser than your conscious mind. Trust its wisdom.',
+    quotes: [
+      'The unconscious mind is a vast storehouse of resources and learnings.',
+      'Change can occur at the unconscious level without conscious understanding.',
+      'Every person has within them the resources they need to make the changes they desire.',
+      'Patients are patients because they are out of rapport with their own unconscious.',
+    ],
+    meditationStyles: ['guided_visualization', 'body_scan', 'sleep_story', 'surrender'],
+  },
+  {
+    name: 'Dave Elman',
+    tradition: 'psychology_healing',
+    themes: ['rapid induction', 'somnambulism', 'pain management', 'hypnotic depth'],
+    coreTeaching: 'Hypnosis is a natural state that can be accessed quickly and used for profound healing.',
+    quotes: [
+      'Hypnosis is the bypass of the critical factor of the conscious mind.',
+      'The deeper the trance, the more effective the suggestion.',
+      'All hypnosis is self-hypnosis - the hypnotist is merely a guide.',
+    ],
+    meditationStyles: ['body_scan', 'guided_visualization', 'presence'],
+  },
+
+  // ========== JOURNEY WORK & SHAMANISM ==========
+  {
+    name: 'Sandra Ingerman',
+    tradition: 'ancient_wisdom',
+    themes: ['shamanic journey', 'soul retrieval', 'power animals', 'spiritual healing', 'earth wisdom'],
+    coreTeaching: 'Shamanic journeying allows us to access the wisdom of the spirit world for healing and guidance.',
+    quotes: [
+      'When we lose a part of ourselves, it goes to a safe place until we are ready to retrieve it.',
+      'Power animals are spiritual allies who guide and protect us.',
+      'The invisible world is alive and wants to communicate with us.',
+      'Healing happens when we restore the parts of ourselves that were lost.',
+    ],
+    meditationStyles: ['guided_visualization', 'shadow_work', 'presence'],
+  },
+  {
+    name: 'Michael Harner',
+    tradition: 'ancient_wisdom',
+    themes: ['core shamanism', 'non-ordinary reality', 'shamanic drumming', 'power retrieval'],
+    coreTeaching: 'The shamanic journey is a universal human experience for accessing wisdom and healing.',
+    quotes: [
+      'Shamanism is not a belief system but a method.',
+      'The spirits want to help - we just need to learn how to connect with them.',
+      'In shamanic work, we don\'t believe - we experience directly.',
+    ],
+    meditationStyles: ['guided_visualization', 'presence', 'inquiry'],
+  },
+  {
+    name: 'Brian Weiss',
+    tradition: 'psychology_healing',
+    themes: ['past life regression', 'between-lives', 'soul healing', 'reincarnation', 'karmic patterns'],
+    coreTeaching: 'Healing current life issues often requires understanding and resolving patterns from past lives.',
+    quotes: [
+      'Love is the ultimate reality. It is the only. The all.',
+      'Understanding breeds love. Fear breeds hatred.',
+      'Our loved ones never truly leave us - they continue in another form.',
+      'The purpose of life is to learn and to love.',
+    ],
+    meditationStyles: ['guided_visualization', 'shadow_work', 'loving_kindness'],
+  },
+  {
+    name: 'Dolores Cannon',
+    tradition: 'modern_consciousness',
+    themes: ['past life regression', 'QHHT', 'higher self', 'cosmic consciousness', 'Earth changes'],
+    coreTeaching: 'The subconscious mind knows everything and can access any information from any time.',
+    quotes: [
+      'There are no limits except those we place upon ourselves.',
+      'The subconscious has access to all knowledge.',
+      'We are all volunteers who came here to help Earth through this transition.',
+      'Your true self is eternal and limitless.',
+    ],
+    meditationStyles: ['guided_visualization', 'presence', 'inquiry'],
+  },
+  {
+    name: 'Robert Monroe',
+    tradition: 'modern_consciousness',
+    themes: ['out-of-body experience', 'astral projection', 'consciousness exploration', 'focus levels'],
+    coreTeaching: 'We are more than our physical bodies. Consciousness can travel beyond physical boundaries.',
+    quotes: [
+      'You are more than your physical body.',
+      'The greatest illusion is that we are only physical beings.',
+      'Fear is the greatest barrier to out-of-body experiences.',
+      'Once you have the experience, you know you are not just your body.',
+    ],
+    meditationStyles: ['guided_visualization', 'presence', 'breathwork'],
+  },
+
+  // ========== AFFIRMATION & MANIFESTATION MASTERS ==========
+  {
+    name: 'Florence Scovel Shinn',
+    tradition: 'modern_consciousness',
+    themes: ['spoken word', 'affirmations', 'divine law', 'faith', 'prosperity consciousness'],
+    coreTeaching: 'Your word is your wand. What you speak, you create.',
+    quotes: [
+      'Your word is your wand. The words you speak create your own destiny.',
+      'Faith knows it has already received and acts accordingly.',
+      'Every great work, every big accomplishment, has been brought into manifestation through holding to the vision.',
+      'Infinite Spirit, open the way for my great abundance. I am an irresistible magnet for all that belongs to me by Divine Right.',
+    ],
+    meditationStyles: ['affirmations', 'manifestation', 'gratitude'],
+  },
+  {
+    name: 'Neville Goddard',
+    tradition: 'modern_consciousness',
+    themes: ['imagination', 'feeling is the secret', 'assumption', 'I AM', 'consciousness creates reality'],
+    coreTeaching: 'Assume the feeling of the wish fulfilled and it must come to pass.',
+    quotes: [
+      'Imagination is the beginning of creation.',
+      'Assume the feeling of your wish fulfilled.',
+      'An assumption, though false, if persisted in, will harden into fact.',
+      'Change your conception of yourself and you will automatically change the world in which you live.',
+    ],
+    meditationStyles: ['affirmations', 'manifestation', 'guided_visualization'],
+  },
+  {
+    name: 'Joseph Murphy',
+    tradition: 'modern_consciousness',
+    themes: ['subconscious mind', 'prayer', 'belief', 'mental imagery', 'prosperity'],
+    coreTeaching: 'The subconscious mind accepts whatever is impressed upon it and proceeds to manifest it.',
+    quotes: [
+      'Your subconscious mind does not argue with you. It accepts what your conscious mind decrees.',
+      'The feeling of wealth produces wealth.',
+      'Just keep your conscious mind busy with expectation of the best.',
+      'Whatever you impress on your subconscious mind will be expressed as your reality.',
+    ],
+    meditationStyles: ['affirmations', 'manifestation', 'sleep_story'],
+  },
 ];
 
 // ============================================================================
@@ -928,4 +1062,120 @@ export function getQuotesByTheme(theme: string): { quote: string; teacher: strin
   }
 
   return results;
+}
+
+// ============================================================================
+// CONTENT-SPECIFIC RECOMMENDATIONS
+// ============================================================================
+
+/**
+ * Content type recommendations based on emotional state.
+ * Maps emotional states to the best content categories and sub-types.
+ */
+export interface ContentRecommendation {
+  meditation: MeditationType[];
+  affirmation: ('power' | 'guided' | 'sleep' | 'mirror_work')[];
+  hypnosis: ('light' | 'standard' | 'therapeutic')[];
+  journey: ('inner_journey' | 'past_life' | 'spirit_guide' | 'shamanic' | 'astral' | 'akashic' | 'quantum_field')[];
+}
+
+export const CONTENT_RECOMMENDATIONS: Record<string, ContentRecommendation> = {
+  anxious: {
+    meditation: ['breathwork', 'body_scan', 'presence'],
+    affirmation: ['power', 'guided'],
+    hypnosis: ['light', 'standard'],
+    journey: ['inner_journey'],
+  },
+  stressed: {
+    meditation: ['body_scan', 'breathwork', 'presence', 'surrender'],
+    affirmation: ['guided', 'sleep'],
+    hypnosis: ['light', 'standard'],
+    journey: ['inner_journey'],
+  },
+  sad: {
+    meditation: ['loving_kindness', 'gratitude', 'shadow_work'],
+    affirmation: ['guided', 'mirror_work'],
+    hypnosis: ['standard', 'therapeutic'],
+    journey: ['inner_journey', 'spirit_guide'],
+  },
+  angry: {
+    meditation: ['breathwork', 'loving_kindness', 'inquiry'],
+    affirmation: ['power', 'guided'],
+    hypnosis: ['light', 'standard'],
+    journey: ['inner_journey'],
+  },
+  self_critical: {
+    meditation: ['loving_kindness', 'shadow_work'],
+    affirmation: ['mirror_work', 'guided'],
+    hypnosis: ['standard', 'therapeutic'],
+    journey: ['inner_journey', 'spirit_guide'],
+  },
+  seeking_growth: {
+    meditation: ['manifestation', 'inquiry', 'shadow_work'],
+    affirmation: ['power', 'guided'],
+    hypnosis: ['standard', 'therapeutic'],
+    journey: ['past_life', 'spirit_guide', 'quantum_field', 'akashic'],
+  },
+  cant_sleep: {
+    meditation: ['sleep_story', 'body_scan', 'presence'],
+    affirmation: ['sleep'],
+    hypnosis: ['light'],
+    journey: [],
+  },
+  seeking_peace: {
+    meditation: ['presence', 'breathwork', 'body_scan'],
+    affirmation: ['guided', 'sleep'],
+    hypnosis: ['light'],
+    journey: ['inner_journey'],
+  },
+  lonely: {
+    meditation: ['loving_kindness', 'presence', 'gratitude'],
+    affirmation: ['guided', 'mirror_work'],
+    hypnosis: ['standard'],
+    journey: ['spirit_guide', 'inner_journey'],
+  },
+  unmotivated: {
+    meditation: ['affirmations', 'manifestation', 'gratitude'],
+    affirmation: ['power'],
+    hypnosis: ['standard'],
+    journey: ['quantum_field'],
+  },
+  confused: {
+    meditation: ['presence', 'inquiry', 'breathwork'],
+    affirmation: ['guided'],
+    hypnosis: ['standard'],
+    journey: ['akashic', 'spirit_guide'],
+  },
+  grateful: {
+    meditation: ['gratitude', 'loving_kindness', 'manifestation'],
+    affirmation: ['power', 'guided'],
+    hypnosis: [],
+    journey: ['quantum_field'],
+  },
+};
+
+/**
+ * Get content recommendations for an emotional state
+ */
+export function getContentRecommendation(emotionalStateId: string): ContentRecommendation | null {
+  return CONTENT_RECOMMENDATIONS[emotionalStateId] || null;
+}
+
+/**
+ * Get teachers relevant to a specific content category
+ */
+export function getTeachersForContentCategory(category: 'hypnosis' | 'journey' | 'affirmation'): WisdomTeacher[] {
+  const themeMapping: Record<string, string[]> = {
+    hypnosis: ['hypnotherapy', 'hypnotic', 'trance', 'subconscious', 'unconscious mind', 'induction'],
+    journey: ['shamanic', 'past life', 'astral', 'out-of-body', 'akashic', 'soul retrieval', 'spirit guide'],
+    affirmation: ['affirmation', 'spoken word', 'I AM', 'subconscious mind', 'belief', 'assumption'],
+  };
+
+  const relevantThemes = themeMapping[category] || [];
+
+  return WISDOM_TEACHERS.filter(teacher =>
+    teacher.themes.some(theme =>
+      relevantThemes.some(rt => theme.toLowerCase().includes(rt.toLowerCase()))
+    )
+  );
 }

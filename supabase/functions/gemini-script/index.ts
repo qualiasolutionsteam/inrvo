@@ -4,6 +4,13 @@ import { getCorsHeaders, createCompressedResponse } from "../_shared/compression
 import { getRequestId, createLogger, getTracingHeaders } from "../_shared/tracing.ts";
 import { checkRateLimit, createRateLimitResponse, RATE_LIMITS } from "../_shared/rateLimit.ts";
 import { withCircuitBreaker, CIRCUIT_CONFIGS, CircuitBreakerError } from "../_shared/circuitBreaker.ts";
+import {
+  buildContentPrompt,
+  type ContentCategory,
+  type ContentGenerationParams,
+  type HypnosisDepth,
+  type StoryAgeGroup,
+} from "../_shared/contentTemplates.ts";
 
 interface GeminiScriptRequest {
   thought: string;
@@ -11,6 +18,11 @@ interface GeminiScriptRequest {
   operation?: 'generate' | 'extend';
   existingScript?: string;
   durationMinutes?: number;  // Target duration in minutes (default: 5)
+  // New content type parameters
+  contentCategory?: ContentCategory;
+  contentSubType?: string;
+  hypnosisDepth?: HypnosisDepth;
+  targetAgeGroup?: StoryAgeGroup;
 }
 
 interface GeminiScriptResponse {
@@ -59,6 +71,24 @@ function calculateWordRange(durationMinutes: number): { wordRange: string; struc
 4. INTEGRATION (${integration} words): Connect to their situation
 5. CLOSING (${closing} words): Gentle return with calm/confidence`,
   };
+}
+
+/**
+ * Get default sub-type for a content category
+ */
+function getDefaultSubType(category: ContentCategory): string {
+  switch (category) {
+    case 'affirmation':
+      return 'power';
+    case 'self_hypnosis':
+      return 'standard';
+    case 'guided_journey':
+      return 'inner_journey';
+    case 'story':
+      return 'young_child';
+    default:
+      return 'guided_visualization';
+  }
 }
 
 function buildGeneratePrompt(thought: string, audioTags: string[], durationMinutes: number): string {
@@ -154,7 +184,17 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const { thought, audioTags, operation = 'generate', existingScript, durationMinutes = 5 }: GeminiScriptRequest = await req.json();
+    const {
+      thought,
+      audioTags,
+      operation = 'generate',
+      existingScript,
+      durationMinutes = 5,
+      contentCategory,
+      contentSubType,
+      hypnosisDepth,
+      targetAgeGroup,
+    }: GeminiScriptRequest = await req.json();
 
     // Validate input based on operation
     if (operation === 'extend') {
@@ -183,14 +223,49 @@ serve(async (req) => {
       );
     }
 
-    log.info('Starting script generation', { operation, thoughtLength: thought?.length || 0, durationMinutes });
+    log.info('Starting script generation', {
+      operation,
+      thoughtLength: thought?.length || 0,
+      durationMinutes,
+      contentCategory: contentCategory || 'meditation',
+      contentSubType: contentSubType || 'default',
+    });
 
     // Build prompt using dynamic template with duration
     let prompt: string;
+    let temperature = 0.7;
+    let maxOutputTokens: number;
+
     if (operation === 'extend') {
       prompt = EXTEND_PROMPT_TEMPLATE.replace('{{SCRIPT}}', existingScript!);
+      maxOutputTokens = 1500;
+    } else if (contentCategory && contentCategory !== 'meditation') {
+      // Use new content type templates for non-meditation categories
+      const contentParams: ContentGenerationParams = {
+        category: contentCategory,
+        subType: contentSubType || getDefaultSubType(contentCategory),
+        hypnosisDepth: hypnosisDepth,
+        targetAgeGroup: targetAgeGroup,
+        durationMinutes: durationMinutes,
+        goal: thought,
+        audioTags: audioTags,
+      };
+
+      const templateResult = buildContentPrompt(contentParams);
+      prompt = templateResult.prompt;
+      temperature = templateResult.temperature;
+      maxOutputTokens = templateResult.maxTokens;
+
+      log.info('Using content template', {
+        category: contentCategory,
+        subType: contentParams.subType,
+        temperature,
+        maxTokens: maxOutputTokens,
+      });
     } else {
+      // Default meditation flow (backwards compatible)
       prompt = buildGeneratePrompt(thought, audioTags || [], durationMinutes);
+      maxOutputTokens = Math.max(1200, durationMinutes * 60 * 2 * 1.5);
     }
 
     // Call Gemini API with circuit breaker and timeout
@@ -210,9 +285,8 @@ serve(async (req) => {
               body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: {
-                  temperature: 0.7,
-                  // Scale tokens with duration: ~1.5 tokens per word, plus buffer
-                  maxOutputTokens: operation === 'extend' ? 1500 : Math.max(1200, durationMinutes * 60 * 2 * 1.5),
+                  temperature,
+                  maxOutputTokens,
                 }
               }),
               signal: controller.signal,

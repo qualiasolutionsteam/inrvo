@@ -1,8 +1,15 @@
 /**
  * INrVO Meditation Agent
  *
- * A conversational AI assistant that guides users through personalized meditation
+ * A conversational AI assistant that guides users through personalized
  * experiences, drawing from diverse wisdom traditions and modern neuroscience.
+ *
+ * Supports 5 content categories:
+ * - Meditations (guided visualizations, breathwork, body scans, etc.)
+ * - Affirmations (power, guided, sleep, mirror work styles)
+ * - Self-Hypnosis (light, standard, therapeutic depths)
+ * - Guided Journeys (past life, spirit guide, shamanic, astral, etc.)
+ * - Children's Stories (toddler 2-4, young child 5-8)
  */
 
 import {
@@ -25,6 +32,25 @@ import {
   getPreferredApproach,
   type MeditationPreferences,
 } from '../preferencesService';
+
+import {
+  ContentDetector,
+  contentDetector,
+  type ContentDetectionResult,
+} from './contentDetection';
+
+import {
+  type ContentCategory,
+  type ContentGenerationParams,
+  type AffirmationSubType,
+  type HypnosisDepth,
+  type JourneySubType,
+  type StoryAgeGroup,
+  CONTENT_CATEGORIES,
+  getContentCategory,
+} from './contentTypes';
+
+import { buildContentPrompt } from './promptTemplates';
 
 // ============================================================================
 // TYPES
@@ -63,6 +89,11 @@ export interface SessionState {
   lastMeditationScript?: string;
   conversationStarted: Date;
   messageCount: number;
+  // Content type detection state
+  awaitingDisambiguation?: boolean;
+  lastDetectionResult?: ContentDetectionResult;
+  selectedContentCategory?: ContentCategory;
+  selectedContentSubType?: string;
 }
 
 export interface AgentResponse {
@@ -75,6 +106,13 @@ export interface AgentResponse {
   quote?: { quote: string; teacher: string };
   // When user pastes a ready-made meditation script, pass it directly without AI processing
   pastedScript?: string;
+  // Content type detection results
+  contentCategory?: ContentCategory;
+  contentSubType?: string;
+  contentGenerationParams?: ContentGenerationParams;
+  // Disambiguation state
+  awaitingDisambiguation?: boolean;
+  disambiguationQuestion?: string;
 }
 
 export interface AgentAction {
@@ -133,9 +171,11 @@ But don't lecture. Drop in wisdom sparingly and naturally.
 
 ## WHAT YOU CAN CREATE (when asked)
 
-- **Meditations**: Guided visualizations, breathwork, body scans, sleep stories
-- **Affirmations**: Personalized positive statements for reprogramming beliefs
-- **Stories**: Calming narratives for sleep or relaxation
+- **Meditations**: Guided visualizations, breathwork, body scans, loving-kindness, presence, etc.
+- **Affirmations**: 4 styles - Power (I AM bursts), Guided (narrative-led), Sleep (fading/subliminal), Mirror Work (You are...)
+- **Self-Hypnosis**: 3 depths - Light (relaxation), Standard (full session), Therapeutic (deep trance work)
+- **Guided Journeys**: Inner journeys, past life regression, spirit guide connection, shamanic journeys, astral projection, akashic records, quantum field exploration
+- **Children's Stories**: Bedtime stories for parents to read aloud - Toddlers (2-4) or Young Kids (5-8)
 
 ## MEDITATION GENERATION TRIGGERS
 
@@ -254,7 +294,12 @@ export class MeditationAgent {
    * Process a user message and generate a response
    */
   async chat(userMessage: string): Promise<AgentResponse> {
-    // FIRST: Check if user pasted a ready-made meditation script
+    // FIRST: Handle disambiguation responses
+    if (this.context.sessionState.awaitingDisambiguation && this.context.sessionState.lastDetectionResult) {
+      return this.handleDisambiguationResponse(userMessage);
+    }
+
+    // SECOND: Check if user pasted a ready-made meditation script
     const pastedScript = this.detectReadyMeditationScript(userMessage);
     if (pastedScript) {
       console.log('[MeditationAgent] User pasted a ready-made meditation, skipping AI processing');
@@ -271,7 +316,9 @@ export class MeditationAgent {
       return {
         message: "I see you've brought your own meditation script. Let me take you to the editor where you can review and customize it.",
         shouldGenerateMeditation: true,
-        meditationType: 'guided_visualization', // Default type for pasted scripts
+        meditationType: 'guided_visualization',
+        contentCategory: 'meditation',
+        contentSubType: 'guided_visualization',
         pastedScript: pastedScript,
       };
     }
@@ -293,8 +340,38 @@ export class MeditationAgent {
     this.context.messages.push(userMsg);
     this.context.sessionState.messageCount++;
 
-    // Check if user is asking for a specific meditation type
-    const requestedMeditation = this.detectMeditationRequest(userMessage);
+    // Use new intelligent content type detection
+    const detection = contentDetector.detect(userMessage);
+    console.log('[MeditationAgent] Content detection result:', {
+      category: detection.category,
+      subType: detection.subType,
+      confidence: detection.confidence,
+      needsDisambiguation: detection.needsDisambiguation,
+    });
+
+    // Handle disambiguation if needed
+    if (detection.needsDisambiguation && detection.confidence < 70) {
+      this.context.sessionState.awaitingDisambiguation = true;
+      this.context.sessionState.lastDetectionResult = detection;
+
+      return {
+        message: detection.disambiguationQuestion || "I'd love to help. What kind of experience are you looking for?",
+        awaitingDisambiguation: true,
+        disambiguationQuestion: detection.disambiguationQuestion,
+        emotionalState: emotionalState?.id,
+      };
+    }
+
+    // High confidence detection - route to content generation if explicit request
+    if (detection.confidence >= 70 && this.isExplicitGenerationRequest(userMessage)) {
+      return this.routeToContentGeneration(detection, emotionalState?.id);
+    }
+
+    // Otherwise, continue with conversational flow
+    // Check if user is asking for a specific meditation type (legacy support)
+    const requestedMeditation = detection.category === 'meditation' && detection.confidence >= 60
+      ? detection.meditationType || this.inferMeditationTypeFromSubType(detection.subType)
+      : undefined;
 
     // Build the prompt for Gemini
     const prompt = this.buildPrompt(userMessage, emotionalState?.id, requestedMeditation);
@@ -303,7 +380,7 @@ export class MeditationAgent {
     const responseText = await this.generateContent(prompt);
 
     // Parse the response for any structured data
-    const parsedResponse = this.parseResponse(responseText, emotionalState?.id, requestedMeditation);
+    const parsedResponse = this.parseResponse(responseText, emotionalState?.id, requestedMeditation, detection);
 
     // Add assistant message to context
     const assistantMsg: ConversationMessage = {
@@ -318,6 +395,166 @@ export class MeditationAgent {
     this.context.messages.push(assistantMsg);
 
     return parsedResponse;
+  }
+
+  /**
+   * Handle user response to disambiguation question
+   */
+  private handleDisambiguationResponse(userMessage: string): AgentResponse {
+    const previousResult = this.context.sessionState.lastDetectionResult!;
+
+    // Clear disambiguation state
+    this.context.sessionState.awaitingDisambiguation = false;
+    this.context.sessionState.lastDetectionResult = undefined;
+
+    // Use the content detector to handle the response
+    const updatedResult = contentDetector.handleDisambiguationResponse(userMessage, previousResult);
+
+    console.log('[MeditationAgent] Disambiguation resolved:', {
+      category: updatedResult.category,
+      subType: updatedResult.subType,
+      confidence: updatedResult.confidence,
+    });
+
+    // Add user message to context
+    this.context.messages.push({
+      role: 'user',
+      content: userMessage,
+      timestamp: new Date(),
+    });
+    this.context.sessionState.messageCount++;
+
+    // If still needs disambiguation (couldn't parse response), ask again
+    if (updatedResult.needsDisambiguation) {
+      this.context.sessionState.awaitingDisambiguation = true;
+      this.context.sessionState.lastDetectionResult = updatedResult;
+
+      return {
+        message: "I didn't quite catch that. " + (updatedResult.disambiguationQuestion || "What kind of experience would you like?"),
+        awaitingDisambiguation: true,
+        disambiguationQuestion: updatedResult.disambiguationQuestion,
+      };
+    }
+
+    // Route to content generation
+    return this.routeToContentGeneration(updatedResult, this.context.sessionState.currentMood);
+  }
+
+  /**
+   * Route to appropriate content generation based on detection result
+   */
+  private routeToContentGeneration(detection: ContentDetectionResult, emotionalState?: string): AgentResponse {
+    const categoryInfo = getContentCategory(detection.category);
+    const categoryName = categoryInfo?.name || detection.category;
+
+    // Store in session state
+    this.context.sessionState.selectedContentCategory = detection.category;
+    this.context.sessionState.selectedContentSubType = detection.subType;
+
+    // Map to meditation type for legacy compatibility
+    const meditationType = detection.meditationType || this.inferMeditationTypeFromSubType(detection.subType);
+
+    // Build generation parameters
+    const generationParams: ContentGenerationParams = {
+      category: detection.category,
+      subType: detection.subType,
+      meditationType: meditationType,
+      hypnosisDepth: detection.depth,
+      targetAgeGroup: detection.ageGroup,
+      durationMinutes: detection.durationMinutes || categoryInfo?.defaultDuration.recommended || 10,
+      goal: detection.extractedGoal || this.extractGoalFromContext(),
+      emotionalState: emotionalState,
+    };
+
+    // Construct confirmation message based on category
+    let confirmationMessage: string;
+    switch (detection.category) {
+      case 'affirmation':
+        confirmationMessage = `I'll create ${detection.subType.replace(/_/g, ' ')} affirmations for you.`;
+        break;
+      case 'self_hypnosis':
+        confirmationMessage = `I'll craft a ${detection.depth || 'standard'} self-hypnosis session for you.`;
+        break;
+      case 'guided_journey':
+        confirmationMessage = `I'll guide you on a ${detection.subType.replace(/_/g, ' ')} journey.`;
+        break;
+      case 'story':
+        const ageLabel = detection.ageGroup === 'toddler' ? '2-4 year old' : '5-8 year old';
+        confirmationMessage = `I'll create a bedtime story perfect for a ${ageLabel}.`;
+        break;
+      default:
+        confirmationMessage = `I'll create a ${this.getMeditationTypeName(meditationType)} meditation for you.`;
+    }
+
+    return {
+      message: confirmationMessage,
+      shouldGenerateMeditation: true,
+      meditationType: meditationType,
+      contentCategory: detection.category,
+      contentSubType: detection.subType,
+      contentGenerationParams: generationParams,
+      emotionalState: emotionalState,
+    };
+  }
+
+  /**
+   * Extract goal from conversation context
+   */
+  private extractGoalFromContext(): string {
+    const userMessages = this.context.messages
+      .filter(m => m.role === 'user')
+      .map(m => m.content)
+      .slice(-3)
+      .join(' ');
+    return userMessages.slice(0, 200);
+  }
+
+  /**
+   * Get human-readable meditation type name
+   */
+  private getMeditationTypeName(type: MeditationType): string {
+    const typeInfo = MEDITATION_TYPES.find(m => m.id === type);
+    return typeInfo?.name.toLowerCase() || type.replace(/_/g, ' ');
+  }
+
+  /**
+   * Infer meditation type from content sub-type
+   */
+  private inferMeditationTypeFromSubType(subType: string): MeditationType {
+    const subTypeToMeditation: Record<string, MeditationType> = {
+      'breathwork': 'breathwork',
+      'body_scan': 'body_scan',
+      'loving_kindness': 'loving_kindness',
+      'sleep_story': 'sleep_story',
+      'guided_visualization': 'guided_visualization',
+      'walking_meditation': 'walking_meditation',
+      'shadow_work': 'shadow_work',
+      'gratitude': 'gratitude',
+      'manifestation': 'manifestation',
+      'presence': 'presence',
+      'inquiry': 'inquiry',
+      'surrender': 'surrender',
+      // Affirmation types map to affirmations
+      'power': 'affirmations',
+      'guided': 'affirmations',
+      'sleep': 'affirmations',
+      'mirror_work': 'affirmations',
+      // Journey and hypnosis types map to visualization
+      'inner_journey': 'guided_visualization',
+      'past_life': 'guided_visualization',
+      'spirit_guide': 'guided_visualization',
+      'shamanic': 'guided_visualization',
+      'astral': 'guided_visualization',
+      'akashic': 'guided_visualization',
+      'quantum_field': 'guided_visualization',
+      'light': 'guided_visualization',
+      'standard': 'guided_visualization',
+      'therapeutic': 'guided_visualization',
+      // Story types map to sleep story
+      'toddler': 'sleep_story',
+      'young_child': 'sleep_story',
+    };
+    return subTypeToMeditation[subType] || 'guided_visualization';
   }
 
   /**
@@ -613,7 +850,8 @@ Guide:`;
   private parseResponse(
     responseText: string,
     emotionalState?: string,
-    requestedMeditation?: MeditationType
+    requestedMeditation?: MeditationType,
+    detection?: ContentDetectionResult
   ): AgentResponse {
     const response: AgentResponse = {
       message: responseText,
@@ -647,6 +885,25 @@ Guide:`;
     if (shouldGenerate) {
       response.shouldGenerateMeditation = true;
       response.meditationType = requestedMeditation || this.inferMeditationType(responseText);
+
+      // Include content category info if we have detection results
+      if (detection) {
+        response.contentCategory = detection.category;
+        response.contentSubType = detection.subType;
+
+        // Build generation params for the new system
+        const categoryInfo = getContentCategory(detection.category);
+        response.contentGenerationParams = {
+          category: detection.category,
+          subType: detection.subType,
+          meditationType: response.meditationType,
+          hypnosisDepth: detection.depth,
+          targetAgeGroup: detection.ageGroup,
+          durationMinutes: detection.durationMinutes || categoryInfo?.defaultDuration.recommended || 10,
+          goal: detection.extractedGoal || this.extractGoalFromContext(),
+          emotionalState: emotionalState,
+        };
+      }
     }
 
     // SAFETY CHECK: Detect if AI wrote meditation content without being asked
@@ -820,6 +1077,82 @@ Guide:`;
     prompt += `\nCRITICAL: The meditation MUST directly address what the user asked for. Match their specific situation, not a generic version.`;
 
     return prompt;
+  }
+
+  /**
+   * Generate content prompt for any content category using the new template system.
+   * This is the primary method for new content types (affirmations, hypnosis, journeys, stories).
+   * For backwards compatibility, generateMeditationPrompt is still available.
+   */
+  generateContentPrompt(params?: ContentGenerationParams): { prompt: string; temperature: number; maxTokens: number } {
+    // If params provided, use the new template system
+    if (params) {
+      return buildContentPrompt(params);
+    }
+
+    // Fallback: Build params from session state
+    const category = this.context.sessionState.selectedContentCategory || 'meditation';
+    const subType = this.context.sessionState.selectedContentSubType || 'guided_visualization';
+    const mood = this.context.sessionState.currentMood;
+
+    // Get all user messages for goal extraction
+    const allUserMessages = this.context.messages
+      .filter(m => m.role === 'user')
+      .map(m => m.content);
+
+    const combinedInput = allUserMessages.join(' ').toLowerCase();
+    const extractedContext = this.extractUserContext(combinedInput);
+
+    // Detect duration from context
+    let durationMinutes = 10;
+    if (extractedContext.duration) {
+      const match = extractedContext.duration.match(/(\d+)/);
+      if (match) {
+        durationMinutes = parseInt(match[1]);
+      }
+    }
+
+    const categoryInfo = getContentCategory(category);
+
+    const generationParams: ContentGenerationParams = {
+      category,
+      subType,
+      meditationType: this.context.sessionState.selectedMeditation || this.inferMeditationTypeFromSubType(subType),
+      durationMinutes: durationMinutes || categoryInfo?.defaultDuration.recommended || 10,
+      goal: extractedContext.goals.join(', ') || allUserMessages.slice(-3).join(' ').slice(0, 200),
+      emotionalState: mood,
+    };
+
+    // Include audio tags if settings suggest specific ones
+    if (extractedContext.settings.length > 0) {
+      generationParams.audioTags = extractedContext.settings;
+    }
+
+    return buildContentPrompt(generationParams);
+  }
+
+  /**
+   * Get generation parameters from current session state
+   * Useful for the edge function to retrieve what to generate
+   */
+  getContentGenerationParams(): ContentGenerationParams | null {
+    const category = this.context.sessionState.selectedContentCategory;
+    const subType = this.context.sessionState.selectedContentSubType;
+
+    if (!category || !subType) {
+      return null;
+    }
+
+    const categoryInfo = getContentCategory(category);
+
+    return {
+      category,
+      subType,
+      meditationType: this.context.sessionState.selectedMeditation,
+      durationMinutes: categoryInfo?.defaultDuration.recommended || 10,
+      goal: this.extractGoalFromContext(),
+      emotionalState: this.context.sessionState.currentMood,
+    };
   }
 
   /**
