@@ -49,6 +49,16 @@ supabase db push                            # Push migrations to remote
 - `components/SimpleVoiceClone.tsx` - Voice cloning UI
 - `components/AgentChat.tsx` - Conversational AI interface
 - `components/ui/chronos-engine.tsx` - Animated gear engine for agent avatar and loading states
+- `src/pages/TemplatesPage.tsx` - Template browser with category navigation
+
+**Templates System (`constants.tsx`):**
+4 main categories with 50+ ready-to-use templates:
+- **Meditation** (cyan) - Stress Relief, Sleep, Focus, Self-Love, Spiritual
+- **Affirmations** (amber) - Morning Power, Confidence, Abundance, Health
+- **Self-Hypnosis** (violet) - Weight Loss, Quit Smoking, Confidence, Sleep
+- **Sleep Stories** (pink) - Nature Journeys, Fantasy Realms, Cozy Nights
+
+Each category has color theming, custom icons (Sparkle, Affirmation heart, Hypnosis spiral, Book), and subcategories. Templates populate the meditation editor when selected. Access via burger menu → Templates.
 
 **UI Components (`components/ui/`):**
 - `chronos-engine.tsx` - Animated gear component with variants: `avatar` (32px), `mini` (24px), `loading` (120px). Exports: `ChronosEngine`, `ChronosAvatar`, `ChronosLoader`, `ChronosMiniLoader`
@@ -148,15 +158,21 @@ Provider selection happens in `voiceService.detectProvider()` based on voice pro
 
 ### Fish Audio Settings (Edge Functions)
 
-Optimized for natural, meditation-style delivery:
+Optimized for speed with good quality (long meditations can take 35-76s):
 
 | Setting | Value | Purpose |
 |---------|-------|---------|
-| `mp3_bitrate` | 192 | Higher quality audio (vs default 128) |
+| `mp3_bitrate` | 128 | Good quality, faster encoding |
+| `chunk_length` | 300 | Larger chunks for faster processing |
 | `model` header | `speech-1.6` | Enables paralanguage effects |
 | `normalize` | true | Consistent volume levels |
-| `latency` | `normal` | Best quality (vs `balanced`) |
+| `latency` | `balanced` | Faster generation (vs `normal`) |
 | `train_mode` | `fast_high_quality` | Better voice clone fidelity |
+
+**Timeout Configuration:**
+- Client-side (`edgeFunctions.ts`): 120s for TTS calls
+- Server-side: 120s timeout on edge functions
+- Fish Audio can take 35-76s for long meditation scripts
 
 ### Fish Audio V1.6 Paralanguage Effects
 
