@@ -92,6 +92,9 @@ interface ControlPanelProps {
   isGeneratingPreview?: boolean;
   onGenerateVoicePreview?: () => void;
   onStopVoicePreview?: () => void;
+  // Music preview
+  previewingMusicId?: string | null;
+  onMusicPreviewToggle?: (track: BackgroundTrack) => void;
 }
 
 // Quick tags for easy insertion
@@ -159,6 +162,8 @@ export const ControlPanel = memo<ControlPanelProps>(
     isGeneratingPreview = false,
     onGenerateVoicePreview,
     onStopVoicePreview,
+    previewingMusicId,
+    onMusicPreviewToggle,
   }) => {
     const [expanded, setExpanded] = useState(false);
     const [activeTab, setActiveTab] = useState<ControlTab>('voice');
@@ -302,8 +307,8 @@ export const ControlPanel = memo<ControlPanelProps>(
                 </button>
               </div>
 
-              {/* Tab Content */}
-              <div className="max-h-40 overflow-y-auto">
+              {/* Tab Content - taller on mobile for better visibility */}
+              <div className="max-h-64 sm:max-h-40 overflow-y-auto">
                 {/* Voice Tab */}
                 {activeTab === 'voice' && (
                   <div className="space-y-3">
