@@ -62,6 +62,13 @@ Each category has color theming, custom icons (Sparkle, Affirmation heart, Hypno
 
 **UI Components (`components/ui/`):**
 - `chronos-engine.tsx` - Animated gear component with variants: `avatar` (32px), `mini` (24px), `loading` (120px). Exports: `ChronosEngine`, `ChronosAvatar`, `ChronosLoader`, `ChronosMiniLoader`
+- `ai-voice-input.tsx` - Standalone voice recording button with visualizer bars, timer, and auto-stop at 30s
+
+**Recording State Styling:**
+The app uses a consistent cyan/teal theme for recording states (not red):
+- **AgentChat input:** Cyan border (`border-cyan-400/60`) with soft glow effect (cyan outer + purple undertone)
+- **Recording button:** Solid cyan (`bg-cyan-500/90`)
+- **Glow effect:** `boxShadow: '0 0 20px rgba(34, 211, 238, 0.15), 0 0 40px rgba(139, 92, 246, 0.1)'`
 
 **Data Layer:**
 - `lib/supabase.ts` - Supabase client and all database operations
