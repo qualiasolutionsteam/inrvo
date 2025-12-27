@@ -41,6 +41,52 @@ function calculateWordStructure(durationMinutes: number): string {
 5. CLOSING (${closing} words): Gentle return with lasting calm/confidence`;
 }
 
+// Valid audio tags allowed in harmonized output
+const VALID_AUDIO_TAGS = new Set([
+  '[pause]',
+  '[long pause]',
+  '[deep breath]',
+  '[exhale slowly]',
+  '[silence]',
+]);
+
+/**
+ * Validate and sanitize harmonized script output
+ * Prevents XSS and ensures only valid audio tags are present
+ */
+function validateHarmonizedOutput(script: string): string {
+  // Check for dangerous HTML/script patterns
+  const dangerousPatterns = [
+    /<script[^>]*>/i,
+    /<\/script>/i,
+    /<iframe[^>]*>/i,
+    /<object[^>]*>/i,
+    /<embed[^>]*>/i,
+    /<style[^>]*>/i,
+    /<link[^>]*>/i,
+    /javascript:/i,
+    /on\w+\s*=/i,
+    /<img[^>]*onerror/i,
+  ];
+
+  for (const pattern of dangerousPatterns) {
+    if (pattern.test(script)) {
+      throw new Error('Invalid content detected in response');
+    }
+  }
+
+  // Filter to only allow known valid audio tags
+  const sanitized = script.replace(/\[[^\]]+\]/g, (match) => {
+    if (VALID_AUDIO_TAGS.has(match)) {
+      return match;
+    }
+    console.warn(`Unknown audio tag removed: ${match}`);
+    return '';
+  });
+
+  return sanitized.replace(/\s{2,}/g, ' ').trim();
+}
+
 export const geminiService = {
   /**
    * Conversational chat with Gemini
@@ -300,7 +346,8 @@ OUTPUT: The complete harmonized script with audio tags inserted. No explanations
         throw new Error('Empty response from API. Please try again.');
       }
 
-      return text;
+      // Validate and sanitize harmonized output to prevent XSS
+      return validateHarmonizedOutput(text);
     } catch (error: any) {
       console.error('Error in harmonizeScript:', error);
       throw new Error(error?.message || 'Failed to harmonize script. Please try again.');

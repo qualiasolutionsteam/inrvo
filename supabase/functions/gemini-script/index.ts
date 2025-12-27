@@ -38,6 +38,55 @@ interface GeminiScriptResponse {
   error?: string;
 }
 
+// Valid audio tags allowed in harmonized output
+const VALID_AUDIO_TAGS = new Set([
+  '[pause]',
+  '[long pause]',
+  '[deep breath]',
+  '[exhale slowly]',
+  '[silence]',
+]);
+
+/**
+ * Validate and sanitize harmonized script output
+ * Prevents XSS and ensures only valid audio tags are present
+ */
+function validateHarmonizedOutput(script: string): string {
+  // Check for dangerous HTML/script tags - reject if found
+  const dangerousPatterns = [
+    /<script[^>]*>/i,
+    /<\/script>/i,
+    /<iframe[^>]*>/i,
+    /<object[^>]*>/i,
+    /<embed[^>]*>/i,
+    /<style[^>]*>/i,
+    /<link[^>]*>/i,
+    /javascript:/i,
+    /on\w+\s*=/i, // onclick=, onerror=, etc.
+    /<img[^>]*onerror/i,
+  ];
+
+  for (const pattern of dangerousPatterns) {
+    if (pattern.test(script)) {
+      throw new Error('Invalid content detected in harmonized output');
+    }
+  }
+
+  // Validate and filter audio tags - only allow known valid tags
+  // Replace any unknown tags with empty string
+  const sanitized = script.replace(/\[[^\]]+\]/g, (match) => {
+    if (VALID_AUDIO_TAGS.has(match)) {
+      return match;
+    }
+    // Log unknown tag for monitoring
+    console.warn(`Unknown audio tag removed from harmonized output: ${match}`);
+    return '';
+  });
+
+  // Clean up any double spaces left by removed tags
+  return sanitized.replace(/\s{2,}/g, ' ').trim();
+}
+
 // Optimized prompt templates - pre-compiled to reduce per-request overhead
 const EXTEND_PROMPT_TEMPLATE = `Expand this meditation into a longer version (250-350 words) preserving its essence and tone.
 
@@ -349,10 +398,16 @@ serve(async (req) => {
       maxOutputTokens = 1500;
     } else if (operation === 'harmonize') {
       prompt = HARMONIZE_PROMPT_TEMPLATE.replace('{{SCRIPT}}', existingScript!);
-      // Calculate tokens based on word count (~1.5 tokens per word with added tags)
-      const wordCount = existingScript!.split(/\s+/).length;
-      const estimatedTokens = wordCount * 1.5;
-      maxOutputTokens = Math.max(2000, Math.ceil(estimatedTokens * 1.3));
+      // Calculate tokens with correct ratio and bounds
+      // 1 token ≈ 0.75 words for English, so words → tokens = words / 0.75
+      const wordCount = existingScript!.split(/\s+/).filter(w => w.length > 0).length;
+      const scriptTokens = Math.ceil(wordCount / 0.75);
+      // Add ~10% overhead for audio tags (conservative estimate for 1-2 tags per paragraph)
+      const tagsOverhead = Math.ceil(scriptTokens * 0.1);
+      const estimatedTokens = (scriptTokens + tagsOverhead) * 1.2; // 20% safety margin
+      // Gemini's max is 8192, use 90% to leave headroom
+      const GEMINI_TOKEN_LIMIT = 7372;
+      maxOutputTokens = Math.min(GEMINI_TOKEN_LIMIT, Math.max(2000, Math.ceil(estimatedTokens)));
       temperature = 0.3;  // Lower temperature for more precise tag placement
     } else if (contentCategory && contentCategory !== 'meditation') {
       // Use new content type templates for non-meditation categories
@@ -431,11 +486,21 @@ serve(async (req) => {
       }
     );
 
-    log.info('Script generation successful', { scriptLength: script.length });
+    // Apply output validation for harmonize operations to prevent XSS
+    let validatedScript = script;
+    if (operation === 'harmonize') {
+      validatedScript = validateHarmonizedOutput(script);
+      log.info('Harmonize output validated', {
+        originalLength: script.length,
+        validatedLength: validatedScript.length,
+      });
+    }
+
+    log.info('Script generation successful', { scriptLength: validatedScript.length });
 
     // Use compression for script responses (typically 2-4KB text)
     return await createCompressedResponse(
-      { script, requestId } as GeminiScriptResponse,
+      { script: validatedScript, requestId } as GeminiScriptResponse,
       allHeaders
     );
 

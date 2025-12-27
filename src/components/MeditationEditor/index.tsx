@@ -12,8 +12,9 @@
  * - Mobile-first responsive design with proper safe area handling
  */
 
-import React, { memo, useState, useCallback, useRef, useEffect } from 'react';
+import React, { memo, useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
+import DOMPurify from 'dompurify';
 import type { MeditationEditorProps, ScriptStats } from './types';
 import { useAudioTags } from './hooks/useAudioTags';
 import { useEditorCursor } from './hooks/useEditorCursor';
@@ -82,8 +83,20 @@ export const MeditationEditor = memo<MeditationEditorProps>(
     const [isHarmonizing, setIsHarmonizing] = useState(false);
     const editorRef = useRef<HTMLDivElement>(null);
 
-    // Hooks
-    const { renderStyledContent, stats } = useAudioTags(editedScript);
+    // Sanitize script content to prevent XSS attacks
+    // Only allow text content - strip all HTML tags except our audio tag spans
+    const sanitizedScript = useMemo(() => {
+      // DOMPurify with strict config - only allow text content
+      const config = {
+        ALLOWED_TAGS: [], // No HTML tags allowed in the text content
+        ALLOWED_ATTR: [],
+        KEEP_CONTENT: true, // Keep text content, remove tags
+      };
+      return DOMPurify.sanitize(editedScript, config);
+    }, [editedScript]);
+
+    // Hooks - use sanitized script for rendering
+    const { renderStyledContent, stats } = useAudioTags(sanitizedScript);
     const { restoreCursorPosition, insertAtCursor } = useEditorCursor(editorRef);
 
     // Keyboard shortcuts
@@ -150,11 +163,12 @@ export const MeditationEditor = memo<MeditationEditorProps>(
 
     // Handle harmonize - AI-powered audio tag insertion
     const handleHarmonize = useCallback(async () => {
-      if (!editedScript.trim() || isHarmonizing) return;
+      if (!sanitizedScript.trim() || isHarmonizing) return;
 
       setIsHarmonizing(true);
       try {
-        const harmonizedScript = await geminiService.harmonizeScript(editedScript);
+        // Use sanitized script for API call
+        const harmonizedScript = await geminiService.harmonizeScript(sanitizedScript);
         setEditedScript(harmonizedScript);
         toast.success('Script harmonized', {
           description: 'Audio tags have been added for natural pacing',
@@ -167,7 +181,7 @@ export const MeditationEditor = memo<MeditationEditorProps>(
       } finally {
         setIsHarmonizing(false);
       }
-    }, [editedScript, isHarmonizing]);
+    }, [sanitizedScript, isHarmonizing]);
 
     // Restore cursor position after state update
     useEffect(() => {
@@ -184,8 +198,9 @@ export const MeditationEditor = memo<MeditationEditorProps>(
         onVoiceSelect();
         return;
       }
-      onGenerate(editedScript);
-    }, [editedScript, selectedVoice, onGenerate, onVoiceSelect]);
+      // Use sanitized script for generation
+      onGenerate(sanitizedScript);
+    }, [sanitizedScript, selectedVoice, onGenerate, onVoiceSelect]);
 
     // Prevent body scroll when editor is open
     useEffect(() => {
@@ -318,7 +333,7 @@ export const MeditationEditor = memo<MeditationEditorProps>(
             selectedVoice={selectedVoice}
             isGenerating={isGenerating}
             onClick={handleGenerate}
-            disabled={!editedScript.trim()}
+            disabled={!sanitizedScript.trim()}
           />
         </div>
       </div>
