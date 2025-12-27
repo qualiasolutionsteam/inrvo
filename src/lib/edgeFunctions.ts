@@ -278,8 +278,10 @@ async function callEdgeFunction<T>(
 // ============================================================================
 
 /**
- * Generate speech using Chatterbox via Replicate Edge Function
+ * Generate speech using TTS Edge Function (Fish Audio primary, Chatterbox fallback)
  * API key is stored server-side
+ *
+ * IMPORTANT: Uses 120s timeout because Fish Audio takes 35-76s for long meditations
  */
 export async function generateSpeech(
   voiceId: string,
@@ -290,12 +292,20 @@ export async function generateSpeech(
   }
 ): Promise<string> {
   // Settings optimized for calm, natural meditation delivery
+  // 120s timeout to match edge function (Fish Audio needs 35-76s for long scripts)
   const response = await callEdgeFunction<{ success: boolean; audioBase64: string }>('generate-speech', {
     voiceId,
     text,
     voiceSettings: voiceSettings || {
       exaggeration: 0.35,  // Lower for calmer delivery (meditation-optimized)
       cfgWeight: 0.6,      // Balanced for deliberate pacing
+    },
+  }, {
+    timeout: 120000, // 120s - Fish Audio needs time for long meditations
+    retry: {
+      maxRetries: 1, // Single retry for TTS (expensive operation)
+      baseDelayMs: 2000,
+      maxDelayMs: 5000,
     },
   });
 
@@ -530,6 +540,8 @@ export interface FishAudioCloneResponse {
 /**
  * Generate speech using Fish Audio (with automatic Chatterbox fallback)
  * Fish Audio is the primary provider - best quality, real-time API
+ *
+ * IMPORTANT: Uses 120s timeout because Fish Audio takes 35-76s for long meditations
  */
 export async function fishAudioTTS(
   voiceId: string,
@@ -549,7 +561,14 @@ export async function fishAudioTTS(
     voiceId,
     text,
     options,
-  }, { timeout: 60000 });
+  }, {
+    timeout: 120000, // 120s - Fish Audio needs time for long scripts
+    retry: {
+      maxRetries: 1, // Single retry for TTS
+      baseDelayMs: 2000,
+      maxDelayMs: 5000,
+    },
+  });
 
   return {
     audioBase64: response.audioBase64,

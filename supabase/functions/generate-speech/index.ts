@@ -109,9 +109,9 @@ async function runFishAudioTTS(
         text,
         reference_id: modelId,
         format: 'mp3',
-        mp3_bitrate: 192,          // Higher quality for meditation (vs 128)
-        chunk_length: 200,         // Optimal balance
-        latency: 'normal',         // Best quality (vs 'balanced')
+        mp3_bitrate: 128,          // Standard quality (faster encoding than 192)
+        chunk_length: 300,         // Larger chunks = fewer API calls = faster
+        latency: 'balanced',       // Faster response (vs 'normal') - good enough for meditation
         normalize: true,           // Consistent volume
         streaming: false,
       }),
