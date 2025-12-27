@@ -168,7 +168,7 @@ const LibraryPage: React.FC = () => {
                     : 'bg-white/5 text-slate-400 hover:text-white'
                 }`}
               >
-                All Meditations
+                My Audios
               </button>
               <button
                 onClick={() => setLibraryTab('favorites')}
