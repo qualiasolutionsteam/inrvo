@@ -383,6 +383,38 @@ export async function geminiExtendScript(
 }
 
 // ============================================================================
+// Gemini Chat (Conversational AI)
+// ============================================================================
+
+export interface GeminiChatResponse {
+  message: string;
+}
+
+/**
+ * Chat with Gemini for conversational AI responses
+ * Unlike geminiGenerateScript, this respects the agent's system prompt
+ * and returns natural conversational responses (not meditation scripts)
+ *
+ * @param prompt - Full prompt including system instructions and conversation history
+ * @param options - Optional settings for temperature and max tokens
+ */
+export async function geminiChat(
+  prompt: string,
+  options?: {
+    maxTokens?: number;
+    temperature?: number;
+  }
+): Promise<string> {
+  const response = await callEdgeFunction<GeminiChatResponse>('gemini-chat', {
+    prompt,
+    maxTokens: options?.maxTokens ?? 500,
+    temperature: options?.temperature ?? 0.8,
+  });
+
+  return response.message;
+}
+
+// ============================================================================
 // Chatterbox Edge Function Wrappers (via Replicate)
 // ============================================================================
 

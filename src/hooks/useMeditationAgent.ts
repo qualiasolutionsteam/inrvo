@@ -94,11 +94,13 @@ export function useMeditationAgent(): UseMeditationAgentReturn {
 
   // Initialize agent on mount
   useEffect(() => {
-    // Create the Gemini content generator function
+    // Create the Gemini content generator function for conversational chat
+    // This uses geminiService.chat() which respects the agent's system prompt
+    // (NOT enhanceScript which is for meditation generation only)
     const generateContent = async (prompt: string): Promise<string> => {
       try {
-        // Use geminiService for generation
-        const response = await geminiService.enhanceScript(prompt);
+        // Use geminiService.chat() for natural conversation
+        const response = await geminiService.chat(prompt);
         return response;
       } catch (error: any) {
         console.error('Error generating content:', error);

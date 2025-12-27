@@ -738,40 +738,41 @@ Guide:`;
 
   /**
    * Get a conversational fallback when AI generates unwanted meditation content
+   * NOTE: With the proper gemini-chat endpoint, this should rarely be needed
    */
   private getConversationalFallback(emotionalState?: string): string {
-    // State-specific conversational responses
+    // State-specific conversational responses - more natural, less therapist-like
     if (emotionalState) {
       const stateResponses: Record<string, string[]> = {
         'anxious': [
-          "It sounds like there's some anxiety there. What's bringing that up?",
-          "Anxiety can be tough. What's on your mind?",
-          "I sense some unease. Want to talk about what's happening?",
+          "What's going on?",
+          "What's making you anxious?",
+          "Tell me what's happening.",
         ],
         'stressed': [
-          "That sounds stressful. What's weighing on you most?",
-          "Stress can pile up. What's been happening?",
-          "I hear you. What's been the hardest part?",
+          "What's stressing you out?",
+          "What's going on?",
+          "Tell me about it.",
         ],
         'sad': [
-          "I sense some heaviness. Would you like to talk about it?",
-          "That sounds difficult. What's going on?",
-          "I'm here to listen. What's been on your heart?",
+          "What happened?",
+          "What's going on?",
+          "I'm listening.",
         ],
         'overwhelmed': [
-          "That's a lot to carry. What feels most pressing right now?",
-          "It sounds like a lot. Where would you like to start?",
-          "When things pile up, it helps to just talk. What's the biggest thing?",
+          "What's the main thing?",
+          "Where do you want to start?",
+          "What's happening?",
         ],
         'seeking_clarity': [
-          "That's a deep topic. What aspects are you curious about?",
-          "There's a lot to explore there. What draws you to this?",
-          "Interesting. What made you think about this?",
+          "What are you thinking about?",
+          "Tell me more.",
+          "What's on your mind?",
         ],
         'neutral': [
-          "Tell me more about what's on your mind.",
-          "What aspects of that interest you?",
-          "I'm curious - what brings this up for you?",
+          "What's on your mind?",
+          "Tell me more.",
+          "Go on.",
         ],
       };
 
@@ -781,13 +782,13 @@ Guide:`;
       }
     }
 
-    // Generic conversational fallbacks
+    // Simple, natural fallbacks
     const fallbacks = [
-      "That's interesting. Tell me more about what's on your mind.",
-      "I hear you. What aspects of that would you like to explore?",
-      "Life has many dimensions. What draws you to think about this?",
-      "That's a deep topic. What specifically resonates with you?",
-      "What made you think about this today?",
+      "What's on your mind?",
+      "Tell me more.",
+      "Go on.",
+      "What's happening?",
+      "I'm listening.",
     ];
 
     return fallbacks[Math.floor(Math.random() * fallbacks.length)];

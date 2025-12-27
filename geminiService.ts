@@ -43,6 +43,48 @@ function calculateWordStructure(durationMinutes: number): string {
 
 export const geminiService = {
   /**
+   * Conversational chat with Gemini
+   * Uses Edge Functions for secure API key handling
+   * This method respects the agent's system prompt for natural conversation
+   *
+   * @param prompt - Full prompt including system instructions and conversation
+   * @param options - Optional settings for temperature and max tokens
+   */
+  async chat(prompt: string, options?: { maxTokens?: number; temperature?: number }): Promise<string> {
+    try {
+      const { isEdgeFunctionAvailable, geminiChat } = await import('./src/lib/edgeFunctions');
+      if (USE_EDGE_FUNCTIONS && await isEdgeFunctionAvailable()) {
+        return geminiChat(prompt, options);
+      }
+
+      // Fallback to client-side SDK (not recommended - exposes API key)
+      if (!import.meta.env.VITE_GEMINI_API_KEY) {
+        throw new Error('Please sign in to use the meditation assistant.');
+      }
+
+      const ai = await getAI();
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.0-flash',
+        contents: prompt,
+        generationConfig: {
+          temperature: options?.temperature ?? 0.8,
+          maxOutputTokens: options?.maxTokens ?? 500,
+        },
+      });
+
+      const text = response.text;
+      if (!text || text.trim() === '') {
+        throw new Error('Empty response from API. Please try again.');
+      }
+
+      return text;
+    } catch (error: any) {
+      console.error('Error in chat:', error);
+      throw new Error(error?.message || 'Failed to get response. Please try again.');
+    }
+  },
+
+  /**
    * Fast script generation using gemini-2.0-flash
    * Uses Edge Functions for secure API key handling
    * @param thought - The user's meditation idea/prompt
