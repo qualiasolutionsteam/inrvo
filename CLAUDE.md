@@ -34,7 +34,7 @@ supabase db push                            # Push migrations to remote
 
 **Routing:** Uses React Router v7 with lazy-loaded pages (`src/router.tsx`). All pages are code-split via `React.lazy()`.
 
-**Routes:** `/` (home), `/play/:id?` (player), `/library`, `/templates`, `/voice`, `/clone`, `/how-it-works`, `/about`, `/terms`, `/privacy`, `/pricing`
+**Routes:** `/` (home), `/play/:id?` (player), `/library` (My Audios), `/templates`, `/voice`, `/clone`, `/how-it-works`, `/about`, `/terms`, `/privacy`, `/pricing`
 
 **State Management:**
 - React Context for cross-cutting concerns:
@@ -114,10 +114,11 @@ The agent uses TWO different Gemini endpoints:
 
 ### Harmonize Feature
 
-The "Harmonize" button in MeditationEditor's Tags tab uses AI to intelligently insert audio tags:
-- Located in `ControlPanel.tsx` → calls `handleHarmonize` in `MeditationEditor/index.tsx`
-- Uses `geminiService.harmonizeScript()` → `gemini-script` edge function with `operation: 'harmonize'`
-- Adds `[pause]`, `[long pause]`, `[deep breath]`, `[exhale slowly]`, `[silence]` at natural points
+The "Harmonize" button (magic wand icon) in MeditationEditor's Status Row uses AI to intelligently insert audio tags:
+- **Location:** Always visible in Status Row (`ControlPanel.tsx`), not hidden in expanded panel
+- **Flow:** `handleHarmonize` in `MeditationEditor/index.tsx` → `geminiService.harmonizeScript()` → `gemini-script` edge function with `operation: 'harmonize'`
+- **Tags inserted:** `[pause]`, `[long pause]`, `[deep breath]`, `[exhale slowly]`, `[silence]` at natural points
+- **Preserves paragraph structure:** All newlines (single and double) are maintained
 - Lower temperature (0.3) for consistent, precise tag placement
 
 **DO NOT** use `enhanceScript()` for chat - it will produce robotic responses because `gemini-script` ignores conversational prompts.
