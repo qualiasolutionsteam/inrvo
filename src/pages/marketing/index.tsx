@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { MarketingNav } from './components/MarketingNav';
 import { useMarketingData } from './hooks/useMarketingData';
 import { MarketingTab, MarketingHubData } from './types';
@@ -101,25 +101,15 @@ function AccessCodeGate({ onAccessGranted }: { onAccessGranted: () => void }) {
 
 export default function MarketingPage() {
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
+  const [activeTab, setActiveTab] = useState<MarketingTab>('overview');
+  const { data, updateData, resetData, isSaving, lastSaved, progress } = useMarketingData();
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     setHasAccess(stored === 'granted');
   }, []);
 
-  // Show nothing while checking access
-  if (hasAccess === null) {
-    return null;
-  }
-
-  // Show access code gate if not authorized
-  if (!hasAccess) {
-    return <AccessCodeGate onAccessGranted={() => setHasAccess(true)} />;
-  }
-  const [activeTab, setActiveTab] = useState<MarketingTab>('overview');
-  const { data, updateData, resetData, isSaving, lastSaved, progress } = useMarketingData();
-
-  // Create phase-specific update handlers
+  // Create phase-specific update handlers - must be before early returns
   const updatePhase1 = useCallback(
     (updates: Partial<MarketingHubData['phase1']>) => {
       updateData('phase1', { ...data.phase1, ...updates });
@@ -154,6 +144,16 @@ export default function MarketingPage() {
     },
     [data.notes, updateData]
   );
+
+  // Show nothing while checking access
+  if (hasAccess === null) {
+    return null;
+  }
+
+  // Show access code gate if not authorized
+  if (!hasAccess) {
+    return <AccessCodeGate onAccessGranted={() => setHasAccess(true)} />;
+  }
 
   const handleExport = (format: 'markdown' | 'pdf') => {
     if (format === 'markdown') {
