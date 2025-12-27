@@ -536,6 +536,74 @@ export const BACKGROUND_TRACKS: BackgroundTrack[] = [
   { id: 'earth-frequency', name: 'Earth Frequency 7.83Hz', description: 'Boost positive energy', category: 'binaural', audioUrl: 'https://archive.org/download/RelaxingSpaMusicCalmingMusicRelaxationMusicMeditationMusicInstrumentalMusic689/7.83%20Hz%20The%20Powerful%20Healing%20Frequency%20of%20Earths%20Magnetic%20Field%20Boost%20Positive%20Energy.mp3' },
 ];
 
+// Nature/Ambient Sounds - Looping environmental audio
+// All sounds from Archive.org (public domain, CORS-enabled)
+export interface NatureSound {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: 'rain' | 'fire' | 'wind' | 'noise' | 'ocean' | 'forest' | 'storm' | 'water';
+  audioUrl: string;
+}
+
+export const NATURE_SOUNDS: NatureSound[] = [
+  // No Sound Option
+  { id: 'none', name: 'No Sound', description: 'Nature sounds disabled', icon: '🔇', category: 'noise', audioUrl: '' },
+
+  // Rain
+  { id: 'gentle-rain', name: 'Gentle Rain', description: 'Light, soothing rainfall', icon: '🌧️', category: 'rain', audioUrl: 'https://archive.org/download/rain_sounds_20250627/gentle-rain-loop.mp3' },
+  { id: 'heavy-rain', name: 'Heavy Rain', description: 'Immersive heavy rainfall', icon: '🌧️', category: 'rain', audioUrl: 'https://archive.org/download/rain_sounds_20250627/heavy-rain-loop.mp3' },
+
+  // Fire
+  { id: 'crackling-fire', name: 'Crackling Fire', description: 'Campfire with crackling', icon: '🔥', category: 'fire', audioUrl: 'https://archive.org/download/fireplace_sounds/crackling-fire-loop.mp3' },
+  { id: 'fireplace', name: 'Cozy Fireplace', description: 'Indoor fireplace warmth', icon: '🔥', category: 'fire', audioUrl: 'https://archive.org/download/fireplace_sounds/cozy-fireplace-loop.mp3' },
+
+  // Wind
+  { id: 'gentle-wind', name: 'Gentle Breeze', description: 'Soft wind through trees', icon: '💨', category: 'wind', audioUrl: 'https://archive.org/download/wind_sounds_ambient/gentle-wind-loop.mp3' },
+  { id: 'howling-wind', name: 'Howling Wind', description: 'Strong winter wind', icon: '🌬️', category: 'wind', audioUrl: 'https://archive.org/download/wind_sounds_ambient/howling-wind-loop.mp3' },
+
+  // White Noise
+  { id: 'white-noise', name: 'White Noise', description: 'Pure white noise static', icon: '📻', category: 'noise', audioUrl: 'https://archive.org/download/white_noise_sounds/white-noise-loop.mp3' },
+  { id: 'fan-noise', name: 'Fan Noise', description: 'Oscillating fan sound', icon: '🌀', category: 'noise', audioUrl: 'https://archive.org/download/white_noise_sounds/fan-noise-loop.mp3' },
+
+  // Ocean
+  { id: 'ocean-waves', name: 'Ocean Waves', description: 'Tropical beach waves', icon: '🌊', category: 'ocean', audioUrl: 'https://archive.org/download/ocean_wave_sounds/ocean-waves-loop.mp3' },
+  { id: 'gentle-ocean', name: 'Gentle Surf', description: 'Calm sea waves', icon: '🌊', category: 'ocean', audioUrl: 'https://archive.org/download/ocean_wave_sounds/gentle-surf-loop.mp3' },
+
+  // Forest
+  { id: 'forest-birds', name: 'Forest Birds', description: 'Birdsong in the forest', icon: '🌲', category: 'forest', audioUrl: 'https://archive.org/download/forest_nature_sounds/forest-birds-loop.mp3' },
+  { id: 'morning-forest', name: 'Morning Forest', description: 'Dawn chorus in nature', icon: '🌳', category: 'forest', audioUrl: 'https://archive.org/download/forest_nature_sounds/morning-forest-loop.mp3' },
+
+  // Storm
+  { id: 'thunderstorm', name: 'Thunderstorm', description: 'Rain with thunder', icon: '⛈️', category: 'storm', audioUrl: 'https://archive.org/download/thunderstorm_sounds/thunderstorm-loop.mp3' },
+  { id: 'distant-thunder', name: 'Distant Thunder', description: 'Rolling thunder', icon: '🌩️', category: 'storm', audioUrl: 'https://archive.org/download/thunderstorm_sounds/distant-thunder-loop.mp3' },
+
+  // Stream/Water
+  { id: 'mountain-stream', name: 'Mountain Stream', description: 'Flowing water', icon: '🏞️', category: 'water', audioUrl: 'https://archive.org/download/water_stream_sounds/mountain-stream-loop.mp3' },
+  { id: 'river-rapids', name: 'River Rapids', description: 'Fast-flowing river', icon: '💧', category: 'water', audioUrl: 'https://archive.org/download/water_stream_sounds/river-rapids-loop.mp3' },
+];
+
+// Nature sound category styling
+export const NATURE_SOUND_CATEGORIES: Record<string, { label: string; color: string; bgColor: string }> = {
+  'rain': { label: 'Rain', color: 'text-blue-400', bgColor: 'bg-blue-500/10' },
+  'fire': { label: 'Fire', color: 'text-orange-400', bgColor: 'bg-orange-500/10' },
+  'wind': { label: 'Wind', color: 'text-slate-400', bgColor: 'bg-slate-500/10' },
+  'noise': { label: 'Noise', color: 'text-gray-400', bgColor: 'bg-gray-500/10' },
+  'ocean': { label: 'Ocean', color: 'text-cyan-400', bgColor: 'bg-cyan-500/10' },
+  'forest': { label: 'Forest', color: 'text-emerald-400', bgColor: 'bg-emerald-500/10' },
+  'storm': { label: 'Storm', color: 'text-purple-400', bgColor: 'bg-purple-500/10' },
+  'water': { label: 'Water', color: 'text-teal-400', bgColor: 'bg-teal-500/10' },
+};
+
+// Pre-computed nature sounds grouped by category
+export const NATURE_SOUNDS_BY_CATEGORY: Record<string, NatureSound[]> = NATURE_SOUNDS.reduce((acc, sound) => {
+  if (sound.id === 'none') return acc; // Skip 'none' from categories
+  if (!acc[sound.category]) acc[sound.category] = [];
+  acc[sound.category].push(sound);
+  return acc;
+}, {} as Record<string, NatureSound[]>);
+
 export const AUDIO_TAG_CATEGORIES: { id: string; name: string; color: string; bgColor: string; tags: { id: string; label: string; description: string }[] }[] = [
   {
     id: 'pauses',

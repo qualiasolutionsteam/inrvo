@@ -242,12 +242,12 @@ export const ControlPanel = memo<ControlPanelProps>(
             >
               {isHarmonizing ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-cyan-300/30 border-t-cyan-300 rounded-full animate-spin" />
+                  <div className="w-5 h-5 sm:w-4 sm:h-4 border-2 border-cyan-300/30 border-t-cyan-300 rounded-full animate-spin" />
                   <span className="hidden sm:inline">Harmonizing...</span>
                 </>
               ) : (
                 <>
-                  <HarmonizeIcon className="w-5 h-5" />
+                  <HarmonizeIcon className="w-7 h-7 sm:w-5 sm:h-5" />
                   <span className="hidden sm:inline">Harmonize</span>
                 </>
               )}

@@ -189,6 +189,66 @@ export const MeditationEditor = memo<MeditationEditorProps>(
       }
     }, [sanitizedScript, isHarmonizing]);
 
+    // Handle voice preview generation
+    const handleGenerateVoicePreview = useCallback(async () => {
+      if (!selectedVoice || isGeneratingPreview) return;
+
+      setIsGeneratingPreview(true);
+      setVoicePreviewUrl(null);
+
+      try {
+        // Dynamically import voiceService to maintain code splitting
+        const { voiceService } = await import('../../lib/voiceService');
+
+        // Generate preview audio using the selected voice
+        const audioBlob = await voiceService.generateSpeech(
+          VOICE_PREVIEW_TEXT,
+          selectedVoice
+        );
+
+        if (!audioBlob) {
+          throw new Error('Failed to generate audio');
+        }
+
+        // Create object URL for the audio blob
+        const audioUrl = URL.createObjectURL(audioBlob);
+        setVoicePreviewUrl(audioUrl);
+
+        toast.success('Preview ready', {
+          description: `Listen to "${selectedVoice.name}" voice sample`,
+        });
+      } catch (error: any) {
+        console.error('Failed to generate voice preview:', error);
+        toast.error('Preview failed', {
+          description: error?.message || 'Could not generate voice preview',
+        });
+      } finally {
+        setIsGeneratingPreview(false);
+      }
+    }, [selectedVoice, isGeneratingPreview]);
+
+    // Stop voice preview and cleanup
+    const handleStopVoicePreview = useCallback(() => {
+      if (voicePreviewUrl) {
+        URL.revokeObjectURL(voicePreviewUrl);
+        setVoicePreviewUrl(null);
+      }
+    }, [voicePreviewUrl]);
+
+    // Clear voice preview when voice changes
+    useEffect(() => {
+      handleStopVoicePreview();
+    }, [selectedVoice?.id]);
+
+    // Cleanup preview URL on unmount
+    useEffect(() => {
+      return () => {
+        if (voicePreviewUrl) {
+          URL.revokeObjectURL(voicePreviewUrl);
+        }
+      };
+    }, []);
+
     // Restore cursor position after state update
     useEffect(() => {
       if (cursorPosition !== null && editorRef.current) {
@@ -332,6 +392,10 @@ export const MeditationEditor = memo<MeditationEditorProps>(
             onTagInsert={handleTagInsert}
             onHarmonize={handleHarmonize}
             isHarmonizing={isHarmonizing}
+            voicePreviewUrl={voicePreviewUrl}
+            isGeneratingPreview={isGeneratingPreview}
+            onGenerateVoicePreview={handleGenerateVoicePreview}
+            onStopVoicePreview={handleStopVoicePreview}
           />
 
           {/* Generate Button */}
