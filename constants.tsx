@@ -12,7 +12,8 @@ export interface TemplateCategory {
   id: string;
   name: string;
   description: string;
-  icon: 'sparkle' | 'story';
+  icon: 'sparkle' | 'story' | 'affirmation' | 'hypnosis';
+  color: string; // Tailwind color class for category theming
   subgroups: TemplateSubgroup[];
 }
 
@@ -22,6 +23,7 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
     name: 'Meditation',
     description: 'Guided meditations for transformation and inner peace',
     icon: 'sparkle',
+    color: 'cyan',
     subgroups: [
       {
         id: 'happiness',
@@ -39,6 +41,12 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
             title: 'Gratitude Flow',
             description: 'Open your heart to appreciation and abundance.',
             prompt: 'Write a heartfelt gratitude meditation. Guide the listener to reflect on blessings in their life - relationships, health, simple pleasures. Include visualization of gratitude as warm golden light filling the heart. End with feeling deeply thankful and at peace.'
+          },
+          {
+            id: 'inner-joy',
+            title: 'Awakening Inner Joy',
+            description: 'Reconnect with your natural state of happiness.',
+            prompt: 'Create a meditation to awaken the listener\'s inner joy. Guide them to release stress and reconnect with childlike wonder. Include visualization of a golden sun in the heart center radiating warmth, and memories of pure happiness. End with feeling light, playful, and genuinely happy.'
           }
         ]
       },
@@ -58,6 +66,12 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
             title: 'Success Mindset',
             description: 'Reprogram your mind for unstoppable success.',
             prompt: 'Write a powerful success manifesting meditation. Include visualization of achieving major goals, standing ovations, celebrating wins, and feeling deeply fulfilled. Use anchoring techniques to lock in the feeling of success. Include affirmations about being destined for greatness.'
+          },
+          {
+            id: 'money-magnet',
+            title: 'Money Magnet',
+            description: 'Become a magnet for financial opportunities.',
+            prompt: 'Create a meditation that transforms limiting beliefs about money. Guide the listener to release scarcity mindset and embrace abundance consciousness. Include visualization of being surrounded by opportunities, doors opening, and wealth flowing naturally toward them.'
           }
         ]
       },
@@ -77,6 +91,276 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
             title: 'Dream Life Vision',
             description: 'Visualize your ideal life in vivid detail.',
             prompt: 'Write an immersive manifesting meditation where the listener walks through their perfect day in their dream life. Include waking up in their ideal home, doing work they love, surrounded by loving relationships, feeling complete health and vitality. Make it sensory-rich and emotionally powerful.'
+          },
+          {
+            id: 'immune-boost',
+            title: 'Immune System Boost',
+            description: 'Strengthen your body\'s natural defenses.',
+            prompt: 'Create a meditation focused on boosting the immune system. Guide the listener to visualize their white blood cells as tiny warriors of light, patrolling and protecting the body. Include affirmations of health and vitality, ending with feeling strong, protected, and resilient.'
+          }
+        ]
+      },
+      {
+        id: 'sleep',
+        name: 'Sleep & Relaxation',
+        description: 'Deep relaxation for restful, restorative sleep',
+        templates: [
+          {
+            id: 'deep-sleep',
+            title: 'Deep Sleep Journey',
+            description: 'Drift into the deepest, most restful sleep.',
+            prompt: 'Create a sleep meditation that guides the listener into deep, restorative rest. Include progressive relaxation from toes to head, visualization of sinking into a soft cloud, and gentle affirmations about sleeping peacefully through the night. Use a slow, hypnotic pace.'
+          },
+          {
+            id: 'release-day',
+            title: 'Release the Day',
+            description: 'Let go of the day\'s stress and worries.',
+            prompt: 'Write a meditation for releasing the day\'s tensions. Guide the listener to mentally review and release each worry, visualizing them floating away like leaves on a stream. Include body scan relaxation and gentle transition into peaceful sleep.'
+          }
+        ]
+      },
+      {
+        id: 'anxiety',
+        name: 'Anxiety & Stress Relief',
+        description: 'Calm the mind and soothe the nervous system',
+        templates: [
+          {
+            id: 'calm-storm',
+            title: 'Calm Within the Storm',
+            description: 'Find your center of peace amid chaos.',
+            prompt: 'Create a meditation for anxiety relief. Guide the listener to find their inner sanctuary of calm, using breath awareness and grounding techniques. Include visualization of being in the eye of a storm - peaceful and still while chaos swirls outside. End with feeling centered and capable.'
+          },
+          {
+            id: 'letting-go',
+            title: 'Letting Go of Worry',
+            description: 'Release anxious thoughts and find peace.',
+            prompt: 'Write a meditation focused on releasing worry and anxiety. Use the metaphor of placing each worry in a balloon and watching them float away into the sky. Include grounding exercises and affirmations of safety and trust in the process of life.'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'affirmations',
+    name: 'Affirmations',
+    description: 'Powerful positive statements to reprogram your mind',
+    icon: 'affirmation',
+    color: 'amber',
+    subgroups: [
+      {
+        id: 'confidence',
+        name: 'Confidence & Self-Worth',
+        description: 'Build unshakeable confidence and self-belief',
+        templates: [
+          {
+            id: 'i-am-worthy',
+            title: 'I Am Worthy',
+            description: 'Affirmations for deep self-worth and value.',
+            prompt: 'Create a powerful affirmation script focused on self-worth. Include statements like "I am worthy of love and respect", "I deserve all the good things life has to offer", and "My worth is not determined by others." Use a confident, empowering tone with pauses between affirmations for integration.'
+          },
+          {
+            id: 'unstoppable-confidence',
+            title: 'Unstoppable Confidence',
+            description: 'Feel confident in any situation.',
+            prompt: 'Write confidence-building affirmations that create unshakeable self-belief. Include "I am confident in who I am", "I trust my abilities completely", "I radiate confidence and attract success." Use a strong, assertive tone with breathing pauses between statements.'
+          },
+          {
+            id: 'self-acceptance',
+            title: 'Complete Self-Acceptance',
+            description: 'Embrace and love yourself fully.',
+            prompt: 'Create affirmations for radical self-acceptance. Include "I accept myself exactly as I am", "I love and approve of myself", "My imperfections make me unique and beautiful." Guide the listener to feel complete acceptance and compassion for themselves.'
+          }
+        ]
+      },
+      {
+        id: 'abundance-aff',
+        name: 'Abundance & Prosperity',
+        description: 'Attract wealth, success, and opportunities',
+        templates: [
+          {
+            id: 'money-flows',
+            title: 'Money Flows to Me',
+            description: 'Attract financial abundance effortlessly.',
+            prompt: 'Create wealth affirmations that reprogram the subconscious for abundance. Include "Money flows to me easily and effortlessly", "I am a magnet for wealth", "Abundance is my natural state." Use a calm yet confident tone with pauses for the affirmations to sink in.'
+          },
+          {
+            id: 'success-attracts',
+            title: 'I Attract Success',
+            description: 'Draw success and opportunities to you.',
+            prompt: 'Write success-focused affirmations. Include "I attract success in everything I do", "Opportunities come to me naturally", "I am destined for greatness." Create a powerful, motivating tone that builds momentum and belief.'
+          },
+          {
+            id: 'abundant-life',
+            title: 'Living an Abundant Life',
+            description: 'Embody abundance in all areas of life.',
+            prompt: 'Create holistic abundance affirmations covering wealth, health, love, and happiness. Include "I live an abundantly blessed life", "Everything I need comes to me at the perfect time", "I am grateful for the abundance that surrounds me."'
+          }
+        ]
+      },
+      {
+        id: 'health-aff',
+        name: 'Health & Vitality',
+        description: 'Program your mind for optimal health',
+        templates: [
+          {
+            id: 'perfect-health',
+            title: 'Perfect Health',
+            description: 'Affirm vibrant health and wellness.',
+            prompt: 'Create health affirmations that support physical wellbeing. Include "My body is healthy, strong, and vital", "Every cell in my body radiates health", "I am grateful for my perfect health." Use a calm, nurturing tone that promotes healing.'
+          },
+          {
+            id: 'energy-vitality',
+            title: 'Boundless Energy',
+            description: 'Feel energized and alive.',
+            prompt: 'Write energy and vitality affirmations. Include "I have unlimited energy", "My body is strong and capable", "I wake up each day feeling refreshed and alive." Create an uplifting, energizing tone.'
+          }
+        ]
+      },
+      {
+        id: 'love-aff',
+        name: 'Love & Relationships',
+        description: 'Attract love and nurture relationships',
+        templates: [
+          {
+            id: 'attract-love',
+            title: 'Attracting True Love',
+            description: 'Open your heart to romantic love.',
+            prompt: 'Create affirmations for attracting romantic love. Include "I am ready to receive deep, lasting love", "My soulmate is drawn to me", "I deserve a loving, supportive partner." Use a warm, open-hearted tone that radiates love energy.'
+          },
+          {
+            id: 'self-love-aff',
+            title: 'Deep Self-Love',
+            description: 'Cultivate unconditional self-love.',
+            prompt: 'Write self-love affirmations that build a foundation of inner love. Include "I love myself unconditionally", "I treat myself with kindness and compassion", "I am my own best friend." Create a gentle, nurturing tone.'
+          }
+        ]
+      },
+      {
+        id: 'morning-aff',
+        name: 'Morning Power',
+        description: 'Start your day with intention and power',
+        templates: [
+          {
+            id: 'morning-power',
+            title: 'Morning Power Routine',
+            description: 'Energize and set intentions for the day.',
+            prompt: 'Create morning affirmations to start the day powerfully. Include "Today is going to be an amazing day", "I am focused, energized, and ready", "Great things are coming to me today." Use an energizing, motivating tone to kickstart the day.'
+          },
+          {
+            id: 'gratitude-morning',
+            title: 'Morning Gratitude',
+            description: 'Begin your day in a state of thankfulness.',
+            prompt: 'Write morning gratitude affirmations. Include "I am grateful for this new day", "I appreciate all the blessings in my life", "Today I choose to see the good in everything." Create a warm, appreciative tone.'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'hypnosis',
+    name: 'Self-Hypnosis',
+    description: 'Deep subconscious reprogramming for lasting change',
+    icon: 'hypnosis',
+    color: 'violet',
+    subgroups: [
+      {
+        id: 'weight-loss',
+        name: 'Weight Loss',
+        description: 'Reprogram your relationship with food and body',
+        templates: [
+          {
+            id: 'eat-mindfully',
+            title: 'Mindful Eating',
+            description: 'Transform your relationship with food.',
+            prompt: 'Create a self-hypnosis script for mindful eating. Include deep relaxation induction, then suggestions for eating slowly, savoring each bite, recognizing true hunger vs emotional eating, and stopping when satisfied. Use hypnotic language patterns and embed suggestions in the subconscious.'
+          },
+          {
+            id: 'love-exercise',
+            title: 'Love Exercise',
+            description: 'Program your mind to enjoy movement.',
+            prompt: 'Write a hypnosis script for developing a love of exercise. Include relaxation, then suggestions for feeling energized by movement, looking forward to workouts, and seeing exercise as self-care. Use future pacing and visualization of an active, fit lifestyle.'
+          },
+          {
+            id: 'ideal-body',
+            title: 'Visualize Your Ideal Body',
+            description: 'See and become your healthiest self.',
+            prompt: 'Create a hypnosis script for weight loss visualization. Guide the listener into deep relaxation, then have them vividly imagine their ideal healthy body, how it feels to move in that body, the confidence they carry. Anchor these feelings and suggest they are manifesting this reality.'
+          }
+        ]
+      },
+      {
+        id: 'quit-smoking',
+        name: 'Quit Smoking',
+        description: 'Break free from nicotine addiction',
+        templates: [
+          {
+            id: 'smoke-free',
+            title: 'Becoming Smoke-Free',
+            description: 'Release the smoking habit for good.',
+            prompt: 'Create a hypnosis script for quitting smoking. Include deep relaxation, then powerful suggestions for feeling disgusted by cigarettes, breathing freely, and feeling proud as a non-smoker. Use aversion techniques and positive visualization of a healthy, smoke-free life.'
+          },
+          {
+            id: 'freedom-from-cravings',
+            title: 'Freedom from Cravings',
+            description: 'Eliminate nicotine cravings.',
+            prompt: 'Write a hypnosis script focused on eliminating cravings. Guide into deep trance, then suggest that cravings are simply signals to breathe deeply, that each passing craving makes you stronger, and that you are free from the need for nicotine.'
+          }
+        ]
+      },
+      {
+        id: 'fear-phobia',
+        name: 'Fears & Phobias',
+        description: 'Overcome deep-seated fears',
+        templates: [
+          {
+            id: 'fear-release',
+            title: 'Release Fear',
+            description: 'Let go of limiting fears and anxiety.',
+            prompt: 'Create a general fear-release hypnosis script. Guide into deep relaxation, then use dissociation techniques to view fear from a safe distance. Include suggestions for feeling safe, capable, and confident. Reframe the fear as excitement and install feelings of courage and calm.'
+          },
+          {
+            id: 'public-speaking',
+            title: 'Confident Public Speaking',
+            description: 'Speak with ease and confidence.',
+            prompt: 'Write a hypnosis script for overcoming fear of public speaking. Include relaxation, then visualization of speaking confidently to audiences, enjoying the spotlight, and receiving positive responses. Anchor confidence to the act of speaking publicly.'
+          }
+        ]
+      },
+      {
+        id: 'sleep-hyp',
+        name: 'Deep Sleep',
+        description: 'Hypnotic induction for profound rest',
+        templates: [
+          {
+            id: 'deep-sleep-hyp',
+            title: 'Hypnotic Sleep Journey',
+            description: 'Fall into the deepest, most restorative sleep.',
+            prompt: 'Create a sleep hypnosis script with progressive relaxation. Include counting down from 10 to 1 while descending a beautiful staircase, each step bringing deeper relaxation. Suggest sleeping through the night, waking refreshed, and having pleasant dreams.'
+          },
+          {
+            id: 'insomnia-cure',
+            title: 'Cure Insomnia',
+            description: 'Reprogram for natural, easy sleep.',
+            prompt: 'Write a hypnosis script for chronic insomnia. Include suggestions that the bed is a trigger for deep sleep, that the mind quiets naturally at night, and that sleep comes easily. Use hypnotic compounding and post-hypnotic suggestions for future nights.'
+          }
+        ]
+      },
+      {
+        id: 'confidence-hyp',
+        name: 'Confidence & Success',
+        description: 'Unlock your full potential',
+        templates: [
+          {
+            id: 'unstoppable-you',
+            title: 'Unstoppable You',
+            description: 'Install unshakeable confidence.',
+            prompt: 'Create a confidence-building hypnosis script. Guide into trance, then access memories of past confidence, amplify those feelings, and install them as the default state. Include suggestions for radiating confidence, handling any situation, and attracting success naturally.'
+          },
+          {
+            id: 'millionaire-mind',
+            title: 'Millionaire Mindset',
+            description: 'Reprogram your brain for wealth.',
+            prompt: 'Write a hypnosis script for developing a millionaire mindset. Include suggestions for seeing opportunities everywhere, making smart decisions, taking inspired action, and believing you deserve wealth. Use embedded commands and visualization of financial success.'
           }
         ]
       }
@@ -84,9 +368,10 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
   },
   {
     id: 'stories',
-    name: 'Stories',
+    name: 'Sleep Stories',
     description: 'Immersive narrative journeys for relaxation and escape',
     icon: 'story',
+    color: 'pink',
     subgroups: [
       {
         id: 'bedtime',
@@ -104,6 +389,12 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
             title: 'Midnight Ocean Voyage',
             description: 'Sail across calm seas under a blanket of stars.',
             prompt: 'Create a sleep story about a peaceful nighttime boat journey across a calm, moonlit ocean. Include the gentle rocking of the boat, the sound of waves, bioluminescent creatures glowing in the water, and constellations telling ancient stories overhead. End with drifting into peaceful sleep.'
+          },
+          {
+            id: 'cloud-village',
+            title: 'Village in the Clouds',
+            description: 'Discover a peaceful village floating among the clouds.',
+            prompt: 'Write a bedtime story about floating up to a magical village in the clouds. Include soft, cottony ground, gentle cloud beings who tend to dreams, a cozy cloud cottage where the listener can rest, and the distant twinkling of stars above. Make it ethereal and deeply peaceful.'
           }
         ]
       },
@@ -123,6 +414,12 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
             title: 'Secret Garden',
             description: 'Discover a hidden garden of tranquility.',
             prompt: 'Create a peaceful story about finding a secret walled garden. Include wandering through fragrant flowers, sitting by a gentle fountain, watching butterflies dance, and feeling the warm sun on your skin. Make it sensory-rich and deeply calming for afternoon relaxation.'
+          },
+          {
+            id: 'library-rain',
+            title: 'Rainy Day Library',
+            description: 'Cozy up in a grand library while rain patters outside.',
+            prompt: 'Write a relaxing story about spending an afternoon in a grand old library. Include tall bookshelves, comfortable leather chairs, the smell of old books, and rain gently tapping against tall windows. The listener finds a perfect book and loses themselves in peaceful reading.'
           }
         ]
       },
@@ -142,6 +439,31 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
             title: 'Sunrise Beach Walk',
             description: 'Greet the day on a peaceful shoreline.',
             prompt: 'Write an uplifting morning story about walking along a beautiful beach at sunrise. Include the soft sand beneath your feet, gentle waves, seabirds calling, and the golden sun rising over the horizon. Fill the listener with hope, energy, and gratitude for the new day.'
+          }
+        ]
+      },
+      {
+        id: 'children',
+        name: 'Children\'s Stories',
+        description: 'Magical tales for young listeners',
+        templates: [
+          {
+            id: 'teddy-adventure',
+            title: 'Teddy\'s Big Adventure',
+            description: 'Join Teddy Bear on a magical nighttime journey.',
+            prompt: 'Write a children\'s bedtime story about a teddy bear who comes alive at night and goes on adventures. Include visiting the moon, making friends with friendly stars, and returning safely before morning. Keep it warm, safe, and full of wonder. Perfect for ages 3-8.'
+          },
+          {
+            id: 'dream-train',
+            title: 'The Dream Train',
+            description: 'Take a magical train ride to the land of dreams.',
+            prompt: 'Create a children\'s sleep story about a magical train that takes sleepy children to dreamland. Include colorful carriages, friendly conductors, passing through cotton candy clouds, and arriving at a wonderful land of happy dreams. Gentle and reassuring for young listeners.'
+          },
+          {
+            id: 'underwater-kingdom',
+            title: 'The Underwater Kingdom',
+            description: 'Discover a magical world beneath the waves.',
+            prompt: 'Write a children\'s story about visiting a friendly underwater kingdom. Include meeting kind mermaids, playing with dolphins, exploring coral castles, and attending a bubble party. Make it magical, safe, and ending with the child floating back to their cozy bed.'
           }
         ]
       }
@@ -512,6 +834,36 @@ export const ICONS = {
       </defs>
       <path fill="url(#bookGrad)" d="M11.25 4.533A9.707 9.707 0 006 3a9.735 9.735 0 00-3.25.555.75.75 0 00-.5.707v14.25a.75.75 0 001 .707A8.237 8.237 0 016 18.75c1.995 0 3.823.707 5.25 1.886V4.533z" />
       <path fill="url(#bookGrad)" opacity="0.6" d="M12.75 20.636A8.214 8.214 0 0118 18.75c.966 0 1.89.166 2.75.47a.75.75 0 001-.708V4.262a.75.75 0 00-.5-.707A9.735 9.735 0 0018 3a9.707 9.707 0 00-5.25 1.533v16.103z" />
+    </svg>
+  ),
+
+  // Affirmation icon - Heart with plus (positive statements)
+  Affirmation: ({ className = "w-6 h-6" }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`${className} icon-glow`}>
+      <defs>
+        <linearGradient id="affirmGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#fbbf24" />
+          <stop offset="100%" stopColor="#f59e0b" />
+        </linearGradient>
+      </defs>
+      <path fill="url(#affirmGrad)" d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+      <path fill="white" opacity="0.9" d="M12 8v4m-2-2h4" strokeWidth="0" />
+    </svg>
+  ),
+
+  // Hypnosis icon - Spiral/concentric circles
+  Hypnosis: ({ className = "w-6 h-6" }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`${className} icon-glow`}>
+      <defs>
+        <linearGradient id="hypnosisGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#a78bfa" />
+          <stop offset="100%" stopColor="#8b5cf6" />
+        </linearGradient>
+      </defs>
+      <circle cx="12" cy="12" r="10" fill="none" stroke="url(#hypnosisGrad)" strokeWidth="1.5" opacity="0.3" />
+      <circle cx="12" cy="12" r="7" fill="none" stroke="url(#hypnosisGrad)" strokeWidth="1.5" opacity="0.5" />
+      <circle cx="12" cy="12" r="4" fill="none" stroke="url(#hypnosisGrad)" strokeWidth="1.5" opacity="0.7" />
+      <circle cx="12" cy="12" r="1.5" fill="url(#hypnosisGrad)" />
     </svg>
   ),
 
