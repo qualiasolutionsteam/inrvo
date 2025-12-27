@@ -422,16 +422,18 @@ export const AgentChat: React.FC<AgentChatProps> = ({
         <div className="max-w-3xl mx-auto w-full">
           <form onSubmit={handleSubmit}>
             <div
-              className={`relative flex items-center bg-white/[0.06] border
+              className={`relative flex items-center bg-white/[0.03] border
                           rounded-full px-4 md:px-6 py-2.5
                           transition-all duration-300
                           ${isRecording
-                            ? 'border-cyan-400/60 bg-cyan-500/5'
-                            : 'border-white/10 focus-within:border-cyan-500/40 focus-within:bg-white/[0.08] shadow-lg shadow-black/10'
+                            ? 'border-cyan-400/50 bg-cyan-500/5'
+                            : 'border-cyan-500/20 focus-within:border-cyan-500/40 focus-within:bg-white/[0.05]'
                           }`}
-              style={isRecording ? {
-                boxShadow: '0 0 20px rgba(34, 211, 238, 0.15), 0 0 40px rgba(139, 92, 246, 0.1), inset 0 0 20px rgba(34, 211, 238, 0.05)'
-              } : undefined}
+              style={{
+                boxShadow: isRecording
+                  ? '0 0 25px rgba(34, 211, 238, 0.2), 0 0 50px rgba(139, 92, 246, 0.15)'
+                  : '0 0 15px rgba(34, 211, 238, 0.08), 0 0 30px rgba(139, 92, 246, 0.05)'
+              }}
             >
               <textarea
                 ref={inputRef}
