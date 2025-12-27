@@ -4,6 +4,8 @@ import { getCorsHeaders } from "../_shared/compression.ts";
 import { getRequestId, createLogger, getTracingHeaders } from "../_shared/tracing.ts";
 import { checkRateLimit, createRateLimitResponse, RATE_LIMITS } from "../_shared/rateLimit.ts";
 import { base64ToUint8Array, getWavValidationError } from "../_shared/encoding.ts";
+import { sanitizeFileName } from "../_shared/sanitization.ts";
+import { addSecurityHeaders } from "../_shared/securityHeaders.ts";
 
 /**
  * Fish Audio Voice Cloning Edge Function
@@ -122,7 +124,7 @@ async function createFishAudioModel(
 
     return result._id;  // This is the model ID to use for TTS
   } catch (error) {
-    if (error.name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError') {
       throw new Error('Voice cloning request timed out. Please try again.');
     }
     throw error;
@@ -136,7 +138,7 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(origin);
   const requestId = getRequestId(req);
   const tracingHeaders = getTracingHeaders(requestId);
-  const allHeaders = { ...corsHeaders, ...tracingHeaders };
+  const allHeaders = addSecurityHeaders({ ...corsHeaders, ...tracingHeaders });
 
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: allHeaders });
@@ -194,11 +196,12 @@ serve(async (req) => {
       );
     }
 
-    const audioBlob = new Blob([bytes], { type: 'audio/wav' });
+    const audioBlob = new Blob([bytes.buffer as ArrayBuffer], { type: 'audio/wav' });
 
-    // Prepare file name for storage
+    // Prepare file name for storage (sanitized to prevent path traversal)
     const timestamp = Date.now();
-    const fileName = `${user.id}/${timestamp}_${voiceName.replace(/\s+/g, '_')}.wav`;
+    const safeName = sanitizeFileName(voiceName);
+    const fileName = `${user.id}/${timestamp}_${safeName}.wav`;
 
     // ========================================================================
     // PARALLEL OPERATIONS: Upload storage + Create Fish Audio model
@@ -256,8 +259,9 @@ serve(async (req) => {
     }
 
     // Create voice profile in database
-    const { data: voiceProfile, error: profileError } = await supabase
-      .from('voice_profiles')
+    // Type assertion needed because edge functions don't have schema types
+    const { data: voiceProfile, error: profileError } = await (supabase
+      .from('voice_profiles') as any)
       .insert({
         user_id: user.id,
         name: voiceName,
@@ -271,12 +275,12 @@ serve(async (req) => {
         metadata: metadata || {},
       })
       .select('id')
-      .single();
+      .single() as { data: { id: string } | null; error: any };
 
-    if (profileError) {
-      log.error('Failed to create voice profile', { error: profileError.message });
+    if (profileError || !voiceProfile) {
+      log.error('Failed to create voice profile', { error: profileError?.message });
       return new Response(
-        JSON.stringify({ error: `Failed to create voice profile: ${profileError.message}`, requestId }),
+        JSON.stringify({ error: `Failed to create voice profile: ${profileError?.message || 'Unknown error'}`, requestId }),
         { status: 500, headers: { ...allHeaders, 'Content-Type': 'application/json' } }
       );
     }

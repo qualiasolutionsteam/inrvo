@@ -447,11 +447,46 @@ export const updateVoiceProfile = async (
 };
 
 /**
+ * Delete a Fish Audio model via Edge Function
+ * This is a best-effort cleanup - failures are logged but don't block the main deletion
+ */
+async function deleteFishAudioModel(modelId: string): Promise<boolean> {
+  try {
+    const { data: { session } } = await supabase!.auth.getSession();
+    if (!session?.access_token) {
+      console.warn('No auth session for Fish Audio cleanup');
+      return false;
+    }
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const response = await fetch(`${supabaseUrl}/functions/v1/delete-fish-audio-model`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ modelId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.warn('Fish Audio model deletion failed:', error);
+      return false;
+    }
+
+    console.log('Fish Audio model deleted successfully:', modelId);
+    return true;
+  } catch (e) {
+    console.warn('Error deleting Fish Audio model:', e);
+    return false;
+  }
+}
+
+/**
  * Delete a voice profile and all associated resources
+ * - Deletes Fish Audio model from their cloud (if exists)
  * - Deletes voice sample files from Supabase Storage
  * - Deletes the database record
- * Note: Fish Audio models are NOT deleted (they remain in Fish Audio cloud)
- * as we don't have an endpoint to delete them. Consider manual cleanup if needed.
  */
 export const deleteVoiceProfile = async (id: string): Promise<void> => {
   const user = await getCurrentUser();
@@ -467,6 +502,14 @@ export const deleteVoiceProfile = async (id: string): Promise<void> => {
 
   if (fetchError) {
     console.warn('Could not fetch voice profile for cleanup:', fetchError);
+  }
+
+  // Delete Fish Audio model if it exists (best-effort, non-blocking)
+  if (profile?.fish_audio_model_id) {
+    // Fire and forget - don't block on Fish Audio API
+    deleteFishAudioModel(profile.fish_audio_model_id).catch((e) => {
+      console.warn('Background Fish Audio cleanup failed:', e);
+    });
   }
 
   // Delete voice sample from storage if it exists

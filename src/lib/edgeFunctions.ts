@@ -421,6 +421,7 @@ export async function chatterboxTTS(
 /**
  * Clone a voice using Chatterbox via Replicate Edge Function
  * Zero-shot cloning - just uploads audio sample, used at TTS time
+ * Now uses callEdgeFunction for retry logic and better error handling
  */
 export async function chatterboxCloneVoice(
   audioBlob: Blob,
@@ -428,30 +429,28 @@ export async function chatterboxCloneVoice(
   description?: string,
   metadata?: VoiceMetadata
 ): Promise<ChatterboxCloneResponse> {
-  const token = await getAuthToken();
   const base64Audio = await blobToBase64(audioBlob);
 
-  const url = `${SUPABASE_URL}/functions/v1/chatterbox-clone`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
+  // Use callEdgeFunction for retry logic and better error handling
+  // Voice cloning takes longer, so use 90s timeout with 2 retries
+  const data = await callEdgeFunction<{
+    success: boolean;
+    voiceProfileId: string;
+    voiceSampleUrl: string;
+    error?: string;
+  }>('chatterbox-clone', {
+    audioBase64: base64Audio,
+    voiceName: name,
+    description: description || 'Voice clone created with Chatterbox',
+    metadata: metadata || undefined,
+  }, {
+    timeout: 90000, // 90 seconds for voice cloning
+    retry: {
+      maxRetries: 2,    // 2 retries for expensive operations
+      baseDelayMs: 1000, // 1 second base delay
+      maxDelayMs: 8000,  // 8 second max delay
     },
-    body: JSON.stringify({
-      audioBase64: base64Audio,
-      voiceName: name,
-      description: description || 'Voice clone created with Chatterbox',
-      metadata: metadata || undefined,
-    }),
   });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || `Voice cloning failed: ${response.status}`);
-  }
 
   if (!data.voiceProfileId) {
     throw new Error('No voice profile ID returned from cloning service');
@@ -513,6 +512,7 @@ export async function fishAudioTTS(
 /**
  * Clone a voice using Fish Audio (with Chatterbox storage for fallback)
  * Creates both a Fish Audio model and stores sample for Chatterbox backup
+ * Now uses callEdgeFunction for retry logic and better error handling
  *
  * @param highQuality - Use high-quality training mode (slower but better results). Default: true
  */
@@ -523,31 +523,30 @@ export async function fishAudioCloneVoice(
   metadata?: VoiceMetadata,
   highQuality: boolean = true  // Default to high quality for natural voice
 ): Promise<FishAudioCloneResponse> {
-  const token = await getAuthToken();
   const base64Audio = await blobToBase64(audioBlob);
 
-  const url = `${SUPABASE_URL}/functions/v1/fish-audio-clone`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
+  // Use callEdgeFunction for retry logic and better error handling
+  // Voice cloning takes longer, so use 90s timeout with 2 retries
+  const data = await callEdgeFunction<{
+    success: boolean;
+    voiceProfileId: string;
+    fishAudioModelId: string | null;
+    voiceSampleUrl: string | null;
+    error?: string;
+  }>('fish-audio-clone', {
+    audioBase64: base64Audio,
+    voiceName: name,
+    description: description || 'Voice clone created with INrVO',
+    metadata: metadata || undefined,
+    highQuality,  // Use high-quality training for better voice naturalness
+  }, {
+    timeout: 90000, // 90 seconds for voice cloning
+    retry: {
+      maxRetries: 2,    // 2 retries for expensive operations
+      baseDelayMs: 1000, // 1 second base delay
+      maxDelayMs: 8000,  // 8 second max delay
     },
-    body: JSON.stringify({
-      audioBase64: base64Audio,
-      voiceName: name,
-      description: description || 'Voice clone created with INrVO',
-      metadata: metadata || undefined,
-      highQuality,  // Use high-quality training for better voice naturalness
-    }),
   });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || `Voice cloning failed: ${response.status}`);
-  }
 
   if (!data.voiceProfileId) {
     throw new Error('No voice profile ID returned from cloning service');

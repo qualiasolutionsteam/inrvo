@@ -14,14 +14,14 @@ import { encode as encodeBase64, decode as decodeBase64 } from "https://deno.lan
  * Much faster than manual chunked String.fromCharCode approach
  */
 export function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  return encodeBase64(new Uint8Array(buffer));
+  return encodeBase64(buffer);
 }
 
 /**
  * Convert Uint8Array to base64 string using native Deno encoding
  */
 export function uint8ArrayToBase64(bytes: Uint8Array): string {
-  return encodeBase64(bytes);
+  return encodeBase64(bytes.buffer as ArrayBuffer);
 }
 
 /**

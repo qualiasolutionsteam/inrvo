@@ -1,10 +1,15 @@
 /**
- * Simple in-memory rate limiting for Edge Functions
- * Uses a sliding window algorithm
+ * Rate Limiting for Edge Functions
  *
- * Note: For production at scale, use a distributed store (Redis, KV, etc.)
- * This implementation works for single-instance Edge Functions
+ * Two modes available:
+ * 1. In-memory rate limiting (fast, but resets on cold start)
+ * 2. Distributed rate limiting (persistent, uses Supabase database)
+ *
+ * Use in-memory for best performance, distributed for critical limits
+ * that must persist across cold starts.
  */
+
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 interface RateLimitEntry {
   count: number;
@@ -13,6 +18,20 @@ interface RateLimitEntry {
 
 // In-memory store (reset on cold start)
 const rateLimitStore = new Map<string, RateLimitEntry>();
+
+// Lazy-load Supabase client for distributed rate limiting
+let supabaseClient: SupabaseClient | null = null;
+
+function getSupabaseClient(): SupabaseClient | null {
+  if (!supabaseClient) {
+    const url = Deno.env.get('SUPABASE_URL');
+    const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (url && key) {
+      supabaseClient = createClient(url, key);
+    }
+  }
+  return supabaseClient;
+}
 
 // Cleanup old entries periodically
 const CLEANUP_INTERVAL = 60000; // 1 minute
@@ -116,7 +135,7 @@ export function createRateLimitResponse(
   result: RateLimitResult,
   corsHeaders: Record<string, string>
 ): Response {
-  const headers = {
+  const headers: Record<string, string> = {
     ...corsHeaders,
     'Content-Type': 'application/json',
     'X-RateLimit-Remaining': String(result.remaining),
@@ -151,4 +170,119 @@ export const RATE_LIMITS = {
   auth: { maxRequests: 10, windowMs: 60000, keyPrefix: 'auth' },
   /** General API */
   general: { maxRequests: 100, windowMs: 60000, keyPrefix: 'api' },
+  /** Data export - very restrictive */
+  dataExport: { maxRequests: 1, windowMs: 3600000, keyPrefix: 'export' }, // 1 per hour
 };
+
+// ============================================================================
+// DISTRIBUTED RATE LIMITING (Database-backed)
+// ============================================================================
+
+export interface DistributedRateLimitResult {
+  allowed: boolean;
+  remaining: number;
+  resetAt: Date;
+  currentCount: number;
+}
+
+/**
+ * Check rate limit using Supabase database (distributed, persistent)
+ * This survives cold starts and works across all Edge Function instances.
+ *
+ * Falls back to in-memory rate limiting if database is unavailable.
+ *
+ * @param identifier - Unique identifier (e.g., user ID, 'anon:ip_address')
+ * @param config - Rate limit configuration
+ * @returns Rate limit result with allowed status and remaining count
+ */
+export async function checkRateLimitDistributed(
+  identifier: string,
+  config: RateLimitConfig
+): Promise<DistributedRateLimitResult> {
+  const { maxRequests, windowMs, keyPrefix = 'api' } = config;
+  const windowSeconds = Math.floor(windowMs / 1000);
+
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    // Fall back to in-memory if database not configured
+    const memResult = checkRateLimit(identifier, config);
+    return {
+      allowed: memResult.allowed,
+      remaining: memResult.remaining,
+      resetAt: new Date(memResult.resetAt),
+      currentCount: maxRequests - memResult.remaining,
+    };
+  }
+
+  try {
+    // Call the database function for atomic rate limit check
+    const { data, error } = await supabase.rpc('check_rate_limit', {
+      p_identifier: `${keyPrefix}:${identifier}`,
+      p_endpoint: keyPrefix,
+      p_max_requests: maxRequests,
+      p_window_seconds: windowSeconds,
+    });
+
+    if (error) {
+      console.error('Distributed rate limit check failed, falling back to in-memory:', error);
+      // Fall back to in-memory on error
+      const memResult = checkRateLimit(identifier, config);
+      return {
+        allowed: memResult.allowed,
+        remaining: memResult.remaining,
+        resetAt: new Date(memResult.resetAt),
+        currentCount: maxRequests - memResult.remaining,
+      };
+    }
+
+    // Data is returned as an array with one row
+    const result = Array.isArray(data) ? data[0] : data;
+
+    return {
+      allowed: result.allowed,
+      remaining: result.remaining,
+      resetAt: new Date(result.reset_at),
+      currentCount: result.current_count,
+    };
+  } catch (err) {
+    console.error('Distributed rate limit error:', err);
+    // Fall back to in-memory on any error
+    const memResult = checkRateLimit(identifier, config);
+    return {
+      allowed: memResult.allowed,
+      remaining: memResult.remaining,
+      resetAt: new Date(memResult.resetAt),
+      currentCount: maxRequests - memResult.remaining,
+    };
+  }
+}
+
+/**
+ * Create a rate-limited response for distributed rate limiting
+ */
+export function createDistributedRateLimitResponse(
+  result: DistributedRateLimitResult,
+  corsHeaders: Record<string, string>
+): Response {
+  const retryAfterMs = Math.max(0, result.resetAt.getTime() - Date.now());
+
+  const headers = {
+    ...corsHeaders,
+    'Content-Type': 'application/json',
+    'X-RateLimit-Remaining': String(result.remaining),
+    'X-RateLimit-Reset': String(Math.ceil(result.resetAt.getTime() / 1000)),
+    'Retry-After': String(Math.ceil(retryAfterMs / 1000)),
+  };
+
+  return new Response(
+    JSON.stringify({
+      error: 'Too many requests. Please try again later.',
+      retryAfterMs,
+      resetAt: result.resetAt.toISOString(),
+    }),
+    {
+      status: 429,
+      headers,
+    }
+  );
+}

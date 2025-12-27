@@ -76,7 +76,7 @@ export async function createCompressedResponse(
 
     // Only use compression if it actually reduces size
     if (compressed.length < jsonString.length * 0.9) {
-      return new Response(compressed, {
+      return new Response(compressed as unknown as BodyInit, {
         status,
         headers: {
           ...corsHeaders,
@@ -127,22 +127,37 @@ export const ALLOWED_ORIGINS = [
   ...(allowDevOrigins ? DEV_ORIGINS : []),
 ];
 
+// Project-specific patterns for Vercel preview deployments
+// Only allow deployments that belong to this project (start with "inrvo")
+const VERCEL_PREVIEW_PATTERNS = [
+  // Preview deployments: inrvo-abc123-team.vercel.app
+  /^https:\/\/inrvo-[a-z0-9]+-[a-z0-9]+\.vercel\.app$/,
+  // Branch deployments: inrvo-git-branch-name-team.vercel.app
+  /^https:\/\/inrvo-git-[a-z0-9-]+\.vercel\.app$/,
+  // PR preview deployments
+  /^https:\/\/inrvo-[a-z0-9-]+-qualiasolutions\.vercel\.app$/,
+];
+
 /**
- * Check if origin is allowed (includes Vercel preview deployments)
+ * Check if origin is allowed
+ * More restrictive than wildcard patterns - only allows project-specific Vercel deployments
  */
 function isOriginAllowed(origin: string): boolean {
-  // Check exact matches first
+  // Check exact matches first (production domains)
   if (ALLOWED_ORIGINS.includes(origin)) {
     return true;
   }
 
-  // Allow Vercel preview deployments (pattern: *.vercel.app)
-  if (origin.endsWith('.vercel.app') && origin.startsWith('https://')) {
-    return true;
+  // Check project-specific Vercel preview patterns
+  for (const pattern of VERCEL_PREVIEW_PATTERNS) {
+    if (pattern.test(origin)) {
+      return true;
+    }
   }
 
-  // Allow GitHub Codespaces (pattern: *.github.dev)
-  if (origin.endsWith('.github.dev') && origin.startsWith('https://')) {
+  // Allow GitHub Codespaces only in development mode
+  // (when ALLOW_DEV_ORIGINS is true)
+  if (allowDevOrigins && origin.endsWith('.github.dev') && origin.startsWith('https://')) {
     return true;
   }
 
