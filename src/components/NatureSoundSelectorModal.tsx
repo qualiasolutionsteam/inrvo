@@ -38,7 +38,7 @@ export const NatureSoundSelectorModal: React.FC<NatureSoundSelectorModalProps> =
   const noneOption = NATURE_SOUNDS.find(s => s.id === 'none');
 
   return (
-    <div className="fixed inset-0 z-[80] bg-[#020617]/95 backdrop-blur-3xl flex flex-col p-4 md:p-6 animate-in fade-in zoom-in duration-500 overflow-y-auto">
+    <div className="fixed inset-0 z-[110] bg-[#020617]/95 backdrop-blur-3xl flex flex-col p-4 md:p-6 animate-in fade-in zoom-in duration-500 overflow-y-auto">
       <Starfield />
 
       <button
