@@ -23,7 +23,7 @@ import {
 interface GeminiScriptRequest {
   thought: string;
   audioTags?: string[];
-  operation?: 'generate' | 'extend';
+  operation?: 'generate' | 'extend' | 'harmonize';
   existingScript?: string;
   durationMinutes?: number;  // Target duration in minutes (default: 5)
   // New content type parameters
@@ -53,6 +53,30 @@ GUIDELINES:
 - Use emotional markers like (relaxed), (soft tone), (whispering) for natural TTS delivery
 
 OUTPUT: Complete expanded script only, no explanations.`;
+
+const HARMONIZE_PROMPT_TEMPLATE = `You are enhancing a meditation script by adding audio tags at natural pause points.
+
+MEDITATION SCRIPT:
+"{{SCRIPT}}"
+
+AUDIO TAGS TO INSERT (use these EXACTLY as shown):
+- [pause] - Short 2-3 second pause, use after phrases or short sentences
+- [long pause] - Extended 4-5 second pause, use between major sections or after profound statements
+- [deep breath] - Breathing cue, use before or after breathing instructions
+- [exhale slowly] - Slow exhale cue, use when guiding relaxation
+- [silence] - Complete silence moment, use for reflection points
+
+HARMONIZATION RULES:
+1. Add [pause] after sentences that introduce new imagery or concepts
+2. Add [long pause] between major sections (opening, grounding, core, closing)
+3. Add [deep breath] before phrases like "breathe in", "take a breath", "inhale"
+4. Add [exhale slowly] after phrases like "breathe out", "release", "let go"
+5. Add [silence] at moments of deep reflection or before final closing
+6. Don't over-tag - aim for 1-2 tags per paragraph maximum
+7. Preserve the original text EXACTLY - only add tags between sentences/phrases
+8. Never add tags in the middle of a sentence
+
+OUTPUT: The complete harmonized script with audio tags inserted. No explanations, just the enhanced script.`;
 
 /**
  * Calculate word count based on duration minutes
@@ -281,11 +305,11 @@ serve(async (req) => {
     // ========================================================================
 
     // Validate input based on operation
-    if (operation === 'extend') {
+    if (operation === 'extend' || operation === 'harmonize') {
       if (!existingScript?.trim()) {
-        log.warn('Missing existingScript for extend operation');
+        log.warn(`Missing existingScript for ${operation} operation`);
         return new Response(
-          JSON.stringify({ error: 'Existing script is required for extend operation', requestId }),
+          JSON.stringify({ error: `Existing script is required for ${operation} operation`, requestId }),
           { status: 400, headers: { ...allHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -323,6 +347,13 @@ serve(async (req) => {
     if (operation === 'extend') {
       prompt = EXTEND_PROMPT_TEMPLATE.replace('{{SCRIPT}}', existingScript!);
       maxOutputTokens = 1500;
+    } else if (operation === 'harmonize') {
+      prompt = HARMONIZE_PROMPT_TEMPLATE.replace('{{SCRIPT}}', existingScript!);
+      // Calculate tokens based on word count (~1.5 tokens per word with added tags)
+      const wordCount = existingScript!.split(/\s+/).length;
+      const estimatedTokens = wordCount * 1.5;
+      maxOutputTokens = Math.max(2000, Math.ceil(estimatedTokens * 1.3));
+      temperature = 0.3;  // Lower temperature for more precise tag placement
     } else if (contentCategory && contentCategory !== 'meditation') {
       // Use new content type templates for non-meditation categories
       const contentParams: ContentGenerationParams = {

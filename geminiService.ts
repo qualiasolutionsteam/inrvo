@@ -242,6 +242,72 @@ If you cannot answer YES to all of these, revise your approach.`,
   },
 
   /**
+   * Harmonize a meditation script by intelligently adding audio tags
+   * Uses Gemini AI to analyze the script and insert [pause], [deep breath], etc. at appropriate places
+   * @param script - The meditation script to harmonize
+   */
+  async harmonizeScript(script: string): Promise<string> {
+    // Validate input before making API call
+    if (!script?.trim()) {
+      throw new Error('Script is required for harmonization.');
+    }
+
+    try {
+      // Use Edge Functions if available (secure, API key server-side)
+      const { isEdgeFunctionAvailable, geminiHarmonizeScript } = await import('./src/lib/edgeFunctions');
+      if (USE_EDGE_FUNCTIONS && await isEdgeFunctionAvailable()) {
+        return geminiHarmonizeScript(script);
+      }
+
+      // Legacy fallback for unauthenticated users
+      if (!import.meta.env.VITE_GEMINI_API_KEY) {
+        throw new Error('Please sign in to harmonize scripts.');
+      }
+
+      const ai = await getAI();
+
+      const prompt = `You are enhancing a meditation script by adding audio tags at natural pause points.
+
+MEDITATION SCRIPT:
+"${script}"
+
+AUDIO TAGS TO INSERT (use these EXACTLY as shown):
+- [pause] - Short 2-3 second pause, use after phrases or short sentences
+- [long pause] - Extended 4-5 second pause, use between major sections or after profound statements
+- [deep breath] - Breathing cue, use before or after breathing instructions
+- [exhale slowly] - Slow exhale cue, use when guiding relaxation
+- [silence] - Complete silence moment, use for reflection points
+
+HARMONIZATION RULES:
+1. Add [pause] after sentences that introduce new imagery or concepts
+2. Add [long pause] between major sections (opening, grounding, core, closing)
+3. Add [deep breath] before phrases like "breathe in", "take a breath", "inhale"
+4. Add [exhale slowly] after phrases like "breathe out", "release", "let go"
+5. Add [silence] at moments of deep reflection or before final closing
+6. Don't over-tag - aim for 1-2 tags per paragraph maximum
+7. Preserve the original text EXACTLY - only add tags between sentences/phrases
+8. Never add tags in the middle of a sentence
+
+OUTPUT: The complete harmonized script with audio tags inserted. No explanations, just the enhanced script.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.0-flash',
+        contents: prompt,
+      });
+
+      const text = response.text;
+      if (!text || text.trim() === '') {
+        throw new Error('Empty response from API. Please try again.');
+      }
+
+      return text;
+    } catch (error: any) {
+      console.error('Error in harmonizeScript:', error);
+      throw new Error(error?.message || 'Failed to harmonize script. Please try again.');
+    }
+  },
+
+  /**
    * Extend an existing meditation script into a longer, more immersive version
    * Uses Edge Functions for secure API key handling
    * @param existingScript - The current meditation script to expand

@@ -82,6 +82,8 @@ interface ControlPanelProps {
   onVoiceSelect: () => void;
   onMusicSelect: (track: BackgroundTrack) => void;
   onTagInsert: (tagLabel: string) => void;
+  onHarmonize?: () => void;
+  isHarmonizing?: boolean;
 }
 
 // Quick tags for easy insertion
@@ -97,6 +99,23 @@ const QUICK_TAGS = [
 // COMPONENT
 // ============================================================================
 
+// Harmonize icon - waveform with sparkle
+const HarmonizeIcon = ({ className = 'w-4 h-4' }: { className?: string }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+  >
+    {/* Waveform */}
+    <path d="M2 12h2l2-3 2 6 2-6 2 6 2-3h2" />
+    {/* Sparkle */}
+    <path d="M19 4l1 2 2 1-2 1-1 2-1-2-2-1 2-1z" fill="currentColor" stroke="none" />
+  </svg>
+);
+
 export const ControlPanel = memo<ControlPanelProps>(
   ({
     selectedVoice,
@@ -106,6 +125,8 @@ export const ControlPanel = memo<ControlPanelProps>(
     onVoiceSelect,
     onMusicSelect,
     onTagInsert,
+    onHarmonize,
+    isHarmonizing = false,
   }) => {
     const [expanded, setExpanded] = useState(false);
     const [activeTab, setActiveTab] = useState<ControlTab>('voice');
@@ -285,9 +306,36 @@ export const ControlPanel = memo<ControlPanelProps>(
                 {/* Tags Tab */}
                 {activeTab === 'tags' && (
                   <div className="space-y-3">
-                    {/* Quick Tags */}
+                    {/* Quick Tags Header with Harmonize Button */}
                     <div>
-                      <p className="text-xs text-white/40 mb-2">Quick Insert</p>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs text-white/40">Quick Insert</p>
+                        {onHarmonize && (
+                          <button
+                            onClick={onHarmonize}
+                            disabled={isHarmonizing}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all
+                              ${isHarmonizing
+                                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30 cursor-wait'
+                                : 'bg-gradient-to-r from-cyan-500/20 to-teal-500/20 hover:from-cyan-500/30 hover:to-teal-500/30 border-cyan-500/30 hover:border-cyan-400/50 text-cyan-200'
+                              }
+                              border active:scale-95`}
+                            title="AI-powered: Automatically add pauses and breathing cues"
+                          >
+                            {isHarmonizing ? (
+                              <>
+                                <div className="w-3 h-3 border-2 border-cyan-300/30 border-t-cyan-300 rounded-full animate-spin" />
+                                <span>Harmonizing...</span>
+                              </>
+                            ) : (
+                              <>
+                                <HarmonizeIcon className="w-3.5 h-3.5" />
+                                <span>Harmonize</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
                       <div className="flex flex-wrap gap-1.5">
                         {QUICK_TAGS.map((tag) => (
                           <button

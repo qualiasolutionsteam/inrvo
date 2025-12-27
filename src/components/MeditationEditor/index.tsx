@@ -13,6 +13,7 @@
  */
 
 import React, { memo, useState, useCallback, useRef, useEffect } from 'react';
+import { toast } from 'sonner';
 import type { MeditationEditorProps, ScriptStats } from './types';
 import { useAudioTags } from './hooks/useAudioTags';
 import { useEditorCursor } from './hooks/useEditorCursor';
@@ -20,6 +21,7 @@ import { useKeyboard } from './hooks/useKeyboard';
 import { ControlPanel } from './components/ControlPanel';
 import { GenerateButton } from './components/GenerateButton';
 import Starfield from '@/components/Starfield';
+import { geminiService } from '../../../geminiService';
 
 // ============================================================================
 // ICONS
@@ -77,6 +79,7 @@ export const MeditationEditor = memo<MeditationEditorProps>(
     // Local state
     const [editedScript, setEditedScript] = useState(script);
     const [cursorPosition, setCursorPosition] = useState<number | null>(null);
+    const [isHarmonizing, setIsHarmonizing] = useState(false);
     const editorRef = useRef<HTMLDivElement>(null);
 
     // Hooks
@@ -144,6 +147,27 @@ export const MeditationEditor = memo<MeditationEditorProps>(
       },
       [editedScript, insertAtCursor, restoreCursorPosition]
     );
+
+    // Handle harmonize - AI-powered audio tag insertion
+    const handleHarmonize = useCallback(async () => {
+      if (!editedScript.trim() || isHarmonizing) return;
+
+      setIsHarmonizing(true);
+      try {
+        const harmonizedScript = await geminiService.harmonizeScript(editedScript);
+        setEditedScript(harmonizedScript);
+        toast.success('Script harmonized', {
+          description: 'Audio tags have been added for natural pacing',
+        });
+      } catch (error: any) {
+        console.error('Failed to harmonize script:', error);
+        toast.error('Failed to harmonize', {
+          description: error?.message || 'Please try again',
+        });
+      } finally {
+        setIsHarmonizing(false);
+      }
+    }, [editedScript, isHarmonizing]);
 
     // Restore cursor position after state update
     useEffect(() => {
@@ -285,6 +309,8 @@ export const MeditationEditor = memo<MeditationEditorProps>(
             onVoiceSelect={onVoiceSelect}
             onMusicSelect={onMusicSelect}
             onTagInsert={handleTagInsert}
+            onHarmonize={handleHarmonize}
+            isHarmonizing={isHarmonizing}
           />
 
           {/* Generate Button */}

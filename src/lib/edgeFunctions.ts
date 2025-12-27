@@ -382,6 +382,23 @@ export async function geminiExtendScript(
   return response.script;
 }
 
+/**
+ * Harmonize a meditation script by intelligently adding audio tags
+ * Uses Gemini to analyze the script and insert [pause], [deep breath], etc.
+ * @param script - The meditation script to harmonize
+ */
+export async function geminiHarmonizeScript(
+  script: string
+): Promise<string> {
+  const response = await callEdgeFunction<GeminiScriptResponse>('gemini-script', {
+    thought: '', // Not used for harmonize operation
+    existingScript: script,
+    operation: 'harmonize',
+  });
+
+  return response.script;
+}
+
 // ============================================================================
 // Gemini Chat (Conversational AI)
 // ============================================================================
