@@ -68,7 +68,8 @@ All API keys are server-side only. Edge functions in `supabase/functions/`:
 | `generate-speech` | Unified TTS with provider routing (Fish Audio primary, Chatterbox fallback) |
 | `fish-audio-tts` | Fish Audio TTS with automatic Chatterbox fallback |
 | `fish-audio-clone` | Voice cloning via Fish Audio API |
-| `gemini-script` | Meditation script generation via Gemini API |
+| `gemini-chat` | **Conversational AI** - respects agent's system prompt for natural dialogue |
+| `gemini-script` | Meditation script generation via Gemini API (NOT for chat) |
 | `chatterbox-tts` | Fallback TTS via Replicate |
 | `chatterbox-clone` | Fallback voice cloning via Replicate |
 | `export-user-data` | GDPR-compliant user data export |
@@ -91,6 +92,20 @@ All API keys are server-side only. Edge functions in `supabase/functions/`:
 - `promptTemplates.ts` - Category-specific prompt generation
 
 The agent is designed to **converse first, generate later** - it only creates meditation scripts when explicitly requested.
+
+**CRITICAL Architecture (Dec 2024 fix):**
+```
+Conversation flow:  geminiService.chat() → gemini-chat edge function
+Script generation:  geminiService.enhanceScript() → gemini-script edge function
+```
+
+The agent uses TWO different Gemini endpoints:
+- `gemini-chat` - For natural conversation, respects the agent's SYSTEM_PROMPT
+- `gemini-script` - For meditation generation only (has its own meditation-focused prompt)
+
+**DO NOT** use `enhanceScript()` for chat - it will produce robotic responses because `gemini-script` ignores conversational prompts.
+
+**Disambiguation triggers** only for explicit generation requests ("create a meditation", "make me a..."), NOT casual mentions of meditation topics.
 
 ### Database Schema
 
@@ -220,3 +235,34 @@ import { fishAudioCloneVoice } from './src/lib/edgeFunctions';
 - Test environment: happy-dom (configured in `vitest.config.ts`)
 - Test setup: `tests/setup.ts` includes mocks for AudioContext, MediaRecorder, and fetch
 - Coverage thresholds: `src/lib/credits.ts` has strict 90% coverage requirement
+
+## Recent Changes (Dec 2024)
+
+### Agent Chat Architecture Fix
+
+**Problem solved:** The agent was giving robotic, canned responses like "Life has many dimensions. What draws you to think about this?" instead of natural conversation.
+
+**Root cause:** The agent's conversational system prompt was being sent to `gemini-script` edge function, which explicitly ignored it and forced meditation-generation mode. When Gemini responded with meditation content, a safety check kicked in and replaced responses with hardcoded fallbacks.
+
+**Solution:**
+1. Created `gemini-chat` edge function for conversational AI
+2. Added `geminiService.chat()` method that calls the new endpoint
+3. Updated `useMeditationAgent.ts` to use `chat()` for conversation
+4. Made disambiguation only trigger for explicit "create/make/generate" requests
+5. When disambiguation fails, falls back to Gemini conversation instead of canned responses
+
+**Key files changed:**
+- `supabase/functions/gemini-chat/index.ts` - NEW edge function
+- `src/lib/edgeFunctions.ts` - Added `geminiChat()` wrapper
+- `geminiService.ts` - Added `chat()` method
+- `src/hooks/useMeditationAgent.ts` - Uses `chat()` for conversation
+- `src/lib/agent/MeditationAgent.ts` - Fixed disambiguation logic
+
+### Current State
+
+The agent chat should now:
+- ✅ Respond naturally to greetings ("hi", "hello")
+- ✅ Have natural back-and-forth conversation
+- ✅ Only ask for clarification when user explicitly requests content creation
+- ✅ Fall back to Gemini when disambiguation fails (no more loops)
+- ✅ Generate meditation scripts when explicitly requested ("create a meditation for sleep")
