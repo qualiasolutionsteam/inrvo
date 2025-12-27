@@ -2025,6 +2025,7 @@ const App: React.FC = () => {
                 onClose={() => {
                   handleInlinePause();
                   stopBackgroundMusic();
+                  stopNatureSound();
                   setCurrentView(View.HOME);
                 }}
                 backgroundMusicEnabled={selectedBackgroundTrack.id !== 'none' && isMusicPlaying}
@@ -2042,6 +2043,13 @@ const App: React.FC = () => {
                 onVoiceVolumeChange={updateVoiceVolume}
                 playbackRate={playbackRate}
                 onPlaybackRateChange={updatePlaybackRate}
+                // Nature sound props
+                natureSoundEnabled={selectedNatureSound.id !== 'none'}
+                natureSoundVolume={natureSoundVolume}
+                onNatureSoundVolumeChange={updateNatureSoundVolume}
+                natureSoundName={selectedNatureSound.name}
+                natureSoundIcon={selectedNatureSound.icon}
+                onOpenNatureSoundModal={() => setShowNatureSoundModal(true)}
                 userId={user?.id}
                 voiceId={selectedVoice?.id}
                 voiceName={selectedVoice?.name}
@@ -2229,6 +2237,19 @@ const App: React.FC = () => {
           previewingTrackId={previewingTrackId}
           onTogglePreview={togglePreviewTrack}
           onStopPreview={stopPreview}
+        />
+
+        {/* MODAL: Nature Sound Selector */}
+        <NatureSoundSelectorModal
+          isOpen={showNatureSoundModal}
+          onClose={() => setShowNatureSoundModal(false)}
+          selectedSound={selectedNatureSound}
+          onSelectSound={(sound) => {
+            setSelectedNatureSound(sound);
+          }}
+          previewingSoundId={previewingNatureSoundId}
+          onTogglePreview={togglePreviewNatureSound}
+          onStopPreview={stopNatureSoundPreview}
         />
 
         {/* MODAL: Audio Tags Selector (extracted component) */}

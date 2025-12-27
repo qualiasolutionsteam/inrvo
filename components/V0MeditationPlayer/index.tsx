@@ -30,6 +30,14 @@ interface MeditationPlayerProps {
   onBackgroundMusicToggle?: () => void;
   backgroundTrackName?: string;
 
+  // Nature/Ambient sounds
+  natureSoundEnabled?: boolean;
+  natureSoundVolume?: number;
+  onNatureSoundVolumeChange?: (volume: number) => void;
+  natureSoundName?: string;
+  natureSoundIcon?: string;
+  onOpenNatureSoundModal?: () => void;
+
   // Voice volume and playback rate
   voiceVolume?: number;
   onVoiceVolumeChange?: (volume: number) => void;
@@ -59,6 +67,12 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
   onBackgroundVolumeChange,
   onBackgroundMusicToggle,
   backgroundTrackName,
+  natureSoundEnabled = false,
+  natureSoundVolume = 0.4,
+  onNatureSoundVolumeChange,
+  natureSoundName,
+  natureSoundIcon,
+  onOpenNatureSoundModal,
   voiceVolume = 0.7,
   onVoiceVolumeChange,
   playbackRate = 0.9,
@@ -104,7 +118,7 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
       <FloatingParticles />
 
       {/* Content */}
-      <div className="relative z-10 flex min-h-[100dvh] flex-col items-center justify-between px-4 sm:px-6 pb-6 sm:pb-8 pt-16 sm:pt-14 safe-top safe-bottom">
+      <div className="relative z-10 flex min-h-[100dvh] flex-col items-center justify-between px-4 sm:px-6 pb-8 sm:pb-10 md:pb-12 pt-16 sm:pt-14 safe-top safe-bottom">
         {/* Header with close button */}
         <div className="w-full max-w-lg mt-2">
           <motion.button
@@ -215,8 +229,8 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
             </motion.button>
           </div>
 
-          {/* Voice speed and volume toggle */}
-          <div className="flex items-center justify-center gap-4 mt-4">
+          {/* Voice speed, volume toggle, and nature sound button */}
+          <div className="flex items-center justify-center gap-3 mt-4 flex-wrap">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -228,6 +242,25 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
               <Volume2 className="h-4 w-4 ml-1" />
               <span>{Math.round(voiceVolume * 100)}%</span>
             </motion.button>
+
+            {/* Nature Sound Button */}
+            {onOpenNatureSoundModal && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={onOpenNatureSoundModal}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors ${
+                  natureSoundEnabled
+                    ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                    : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80'
+                }`}
+              >
+                <span className="text-base">{natureSoundIcon || '🌿'}</span>
+                <span className="max-w-[80px] truncate">
+                  {natureSoundEnabled ? natureSoundName : 'Nature'}
+                </span>
+              </motion.button>
+            )}
           </div>
 
           {/* Expanded controls panel */}
@@ -311,6 +344,37 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                             [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(168,85,247,0.5)]
                             [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
                             [&::-moz-range-thumb]:bg-purple-400 [&::-moz-range-thumb]:border-0"
+                        />
+                        <span className="text-xs text-white/40">100%</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Nature Sound Volume (if enabled) */}
+                  {natureSoundEnabled && onNatureSoundVolumeChange && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-white/50 flex items-center gap-2">
+                          <span>{natureSoundIcon || '🌿'}</span>
+                          {natureSoundName || 'Nature Sound'}
+                        </span>
+                        <span className="text-white/80 font-mono">{Math.round(natureSoundVolume * 100)}%</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-white/40">0%</span>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.05"
+                          value={natureSoundVolume}
+                          onChange={(e) => onNatureSoundVolumeChange(parseFloat(e.target.value))}
+                          className="flex-1 h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer
+                            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
+                            [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-400
+                            [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(52,211,153,0.5)]
+                            [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
+                            [&::-moz-range-thumb]:bg-emerald-400 [&::-moz-range-thumb]:border-0"
                         />
                         <span className="text-xs text-white/40">100%</span>
                       </div>
