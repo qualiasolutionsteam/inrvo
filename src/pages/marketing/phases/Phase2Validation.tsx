@@ -24,12 +24,12 @@ interface Phase2ValidationProps {
 }
 
 const platformColors: Record<Platform, string> = {
-  meta: 'bg-blue-500/20 text-blue-400',
-  tiktok: 'bg-pink-500/20 text-pink-400',
-  google: 'bg-red-500/20 text-red-400',
-  youtube: 'bg-red-500/20 text-red-400',
-  instagram: 'bg-purple-500/20 text-purple-400',
-  twitter: 'bg-sky-500/20 text-sky-400',
+  meta: 'bg-blue-500/20 text-blue-600',
+  tiktok: 'bg-pink-500/20 text-pink-600',
+  google: 'bg-red-500/20 text-red-600',
+  youtube: 'bg-red-500/20 text-red-600',
+  instagram: 'bg-purple-500/20 text-purple-600',
+  twitter: 'bg-sky-500/20 text-sky-600',
 };
 
 const creativeAngles = [
@@ -210,11 +210,11 @@ export function Phase2Validation({ data, onUpdate }: Phase2ValidationProps) {
         defaultExpanded={true}
       >
         {/* Summary Stats */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <div className="bg-slate-50 rounded-lg p-4">
-            <div className="text-sm text-slate-500">Total Budget</div>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-xl font-bold text-slate-900">${paidAcquisition.totalBudget}</span>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="bg-slate-50 rounded-lg p-3 sm:p-4">
+            <div className="text-xs sm:text-sm text-slate-600">Total Budget</div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-1">
+              <span className="text-lg sm:text-xl font-bold text-slate-900">${paidAcquisition.totalBudget}</span>
               <EditableNumber
                 value={paidAcquisition.totalBudget}
                 onChange={(v) => onUpdate({ paidAcquisition: { ...paidAcquisition, totalBudget: v } })}
@@ -223,17 +223,17 @@ export function Phase2Validation({ data, onUpdate }: Phase2ValidationProps) {
               />
             </div>
           </div>
-          <div className="bg-slate-50 rounded-lg p-4">
-            <div className="text-sm text-slate-500">Total Spend</div>
-            <div className="text-xl font-bold text-slate-900">${totalSpend}</div>
+          <div className="bg-slate-50 rounded-lg p-3 sm:p-4">
+            <div className="text-xs sm:text-sm text-slate-600">Total Spend</div>
+            <div className="text-lg sm:text-xl font-bold text-slate-900 mt-1">${totalSpend}</div>
           </div>
-          <div className="bg-slate-50 rounded-lg p-4">
-            <div className="text-sm text-slate-500">Conversions</div>
-            <div className="text-xl font-bold text-teal-600">{totalConversions}</div>
+          <div className="bg-slate-50 rounded-lg p-3 sm:p-4">
+            <div className="text-xs sm:text-sm text-slate-600">Conversions</div>
+            <div className="text-lg sm:text-xl font-bold text-teal-600 mt-1">{totalConversions}</div>
           </div>
-          <div className="bg-slate-50 rounded-lg p-4">
-            <div className="text-sm text-slate-500">Avg ROAS</div>
-            <div className="text-xl font-bold text-amber-400">{avgROAS.toFixed(2)}x</div>
+          <div className="bg-slate-50 rounded-lg p-3 sm:p-4">
+            <div className="text-xs sm:text-sm text-slate-600">Avg ROAS</div>
+            <div className="text-lg sm:text-xl font-bold text-amber-600 mt-1">{avgROAS.toFixed(2)}x</div>
           </div>
         </div>
 
@@ -380,7 +380,7 @@ function CampaignCard({ campaign, onUpdate, onDelete }: CampaignCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const statusColors: Record<CampaignStatus, string> = {
-    planning: 'border-slate-500',
+    planning: 'border-slate-400',
     active: 'border-green-500',
     paused: 'border-amber-500',
     complete: 'border-teal-500',
@@ -390,10 +390,10 @@ function CampaignCard({ campaign, onUpdate, onDelete }: CampaignCardProps) {
   const convRate = campaign.clicks > 0 ? ((campaign.conversions / campaign.clicks) * 100).toFixed(2) : '0.00';
 
   return (
-    <div className={`border-l-4 ${statusColors[campaign.status]} bg-white rounded-lg overflow-hidden`}>
+    <div className={`border-l-4 ${statusColors[campaign.status]} bg-white rounded-lg overflow-hidden shadow-sm`}>
       {/* Header */}
       <div
-        className="flex items-center gap-4 p-4 cursor-pointer hover:bg-slate-50"
+        className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 cursor-pointer hover:bg-slate-50"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex-1 min-w-0">
@@ -401,22 +401,23 @@ function CampaignCard({ campaign, onUpdate, onDelete }: CampaignCardProps) {
             <EditableField
               value={campaign.name}
               onChange={(name) => onUpdate({ name })}
-              className="font-medium text-slate-900"
+              className="font-medium text-slate-900 text-sm sm:text-base"
               onClick={(e) => e.stopPropagation()}
             />
             {campaign.isWinner && (
-              <Award size={16} className="text-amber-400 flex-shrink-0" />
+              <Award size={16} className="text-amber-500 flex-shrink-0" />
             )}
           </div>
           <div className="flex items-center gap-2 mt-1">
             <span className={`px-2 py-0.5 rounded text-xs ${platformColors[campaign.platform]}`}>
               {campaign.platform}
             </span>
-            <span className="text-slate-500 text-sm">${campaign.budget}</span>
+            <span className="text-slate-600 text-xs sm:text-sm">${campaign.budget}</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 text-sm">
+        {/* Stats - responsive grid */}
+        <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm">
           <div className="text-center">
             <div className="text-slate-500">CTR</div>
             <div className="text-slate-900 font-medium">{ctr}%</div>
@@ -427,13 +428,14 @@ function CampaignCard({ campaign, onUpdate, onDelete }: CampaignCardProps) {
           </div>
           <div className="text-center">
             <div className="text-slate-500">ROAS</div>
-            <div className={`font-medium ${campaign.roas >= 2 ? 'text-teal-600' : campaign.roas >= 1 ? 'text-amber-400' : 'text-red-400'}`}>
+            <div className={`font-medium ${campaign.roas >= 2 ? 'text-teal-600' : campaign.roas >= 1 ? 'text-amber-600' : 'text-red-500'}`}>
               {campaign.roas.toFixed(2)}x
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+        {/* Actions */}
+        <div className="flex items-center gap-1.5 sm:gap-2" onClick={(e) => e.stopPropagation()}>
           <StatusSelect
             value={campaign.status}
             onChange={(status) => onUpdate({ status: status as CampaignStatus })}
@@ -444,27 +446,27 @@ function CampaignCard({ campaign, onUpdate, onDelete }: CampaignCardProps) {
               e.stopPropagation();
               onUpdate({ isWinner: !campaign.isWinner });
             }}
-            className={`p-1.5 rounded ${campaign.isWinner ? 'text-amber-400 bg-amber-500/20' : 'text-slate-500 hover:text-amber-400'}`}
+            className={`p-1.5 rounded ${campaign.isWinner ? 'text-amber-500 bg-amber-500/20' : 'text-slate-400 hover:text-amber-500'}`}
             title="Mark as winner"
           >
-            <Award size={16} />
+            <Award size={14} className="sm:w-4 sm:h-4" />
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
               onDelete();
             }}
-            className="p-1.5 text-slate-500 hover:text-red-400 rounded"
+            className="p-1.5 text-slate-400 hover:text-red-500 rounded"
           >
-            <Trash2 size={16} />
+            <Trash2 size={14} className="sm:w-4 sm:h-4" />
           </button>
         </div>
       </div>
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="p-4 pt-0 border-t border-slate-200">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
+        <div className="p-3 sm:p-4 pt-0 border-t border-slate-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 pt-3 sm:pt-4">
             {/* Platform */}
             <div>
               <label className="block text-sm text-slate-500 mb-1">Platform</label>
@@ -548,7 +550,7 @@ function CampaignCard({ campaign, onUpdate, onDelete }: CampaignCardProps) {
           </div>
 
           {/* Performance Metrics */}
-          <div className="grid grid-cols-4 gap-4 mt-4 pt-4 border-t border-slate-200">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-slate-200">
             <div>
               <label className="block text-sm text-slate-500 mb-1">Impressions</label>
               <EditableNumber

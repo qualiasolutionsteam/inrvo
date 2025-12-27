@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 INrVO is a personalized meditation app built with React 19, Vite, and Supabase. Users describe how they feel, an AI agent generates a meditation script via Gemini, and text-to-speech creates audio using cloned or preset voices. The app features real-time audio playback with synchronized text highlighting.
 
+**Requirements:** Node.js >= 20.0.0
+
 ## Commands
 
 ```bash
@@ -14,6 +16,7 @@ npm run dev              # Start dev server on port 3000
 npm run build            # Production build
 npm run preview          # Preview production build
 npx tsc --noEmit         # Type-check without emitting
+ANALYZE=true npm run build  # Bundle analyzer (opens dist/stats.html)
 
 # Testing
 npm test                 # Run tests in watch mode
@@ -65,10 +68,7 @@ Each category has color theming, custom icons (Sparkle, Affirmation heart, Hypno
 - `ai-voice-input.tsx` - Standalone voice recording button with visualizer bars, timer, and auto-stop at 30s
 
 **Chat Input Styling:**
-The chat input has a subtle cyan/purple glow effect:
-- **Default:** `border-cyan-500/20` with glow `0 0 15px rgba(34, 211, 238, 0.08), 0 0 30px rgba(139, 92, 246, 0.05)`
-- **Recording:** `border-cyan-400/50` with brighter glow `0 0 25px rgba(34, 211, 238, 0.2), 0 0 50px rgba(139, 92, 246, 0.15)`
-- **Recording button:** Solid cyan (`bg-cyan-500/90`), not red
+The chat input has a subtle cyan/purple glow effect that intensifies when recording. Recording button uses solid cyan (not red).
 
 **Data Layer:**
 - `lib/supabase.ts` - Supabase client and all database operations
@@ -240,18 +240,13 @@ Edge Functions (set in Supabase Dashboard):
 - `GEMINI_API_KEY` - Script generation
 - `ELEVENLABS_API_KEY` - Legacy voice support (optional)
 
-## Path Aliases
-
-`@/` maps to the project root (configured in both `tsconfig.json` and `vite.config.ts`).
-
-```typescript
-import { supabase } from '@/lib/supabase';
-```
-
 ## Bundle Optimization
+
+**Path Alias:** `@/` maps to project root (configured in `tsconfig.json` and `vite.config.ts`).
 
 Vite config includes manual chunks for:
 - `react-vendor` - React/ReactDOM
+- `router-vendor` - React Router
 - `supabase-vendor` - Supabase client
 - `framer-motion-vendor` - Animation library (~120KB)
 - `sentry-vendor` - Error tracking
