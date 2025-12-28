@@ -3,6 +3,7 @@ import { Plus, DollarSign, Calendar, Users, TrendingUp, Trash2, Award, Play, Pau
 import { Section, SectionGrid } from '../components/Section';
 import { EditableField, EditableNumber } from '../components/EditableField';
 import { StatusSelect } from '../components/StatusBadge';
+import { AttributionBadge } from '../components/AttributionBadge';
 import {
   MarketingHubData,
   Campaign,
@@ -17,6 +18,8 @@ import {
   InfluencerStatus,
 } from '../types';
 import { generateId } from '../data/initialData';
+import { useMarketingUser } from '../contexts/MarketingUserContext';
+import { createAttribution, updateAttribution } from '../utils/attribution';
 
 interface Phase2ValidationProps {
   data: MarketingHubData['phase2'];
@@ -44,6 +47,7 @@ const creativeAngles = [
 
 export function Phase2Validation({ data, onUpdate }: Phase2ValidationProps) {
   const { paidAcquisition, organicContent, influencers } = data;
+  const { email } = useMarketingUser();
 
   // Campaign helpers
   const addCampaign = () => {
@@ -64,6 +68,7 @@ export function Phase2Validation({ data, onUpdate }: Phase2ValidationProps) {
       roas: 0,
       notes: '',
       isWinner: false,
+      attribution: createAttribution(email),
     };
     onUpdate({
       paidAcquisition: {
@@ -75,7 +80,7 @@ export function Phase2Validation({ data, onUpdate }: Phase2ValidationProps) {
 
   const updateCampaign = (id: string, updates: Partial<Campaign>) => {
     const campaigns = paidAcquisition.campaigns.map((c) =>
-      c.id === id ? { ...c, ...updates } : c
+      c.id === id ? { ...c, ...updates, attribution: updateAttribution(c.attribution, email) } : c
     );
     onUpdate({
       paidAcquisition: { ...paidAcquisition, campaigns },
@@ -101,6 +106,7 @@ export function Phase2Validation({ data, onUpdate }: Phase2ValidationProps) {
       hook: '',
       status: 'idea',
       performance: { views: 0, engagement: 0 },
+      attribution: createAttribution(email),
     };
     onUpdate({
       organicContent: {
@@ -112,7 +118,7 @@ export function Phase2Validation({ data, onUpdate }: Phase2ValidationProps) {
 
   const updateCalendarItem = (id: string, updates: Partial<CalendarItem>) => {
     const calendar = organicContent.calendar.map((item) =>
-      item.id === id ? { ...item, ...updates } : item
+      item.id === id ? { ...item, ...updates, attribution: updateAttribution(item.attribution, email) } : item
     );
     onUpdate({
       organicContent: { ...organicContent, calendar },
@@ -137,6 +143,7 @@ export function Phase2Validation({ data, onUpdate }: Phase2ValidationProps) {
       status: 'ideas',
       platform: 'instagram',
       priority: organicContent.backlog.length + 1,
+      attribution: createAttribution(email),
     };
     onUpdate({
       organicContent: {
@@ -148,7 +155,7 @@ export function Phase2Validation({ data, onUpdate }: Phase2ValidationProps) {
 
   const updateBacklogItem = (id: string, updates: Partial<BacklogItem>) => {
     const backlog = organicContent.backlog.map((item) =>
-      item.id === id ? { ...item, ...updates } : item
+      item.id === id ? { ...item, ...updates, attribution: updateAttribution(item.attribution, email) } : item
     );
     onUpdate({
       organicContent: { ...organicContent, backlog },
@@ -177,12 +184,13 @@ export function Phase2Validation({ data, onUpdate }: Phase2ValidationProps) {
       performance: '',
       cost: '',
       notes: '',
+      attribution: createAttribution(email),
     };
     onUpdate({ influencers: [...influencers, newInfluencer] });
   };
 
   const updateInfluencer = (id: string, updates: Partial<Influencer>) => {
-    const updated = influencers.map((inf) => (inf.id === id ? { ...inf, ...updates } : inf));
+    const updated = influencers.map((inf) => (inf.id === id ? { ...inf, ...updates, attribution: updateAttribution(inf.attribution, email) } : inf));
     onUpdate({ influencers: updated });
   };
 
@@ -592,6 +600,13 @@ function CampaignCard({ campaign, onUpdate, onDelete }: CampaignCardProps) {
               multiline
             />
           </div>
+
+          {/* Attribution */}
+          {campaign.attribution && (
+            <div className="mt-4 pt-3 border-t border-slate-200">
+              <AttributionBadge attribution={campaign.attribution} />
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -678,6 +693,11 @@ function ContentCalendarCard({ item, onUpdate, onDelete }: ContentCalendarCardPr
           </div>
         </div>
       )}
+      {item.attribution && (
+        <div className="mt-2 pt-2 border-t border-slate-100">
+          <AttributionBadge attribution={item.attribution} compact />
+        </div>
+      )}
     </div>
   );
 }
@@ -732,6 +752,11 @@ function BacklogCard({ item, onUpdate, onDelete }: BacklogCardProps) {
           <Trash2 size={14} />
         </button>
       </div>
+      {item.attribution && (
+        <div className="mt-2 pt-2 border-t border-slate-100">
+          <AttributionBadge attribution={item.attribution} compact />
+        </div>
+      )}
     </div>
   );
 }
@@ -802,9 +827,14 @@ function InfluencerRow({ influencer, onUpdate, onDelete }: InfluencerRowProps) {
         />
       </td>
       <td className="py-3 px-2 text-right">
-        <button onClick={onDelete} className="p-1 text-slate-500 hover:text-red-400">
-          <Trash2 size={14} />
-        </button>
+        <div className="flex items-center justify-end gap-2">
+          {influencer.attribution && (
+            <AttributionBadge attribution={influencer.attribution} compact />
+          )}
+          <button onClick={onDelete} className="p-1 text-slate-500 hover:text-red-400">
+            <Trash2 size={14} />
+          </button>
+        </div>
       </td>
     </tr>
   );

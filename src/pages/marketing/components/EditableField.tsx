@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Check, X, Pencil } from 'lucide-react';
+import { Attribution } from '../types';
+import { AttributionBadge } from './AttributionBadge';
 
 interface EditableFieldProps {
   value: string;
@@ -9,6 +11,8 @@ interface EditableFieldProps {
   multiline?: boolean;
   label?: string;
   onClick?: (e: React.MouseEvent) => void;
+  attribution?: Attribution;
+  showAttribution?: boolean;
 }
 
 export function EditableField({
@@ -19,6 +23,8 @@ export function EditableField({
   multiline = false,
   label,
   onClick,
+  attribution,
+  showAttribution = false,
 }: EditableFieldProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [tempValue, setTempValue] = useState(value);
@@ -96,10 +102,15 @@ export function EditableField({
       className={`group flex items-start gap-2 cursor-pointer hover:bg-slate-100 rounded px-3 py-2 transition-colors ${className}`}
     >
       {label && <span className="text-sm text-slate-500 min-w-[80px]">{label}</span>}
-      <span className={`flex-1 ${value ? 'text-slate-900' : 'text-slate-400 italic'}`}>
-        {value || placeholder}
-      </span>
-      <Pencil size={14} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="flex-1 flex flex-col gap-1">
+        <span className={`${value ? 'text-slate-900' : 'text-slate-400 italic'}`}>
+          {value || placeholder}
+        </span>
+        {showAttribution && attribution && (
+          <AttributionBadge attribution={attribution} compact />
+        )}
+      </div>
+      <Pencil size={14} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
     </div>
   );
 }

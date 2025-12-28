@@ -15,8 +15,11 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { Section } from '../components/Section';
 import { EditableField } from '../components/EditableField';
+import { AttributionBadge } from '../components/AttributionBadge';
 import { MarketingHubData, MeetingNote, Idea, Question } from '../types';
 import { generateId } from '../data/initialData';
+import { useMarketingUser } from '../contexts/MarketingUserContext';
+import { createAttribution, updateAttribution } from '../utils/attribution';
 
 interface NotesProps {
   data: MarketingHubData['notes'];
@@ -25,6 +28,7 @@ interface NotesProps {
 
 export function Notes({ data, onUpdate }: NotesProps) {
   const { meetingNotes, ideasParkingLot, questions } = data;
+  const { email } = useMarketingUser();
 
   // Meeting Notes helpers
   const addMeetingNote = () => {
@@ -33,12 +37,17 @@ export function Notes({ data, onUpdate }: NotesProps) {
       date: new Date().toISOString().split('T')[0],
       content: '',
       tags: [],
+      attribution: createAttribution(email),
     };
     onUpdate({ meetingNotes: [newNote, ...meetingNotes] });
   };
 
   const updateMeetingNote = (id: string, updates: Partial<MeetingNote>) => {
-    const notes = meetingNotes.map((n) => (n.id === id ? { ...n, ...updates } : n));
+    const notes = meetingNotes.map((n) =>
+      n.id === id
+        ? { ...n, ...updates, attribution: updateAttribution(n.attribution, email) }
+        : n
+    );
     onUpdate({ meetingNotes: notes });
   };
 
@@ -53,12 +62,17 @@ export function Notes({ data, onUpdate }: NotesProps) {
       content: '',
       votes: 0,
       createdAt: new Date().toISOString(),
+      attribution: createAttribution(email),
     };
     onUpdate({ ideasParkingLot: [...ideasParkingLot, newIdea] });
   };
 
   const updateIdea = (id: string, updates: Partial<Idea>) => {
-    const ideas = ideasParkingLot.map((i) => (i.id === id ? { ...i, ...updates } : i));
+    const ideas = ideasParkingLot.map((i) =>
+      i.id === id
+        ? { ...i, ...updates, attribution: updateAttribution(i.attribution, email) }
+        : i
+    );
     onUpdate({ ideasParkingLot: ideas });
   };
 
@@ -83,12 +97,17 @@ export function Notes({ data, onUpdate }: NotesProps) {
       answer: '',
       resolved: false,
       createdAt: new Date().toISOString(),
+      attribution: createAttribution(email),
     };
     onUpdate({ questions: [...questions, newQuestion] });
   };
 
   const updateQuestion = (id: string, updates: Partial<Question>) => {
-    const qs = questions.map((q) => (q.id === id ? { ...q, ...updates } : q));
+    const qs = questions.map((q) =>
+      q.id === id
+        ? { ...q, ...updates, attribution: updateAttribution(q.attribution, email) }
+        : q
+    );
     onUpdate({ questions: qs });
   };
 
@@ -308,6 +327,13 @@ function MeetingNoteCard({ note, onUpdate, onDelete }: MeetingNoteCardProps) {
                   ))}
                 </div>
               )}
+
+              {/* Attribution */}
+              {note.attribution && (
+                <div className="pt-2 border-t border-slate-100">
+                  <AttributionBadge attribution={note.attribution} />
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -366,10 +392,15 @@ function IdeaCard({ idea, onUpdate, onVote, onDelete }: IdeaCardProps) {
             </div>
           )}
 
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-xs text-slate-500">
-              {new Date(idea.createdAt).toLocaleDateString()}
-            </span>
+          <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500">
+                {new Date(idea.createdAt).toLocaleDateString()}
+              </span>
+              {idea.attribution && (
+                <AttributionBadge attribution={idea.attribution} compact />
+              )}
+            </div>
 
             {!idea.movedTo && (
               <select
@@ -447,9 +478,14 @@ function QuestionCard({ question, onUpdate, onDelete }: QuestionCardProps) {
           />
         </div>
 
-        <span className="text-xs text-slate-500">
-          {new Date(question.createdAt).toLocaleDateString()}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-500">
+            {new Date(question.createdAt).toLocaleDateString()}
+          </span>
+          {question.attribution && (
+            <AttributionBadge attribution={question.attribution} compact />
+          )}
+        </div>
 
         <button
           onClick={(e) => {

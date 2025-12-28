@@ -3,12 +3,15 @@ import { Trophy, TrendingUp, RefreshCw, Plus, Trash2, Check, RotateCcw } from 'l
 import { Section } from '../components/Section';
 import { EditableField, EditableNumber } from '../components/EditableField';
 import { ProgressIndicator } from '../components/ProgressIndicator';
+import { AttributionBadge } from '../components/AttributionBadge';
 import {
   MarketingHubData,
   RecurringTask,
   ChannelAllocation,
 } from '../types';
 import { generateId } from '../data/initialData';
+import { useMarketingUser } from '../contexts/MarketingUserContext';
+import { createAttribution, updateAttribution } from '../utils/attribution';
 
 interface Phase3ScaleProps {
   data: MarketingHubData['phase3'];
@@ -25,6 +28,7 @@ const channelColors: Record<keyof ChannelAllocation, { bg: string; text: string 
 
 export function Phase3Scale({ data, onUpdate }: Phase3ScaleProps) {
   const { winningPlaybook, scalePlan, recurringTasks } = data;
+  const { email } = useMarketingUser();
 
   // Calculate LTV:CAC ratio
   const ltvCacRatio = winningPlaybook.currentCAC > 0
@@ -55,12 +59,13 @@ export function Phase3Scale({ data, onUpdate }: Phase3ScaleProps) {
       frequency,
       completed: false,
       lastReset: new Date().toISOString(),
+      attribution: createAttribution(email),
     };
     onUpdate({ recurringTasks: [...recurringTasks, newTask] });
   };
 
   const updateRecurringTask = (id: string, updates: Partial<RecurringTask>) => {
-    const tasks = recurringTasks.map((t) => (t.id === id ? { ...t, ...updates } : t));
+    const tasks = recurringTasks.map((t) => (t.id === id ? { ...t, ...updates, attribution: updateAttribution(t.attribution, email) } : t));
     onUpdate({ recurringTasks: tasks });
   };
 
@@ -416,41 +421,48 @@ interface RecurringTaskItemProps {
 
 function RecurringTaskItem({ task, onUpdate, onReset, onDelete }: RecurringTaskItemProps) {
   return (
-    <div className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+    <div className={`p-3 rounded-lg transition-colors ${
       task.completed ? 'bg-teal-500/10' : 'bg-white'
     }`}>
-      <button
-        onClick={() => onUpdate({ completed: !task.completed })}
-        className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
-          task.completed
-            ? 'bg-teal-500 border-teal-500 text-slate-900'
-            : 'border-slate-200 hover:border-teal-500'
-        }`}
-      >
-        {task.completed && <Check size={12} />}
-      </button>
-      <EditableField
-        value={task.title}
-        onChange={(title) => onUpdate({ title })}
-        className={`flex-1 ${task.completed ? 'line-through text-slate-500' : ''}`}
-      />
-      <div className="flex items-center gap-1">
-        {task.completed && (
-          <button
-            onClick={onReset}
-            className="p-1 text-slate-500 hover:text-slate-900"
-            title="Reset task"
-          >
-            <RotateCcw size={14} />
-          </button>
-        )}
+      <div className="flex items-center gap-3">
         <button
-          onClick={onDelete}
-          className="p-1 text-slate-500 hover:text-red-400"
+          onClick={() => onUpdate({ completed: !task.completed })}
+          className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+            task.completed
+              ? 'bg-teal-500 border-teal-500 text-slate-900'
+              : 'border-slate-200 hover:border-teal-500'
+          }`}
         >
-          <Trash2 size={14} />
+          {task.completed && <Check size={12} />}
         </button>
+        <EditableField
+          value={task.title}
+          onChange={(title) => onUpdate({ title })}
+          className={`flex-1 ${task.completed ? 'line-through text-slate-500' : ''}`}
+        />
+        <div className="flex items-center gap-1">
+          {task.completed && (
+            <button
+              onClick={onReset}
+              className="p-1 text-slate-500 hover:text-slate-900"
+              title="Reset task"
+            >
+              <RotateCcw size={14} />
+            </button>
+          )}
+          <button
+            onClick={onDelete}
+            className="p-1 text-slate-500 hover:text-red-400"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
       </div>
+      {task.attribution && (
+        <div className="mt-2 pl-8">
+          <AttributionBadge attribution={task.attribution} compact />
+        </div>
+      )}
     </div>
   );
 }

@@ -37,7 +37,7 @@ supabase db push                            # Push migrations to remote
 
 **Routing:** Uses React Router v7 with lazy-loaded pages (`src/router.tsx`). All pages are code-split via `React.lazy()`.
 
-**Routes:** `/` (home), `/play/:id?` (player), `/library` (My Audios), `/templates`, `/voice`, `/clone`, `/how-it-works`, `/about`, `/terms`, `/privacy`, `/pricing`
+**Routes:** `/` (home), `/play/:id?` (player), `/library` (My Audios), `/templates`, `/voice`, `/clone`, `/how-it-works`, `/about`, `/terms`, `/privacy`, `/pricing`, `/marketing`
 
 **State Management:**
 - React Context for cross-cutting concerns:
@@ -46,13 +46,17 @@ supabase db push                            # Push migrations to remote
   - `src/contexts/AudioContext.tsx` - Audio playback state
   - `src/contexts/AppContext.tsx` - App-wide state
 
-**Key Components:**
-- `components/V0MeditationPlayer/` - Main player with audio visualization
-- `src/components/MeditationEditor/` - Script editing with audio tag insertion
-- `components/SimpleVoiceClone.tsx` - Voice cloning UI
-- `components/AgentChat.tsx` - Conversational AI interface
-- `components/ui/chronos-engine.tsx` - Animated gear engine for agent avatar and loading states
-- `src/pages/TemplatesPage.tsx` - Template browser with category navigation
+**Key Components (two locations):**
+
+Root `components/` - Shared, feature-rich components:
+- `V0MeditationPlayer/` - Main player with BreathingOrb visualization
+- `SimpleVoiceClone.tsx` - Voice cloning UI
+- `AgentChat.tsx` - Conversational AI interface
+- `ui/chronos-engine.tsx` - Animated gear engine for agent avatar and loading states
+
+`src/components/` - Page-specific components:
+- `MeditationEditor/` - Script editing with audio tag insertion
+- `AudioTagsModal.tsx`, `MusicSelectorModal.tsx`, `NatureSoundSelectorModal.tsx` - Editor modals
 
 **Templates System (`constants.tsx`):**
 4 main categories with 50+ ready-to-use templates:
@@ -75,6 +79,23 @@ The chat input has a subtle cyan/purple glow effect that intensifies when record
 - `src/lib/edgeFunctions.ts` - Edge function wrappers with retry logic
 - `src/lib/voiceService.ts` - TTS provider routing (Fish Audio primary, Chatterbox fallback, Web Speech API free tier)
 - `src/lib/credits.ts` - Credit system (currently disabled, returns unlimited credits)
+
+### Marketing Hub (`/marketing`)
+
+Internal marketing planning dashboard with 3-phase Go-To-Market workflow:
+- **Phase 1: Foundation** - Brand positioning, target personas, value propositions
+- **Phase 2: Validation** - MVP testing, early adopter feedback
+- **Phase 3: Scale** - Growth strategies, channel expansion
+
+Structure in `src/pages/marketing/`:
+- `phases/` - Phase1Foundation, Phase2Validation, Phase3Scale components
+- `sections/` - Overview, Resources, Notes
+- `components/` - Shared UI (ChecklistItem, EditableField, PersonaCard, ProgressIndicator)
+- `hooks/useMarketingData.ts` - localStorage persistence with auto-save
+- `utils/export.ts` - Markdown/JSON export
+- `constants/auth.ts` - Access code protection
+
+Data persisted to localStorage, exportable as markdown. Protected by access code gate.
 
 ### Backend (Supabase Edge Functions)
 
@@ -123,7 +144,10 @@ The agent is designed to **converse first, generate later** - it only creates me
 Conversation flow:  geminiService.chat() → gemini-chat edge function
 Script generation:  geminiService.enhanceScript() → gemini-script edge function
 Script harmonize:   geminiService.harmonizeScript() → gemini-script edge function (operation: 'harmonize')
+Script extend:      geminiService.extendScript() → gemini-script edge function (operation: 'extend')
 ```
+
+**Note:** `geminiService` is located at project root (`/geminiService.ts`), not in `src/lib/`.
 
 The agent uses TWO different Gemini endpoints:
 - `gemini-chat` - For natural conversation, respects the agent's SYSTEM_PROMPT
@@ -250,6 +274,8 @@ Vite config includes manual chunks for:
 - `supabase-vendor` - Supabase client
 - `framer-motion-vendor` - Animation library (~120KB)
 - `sentry-vendor` - Error tracking
+- `icons-vendor` - Lucide icons
+- `toast-vendor` - Sonner notifications
 
 **Code Splitting Strategy:**
 - All page components lazy-loaded via `React.lazy()` in `src/router.tsx`

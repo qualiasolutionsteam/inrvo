@@ -1,5 +1,13 @@
 // Marketing Hub Data Types
 
+// Attribution metadata for tracking who edited what
+export interface Attribution {
+  created_by: string;      // Email of creator
+  created_at: string;      // ISO timestamp
+  last_edited_by: string;  // Email of last editor
+  last_edited_at: string;  // ISO timestamp
+}
+
 export type Status = 'not_started' | 'in_progress' | 'complete' | 'live';
 export type ContentStatus = 'idea' | 'outlined' | 'draft' | 'published' | 'ranking';
 export type SocialContentStatus = 'idea' | 'scripted' | 'filmed' | 'edited' | 'posted';
@@ -75,6 +83,7 @@ export interface SEOArticle {
   difficulty: string;
   status: ContentStatus;
   url: string;
+  attribution?: Attribution;
 }
 
 export interface SocialContent {
@@ -89,6 +98,7 @@ export interface SocialContent {
   saves: number;
   shares: number;
   link: string;
+  attribution?: Attribution;
 }
 
 export interface Campaign {
@@ -108,6 +118,7 @@ export interface Campaign {
   roas: number;
   notes: string;
   isWinner: boolean;
+  attribution?: Attribution;
 }
 
 export interface CalendarItem {
@@ -121,6 +132,7 @@ export interface CalendarItem {
     views: number;
     engagement: number;
   };
+  attribution?: Attribution;
 }
 
 export interface BacklogItem {
@@ -130,6 +142,7 @@ export interface BacklogItem {
   status: BacklogStatus;
   platform: Platform;
   priority: number;
+  attribution?: Attribution;
 }
 
 export interface Influencer {
@@ -143,6 +156,7 @@ export interface Influencer {
   performance: string;
   cost: string;
   notes: string;
+  attribution?: Attribution;
 }
 
 export interface WinningPlaybook {
@@ -168,6 +182,7 @@ export interface RecurringTask {
   frequency: 'weekly' | 'monthly';
   completed: boolean;
   lastReset: string;
+  attribution?: Attribution;
 }
 
 export interface Asset {
@@ -176,6 +191,7 @@ export interface Asset {
   type: 'logo' | 'color' | 'font' | 'guideline' | 'screenshot' | 'video' | 'other';
   url: string;
   value?: string; // For hex codes
+  attribution?: Attribution;
 }
 
 export interface Credential {
@@ -184,6 +200,7 @@ export interface Credential {
   platform: string;
   status: 'active' | 'pending' | 'expired';
   url: string;
+  attribution?: Attribution;
 }
 
 export interface Template {
@@ -191,6 +208,7 @@ export interface Template {
   name: string;
   type: 'content' | 'email' | 'ad' | 'report' | 'other';
   url: string;
+  attribution?: Attribution;
 }
 
 export interface MeetingNote {
@@ -198,6 +216,7 @@ export interface MeetingNote {
   date: string;
   content: string;
   tags: string[];
+  attribution?: Attribution;
 }
 
 export interface Idea {
@@ -206,6 +225,7 @@ export interface Idea {
   votes: number;
   createdAt: string;
   movedTo?: string;
+  attribution?: Attribution;
 }
 
 export interface Question {
@@ -214,6 +234,7 @@ export interface Question {
   answer: string;
   resolved: boolean;
   createdAt: string;
+  attribution?: Attribution;
 }
 
 // Main Marketing Hub interface

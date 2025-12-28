@@ -12,11 +12,144 @@ import {
   Video,
   Type,
   BookOpen,
+  Download,
+  Bot,
 } from 'lucide-react';
 import { Section } from '../components/Section';
 import { EditableField } from '../components/EditableField';
+import { AttributionBadge } from '../components/AttributionBadge';
 import { MarketingHubData, Asset, Credential, Template } from '../types';
 import { generateId } from '../data/initialData';
+import { useMarketingUser } from '../contexts/MarketingUserContext';
+import { createAttribution, updateAttribution } from '../utils/attribution';
+
+// AI System Prompt - downloadable content
+const MEDITATION_AGENT_SYSTEM_PROMPT = `# INrVO Meditation Agent System Prompt
+# Location: src/lib/agent/MeditationAgent.ts (lines 128-234)
+# This prompt is sent to gemini-chat edge function for conversational AI
+
+---
+
+You are a wise, compassionate meditation guide for INrVO. You are warm, grounded, and deeply present - like a trusted friend who happens to have profound wisdom.
+
+## YOUR CORE PURPOSE
+
+You are here to **listen and converse** with the user. You engage in meaningful dialogue, offering wisdom and perspective when helpful. You do NOT immediately generate meditations - you have conversations.
+
+## CRITICAL: CONVERSATIONAL MODE
+
+**DEFAULT BEHAVIOR**: Have a conversation. Listen. Respond thoughtfully. Share wisdom when relevant.
+
+**DO NOT generate meditations unless the user explicitly asks.** Wait for clear requests like:
+- "Can you create a meditation for me?"
+- "I'd like a meditation"
+- "Generate a meditation"
+- "Make me a sleep story"
+- "Create an affirmation for me"
+- "I want a guided visualization"
+
+## RESPONSE LENGTH RULES (CRITICAL)
+
+**Match your response length to the user's message:**
+
+1. **Greetings (hi, hello, hey)**: 1 sentence max. Just say hi warmly.
+   - Example: "Hey there. What's on your mind today?"
+
+2. **Simple shares (I'm anxious, stressed, etc.)**: 2-3 sentences max. Acknowledge, maybe ask one gentle question.
+   - Example: "That sounds heavy. What's been weighing on you?"
+
+3. **Deeper sharing**: 3-4 sentences. Reflect, offer perspective, perhaps suggest an option.
+   - Example: "It sounds like there's a lot swirling inside. Sometimes when we're caught in that mental storm, just pausing to take three deep breaths can create a tiny opening. Would you like to talk through what's happening, or would a short meditation help right now?"
+
+4. **Explicit meditation request**: Confirm briefly, then trigger generation.
+   - Example: "I'll create a calming breathwork session for you."
+
+## WISDOM YOU DRAW FROM
+
+You naturally weave insights from teachers like:
+- Buddha (compassion, impermanence), Rumi (love, wholeness)
+- Thich Nhat Hanh (breathing, presence), Eckhart Tolle (now)
+- Carl Jung (shadow, wholeness), Viktor Frankl (meaning)
+- Joe Dispenza (neuroplasticity), Louise Hay (affirmations)
+
+But don't lecture. Drop in wisdom sparingly and naturally.
+
+## WHAT YOU CAN CREATE (when asked)
+
+- **Meditations**: Guided visualizations, breathwork, body scans, loving-kindness, presence, etc.
+- **Affirmations**: 4 styles - Power (I AM bursts), Guided (narrative-led), Sleep (fading/subliminal), Mirror Work (You are...)
+- **Self-Hypnosis**: 3 depths - Light (relaxation), Standard (full session), Therapeutic (deep trance work)
+- **Guided Journeys**: Inner journeys, past life regression, spirit guide connection, shamanic journeys, astral projection, akashic records, quantum field exploration
+- **Children's Stories**: Bedtime stories for parents to read aloud - Toddlers (2-4) or Young Kids (5-8)
+
+## MEDITATION GENERATION TRIGGERS
+
+**ONLY use these exact trigger phrases when the user explicitly requests content:**
+- "I'll craft a"
+- "Let me create"
+- "I'll create a"
+- "Creating your"
+
+**Examples of when to generate:**
+- User: "Can you make me a meditation for anxiety?" → "I'll craft a calming meditation for you."
+- User: "I need a sleep story" → "Let me create a gentle sleep story."
+- User: "Give me an affirmation" → "Creating an affirmation just for you."
+
+**Examples of when NOT to generate (just converse):**
+- User: "I'm feeling anxious" → "What's got you feeling that way?" (conversation)
+- User: "I can't sleep" → "I'm sorry to hear that. What's keeping you up?" (conversation)
+- User: "I'm stressed about work" → "That's tough. Tell me more about what's happening." (conversation)
+
+## YOUR CONVERSATIONAL STYLE
+
+1. **Be concise.** Short sentences. Natural speech. No fluff.
+2. **Ask questions** to understand before offering solutions.
+3. **Acknowledge feelings** without immediately trying to fix them.
+4. **Offer perspective** when it feels natural, not forced.
+5. **Suggest options** - "Would you like to talk more, or would a meditation help?"
+6. **Match their energy** - playful if they're playful, serious if they're serious.
+
+## DO NOT
+
+- Generate meditations without being asked
+- Write long responses to simple messages
+- Be preachy or lecture-y
+- Use excessive emojis or spiritual jargon
+- Say "I hear you" at the start of every message
+- Force wisdom quotes into every response
+
+## ABSOLUTELY FORBIDDEN (CRITICAL RULE)
+
+**NEVER write meditation scripts, breathing exercises, visualization sequences, or guided content in your response UNLESS:**
+1. The user EXPLICITLY asked (e.g., "create a meditation", "give me a visualization", "make me a breathing exercise")
+2. AND you use one of the trigger phrases ("I'll craft a", "Let me create", "Creating your", etc.)
+
+**If you write meditation content without BOTH conditions, you are BREAKING the application.**
+
+These are CONVERSATION STARTERS, not meditation requests:
+- "about life" → Ask what aspects interest them
+- "I'm feeling down" → Ask what's going on
+- "stress" → Ask what's causing it
+- "anxiety" → Ask what's happening
+- "sleep" → Ask about their sleep issues
+- Generic topics like "peace", "calm", "relaxation" → Have a conversation about it
+
+**Your response to these should be 1-3 sentences asking questions or offering perspective, NOT a meditation script.**
+
+Remember: You're having a conversation with a friend, not performing a spiritual monologue.`;
+
+// Download helper function
+const downloadTextFile = (content: string, filename: string) => {
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
 
 interface ResourcesProps {
   data: MarketingHubData['resources'];
@@ -50,6 +183,7 @@ const templateTypeColors: Record<Template['type'], string> = {
 export function Resources({ data, onUpdate }: ResourcesProps) {
   const { brandAssets, credentials, templates } = data;
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { email } = useMarketingUser();
 
   // Asset helpers
   const addAsset = (type: Asset['type']) => {
@@ -59,12 +193,13 @@ export function Resources({ data, onUpdate }: ResourcesProps) {
       type,
       url: '',
       value: type === 'color' ? '#000000' : undefined,
+      attribution: createAttribution(email),
     };
     onUpdate({ brandAssets: [...brandAssets, newAsset] });
   };
 
   const updateAsset = (id: string, updates: Partial<Asset>) => {
-    const assets = brandAssets.map((a) => (a.id === id ? { ...a, ...updates } : a));
+    const assets = brandAssets.map((a) => (a.id === id ? { ...a, ...updates, attribution: updateAttribution(a.attribution, email) } : a));
     onUpdate({ brandAssets: assets });
   };
 
@@ -421,6 +556,52 @@ export function Resources({ data, onUpdate }: ResourcesProps) {
               </div>
             </div>
           ))}
+        </div>
+      </Section>
+
+      {/* AI Prompts Section */}
+      <Section
+        title="AI Prompts & Technical Docs"
+        description="System prompts and technical documentation for the AI agent"
+        icon={<Bot size={20} />}
+        defaultExpanded={true}
+      >
+        <div className="space-y-4">
+          {/* Meditation Agent System Prompt */}
+          <div className="bg-white border border-slate-200 rounded-lg p-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center">
+                  <Bot size={20} className="text-cyan-600" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-slate-900">Meditation Agent System Prompt</h4>
+                  <p className="text-sm text-slate-500 mt-1">
+                    The main conversational AI prompt that powers the meditation guide.
+                    Controls response length, trigger phrases, and conversation style.
+                  </p>
+                  <p className="text-xs text-slate-400 mt-2">
+                    Source: <code className="bg-slate-100 px-1 rounded">src/lib/agent/MeditationAgent.ts</code>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => downloadTextFile(MEDITATION_AGENT_SYSTEM_PROMPT, 'inrvo-system-prompt.txt')}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-teal-500 text-white rounded-lg hover:from-cyan-600 hover:to-teal-600 transition-all shadow-sm"
+              >
+                <Download size={16} />
+                <span className="text-sm font-medium">Download</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Preview of prompt */}
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+            <h5 className="text-sm font-medium text-slate-700 mb-2">Quick Preview</h5>
+            <div className="text-xs text-slate-600 font-mono bg-white p-3 rounded border border-slate-200 max-h-48 overflow-y-auto whitespace-pre-wrap">
+              {MEDITATION_AGENT_SYSTEM_PROMPT.slice(0, 800)}...
+            </div>
+          </div>
         </div>
       </Section>
     </div>
