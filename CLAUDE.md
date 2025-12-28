@@ -298,6 +298,131 @@ import { fishAudioCloneVoice } from './src/lib/edgeFunctions';
 - Test setup: `tests/setup.ts` includes mocks for AudioContext, MediaRecorder, and fetch
 - Coverage thresholds: `src/lib/credits.ts` has strict 90% coverage requirement
 
+**Test Files (148 tests total):**
+
+| File | Tests | Coverage |
+|------|-------|----------|
+| `tests/lib/credits.test.ts` | 42 | Credit calculations, deductions, atomic RPC |
+| `tests/lib/voiceService.test.ts` | 27 | Provider detection, paralanguage conversion, cost estimation |
+| `tests/lib/edgeFunctions.test.ts` | 27 | Retry logic, timeout handling, error scenarios |
+| `tests/lib/agent/MeditationAgent.test.ts` | 52 | Content detection, disambiguation, context extraction |
+
+## Code Quality Patterns
+
+### Error Handling
+
+All error handlers use `unknown` type with type guards (not `any`):
+
+```typescript
+// ✅ Correct pattern
+} catch (error: unknown) {
+  const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+  console.error('Operation failed:', errorMessage);
+}
+
+// ❌ Avoid
+} catch (error: any) {
+  console.error(error.message);  // Unsafe
+}
+```
+
+**Edge function errors** use the `EdgeFunctionError` interface (`src/lib/edgeFunctions.ts`):
+```typescript
+interface EdgeFunctionError extends Error {
+  requestId?: string;   // For distributed tracing
+  status?: number;      // HTTP status code
+  isNetworkError?: boolean;
+}
+```
+
+### Debug Logging
+
+All debug logs are wrapped with a DEV flag to avoid console noise in production:
+
+```typescript
+const DEBUG = import.meta.env?.DEV ?? false;
+
+// Usage
+if (DEBUG) console.log('[moduleName] Debug info:', data);
+```
+
+Files using this pattern:
+- `src/lib/voiceService.ts`
+- `src/lib/edgeFunctions.ts`
+- `src/lib/audioConverter.ts`
+- `src/lib/agent/MeditationAgent.ts`
+- `src/hooks/useMeditationAgent.ts`
+
+### Error Boundaries
+
+Lazy-loaded components are wrapped with `ErrorBoundary` to handle chunk load failures:
+
+```typescript
+// In AgentChat.tsx and App.tsx
+<ErrorBoundary>
+  <Suspense fallback={<LoadingSpinner />}>
+    <LazyComponent />
+  </Suspense>
+</ErrorBoundary>
+```
+
+The `ErrorBoundary` component (`src/components/ErrorBoundary.tsx`) catches render errors and displays a user-friendly fallback.
+
+### Retry Logic (Edge Functions)
+
+`src/lib/edgeFunctions.ts` implements automatic retry with exponential backoff:
+
+| Error Type | Retryable? | Behavior |
+|------------|------------|----------|
+| 5xx Server Error | ✅ Yes | Retry with backoff |
+| 429 Rate Limit | ✅ Yes | Retry with backoff |
+| Network Error | ✅ Yes | Retry if online |
+| Timeout | ✅ Yes | Retry with backoff |
+| 4xx Client Error | ❌ No | Fail immediately |
+| 401/403 Auth Error | ❌ No | Fail immediately |
+
+Default config: 3 retries, 500ms base delay, 5s max delay, with jitter.
+
+## Architecture Decisions
+
+### AppContext (Not Decomposed)
+
+`src/contexts/AppContext.tsx` is a "god context" (~363 lines, 40+ state items) handling auth, voices, audio, scripts, playback, etc.
+
+**Decision:** Kept as-is for now.
+
+**Rationale:**
+- No observable performance issues
+- Medium risk to decompose (touches 20+ files)
+- Meditation app doesn't have high-frequency state updates
+- Works fine in production
+
+**Future decomposition plan** (if needed):
+```
+src/contexts/
+├── AuthContext.tsx      # user, auth methods
+├── VoiceContext.tsx     # voice selection, cloning (exists)
+├── PlaybackContext.tsx  # isPlaying, currentTime, audio refs
+├── ScriptContext.tsx    # script state, audio tags
+├── LibraryContext.tsx   # meditation history, pagination
+└── AppContext.tsx       # minimal: theme, navigation only
+```
+
+**When to decompose:**
+- UI lag during playback
+- File grows past 500 lines
+- Multiple devs causing merge conflicts
+
+### Type Exports
+
+`AgentAction` type is defined once in `MeditationAgent.ts` and re-exported from `useMeditationAgent.ts`:
+
+```typescript
+// src/hooks/useMeditationAgent.ts
+import { type AgentAction } from '../lib/agent/MeditationAgent';
+export type { AgentAction };
+```
+
 ## Local Edge Function Development
 
 ```bash
