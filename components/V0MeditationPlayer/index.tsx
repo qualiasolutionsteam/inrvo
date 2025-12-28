@@ -333,8 +333,8 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-xs text-cyan-400/40">0%</span>
-                        <div className="relative flex-1 h-1.5">
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500/20 to-cyan-400/30" />
+                        <div className="relative flex-1 h-4 flex items-center">
+                          <div className="absolute inset-x-0 h-1.5 rounded-full bg-gradient-to-r from-cyan-500/20 to-cyan-400/30" />
                           <input
                             type="range"
                             min="0"
@@ -342,7 +342,7 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                             step="0.05"
                             value={voiceVolume}
                             onChange={(e) => onVoiceVolumeChange(parseFloat(e.target.value))}
-                            className="relative w-full h-1.5 bg-transparent rounded-full appearance-none cursor-pointer
+                            className="relative z-10 w-full h-1.5 bg-transparent rounded-full appearance-none cursor-pointer
                               [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
                               [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-cyan-400 [&::-webkit-slider-thumb]:to-cyan-500
                               [&::-webkit-slider-thumb]:shadow-[0_0_12px_rgba(34,211,238,0.6),0_0_4px_rgba(34,211,238,0.8)]
@@ -367,8 +367,8 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-xs text-violet-400/40">0%</span>
-                        <div className="relative flex-1 h-1.5">
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500/20 via-violet-500/25 to-purple-500/20" />
+                        <div className="relative flex-1 h-4 flex items-center">
+                          <div className="absolute inset-x-0 h-1.5 rounded-full bg-gradient-to-r from-cyan-500/20 via-violet-500/25 to-purple-500/20" />
                           <input
                             type="range"
                             min="0"
@@ -376,7 +376,7 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                             step="0.05"
                             value={natureSoundVolume}
                             onChange={(e) => onNatureSoundVolumeChange(parseFloat(e.target.value))}
-                            className="relative w-full h-1.5 bg-transparent rounded-full appearance-none cursor-pointer
+                            className="relative z-10 w-full h-1.5 bg-transparent rounded-full appearance-none cursor-pointer
                               [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
                               [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-cyan-400 [&::-webkit-slider-thumb]:via-violet-400 [&::-webkit-slider-thumb]:to-purple-500
                               [&::-webkit-slider-thumb]:shadow-[0_0_12px_rgba(139,92,246,0.6),0_0_4px_rgba(139,92,246,0.8)]
@@ -401,8 +401,8 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-xs text-purple-400/40">0%</span>
-                        <div className="relative flex-1 h-1.5">
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500/20 to-purple-400/30" />
+                        <div className="relative flex-1 h-4 flex items-center">
+                          <div className="absolute inset-x-0 h-1.5 rounded-full bg-gradient-to-r from-purple-500/20 to-purple-400/30" />
                           <input
                             type="range"
                             min="0"
@@ -410,7 +410,7 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                             step="0.05"
                             value={backgroundVolume}
                             onChange={(e) => onBackgroundVolumeChange(parseFloat(e.target.value))}
-                            className="relative w-full h-1.5 bg-transparent rounded-full appearance-none cursor-pointer
+                            className="relative z-10 w-full h-1.5 bg-transparent rounded-full appearance-none cursor-pointer
                               [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
                               [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-purple-400 [&::-webkit-slider-thumb]:to-purple-600
                               [&::-webkit-slider-thumb]:shadow-[0_0_12px_rgba(168,85,247,0.6),0_0_4px_rgba(168,85,247,0.8)]
