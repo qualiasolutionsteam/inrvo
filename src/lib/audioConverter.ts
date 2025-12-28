@@ -3,6 +3,9 @@
  * Converts WebM/MP4 recordings to high-quality WAV format for better voice cloning results
  */
 
+// Debug logging - only enabled in development
+const DEBUG = import.meta.env?.DEV ?? false;
+
 /**
  * Convert WebM/MP4 audio blob to WAV format with high quality settings
  *
@@ -16,7 +19,7 @@
  * @returns Promise<Blob> - High-quality WAV blob suitable for voice cloning
  */
 export async function convertToWAV(blob: Blob): Promise<Blob> {
-  console.log('[convertToWAV] Starting conversion, input blob size:', blob.size, 'type:', blob.type);
+  if (DEBUG) console.log('[convertToWAV] Starting conversion, input blob size:', blob.size, 'type:', blob.type);
 
   // Create audio context with high sample rate for better quality
   const audioContext = new AudioContext({ sampleRate: 48000 });
@@ -24,17 +27,17 @@ export async function convertToWAV(blob: Blob): Promise<Blob> {
   try {
     // Decode the input audio to raw PCM data
     const arrayBuffer = await blob.arrayBuffer();
-    console.log('[convertToWAV] ArrayBuffer size:', arrayBuffer.byteLength);
+    if (DEBUG) console.log('[convertToWAV] ArrayBuffer size:', arrayBuffer.byteLength);
 
     const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-    console.log('[convertToWAV] Decoded audio - duration:', audioBuffer.duration, 'sampleRate:', audioBuffer.sampleRate, 'channels:', audioBuffer.numberOfChannels, 'length:', audioBuffer.length);
+    if (DEBUG) console.log('[convertToWAV] Decoded audio - duration:', audioBuffer.duration, 'sampleRate:', audioBuffer.sampleRate, 'channels:', audioBuffer.numberOfChannels, 'length:', audioBuffer.length);
 
     // Convert to mono if stereo (voice cloning doesn't need stereo)
     const monoData = audioBuffer.numberOfChannels > 1
       ? mergeChannels(audioBuffer)
       : audioBuffer.getChannelData(0);
 
-    console.log('[convertToWAV] Mono data length:', monoData.length);
+    if (DEBUG) console.log('[convertToWAV] Mono data length:', monoData.length);
 
     if (monoData.length === 0) {
       throw new Error('Audio decoding produced empty data');
@@ -57,7 +60,7 @@ export async function convertToWAV(blob: Blob): Promise<Blob> {
       throw new Error('WAV encoding failed - invalid headers');
     }
 
-    console.log('[convertToWAV] Conversion successful - output size:', wavBlob.size, 'type:', wavBlob.type);
+    if (DEBUG) console.log('[convertToWAV] Conversion successful - output size:', wavBlob.size, 'type:', wavBlob.type);
     return wavBlob;
   } catch (error) {
     console.error('[convertToWAV] Conversion failed:', error);
@@ -111,7 +114,7 @@ function normalizeRMS(samples: Float32Array, targetRMS: number = 0.2): Float32Ar
 
   // If audio is too quiet (silence or near-silence), skip normalization
   if (currentRMS < 0.0001) {
-    console.log('[normalizeRMS] Audio too quiet, skipping normalization');
+    if (DEBUG) console.log('[normalizeRMS] Audio too quiet, skipping normalization');
     return samples;
   }
 
@@ -135,10 +138,10 @@ function normalizeRMS(samples: Float32Array, targetRMS: number = 0.2): Float32Ar
   }
 
   if (clippedSamples > 0) {
-    console.log(`[normalizeRMS] Applied soft limiting to ${clippedSamples} samples (${(clippedSamples / samples.length * 100).toFixed(2)}%)`);
+    if (DEBUG) console.log(`[normalizeRMS] Applied soft limiting to ${clippedSamples} samples (${(clippedSamples / samples.length * 100).toFixed(2)}%)`);
   }
 
-  console.log(`[normalizeRMS] Normalized from RMS ${currentRMS.toFixed(4)} to ${targetRMS} (gain: ${gain.toFixed(2)}x)`);
+  if (DEBUG) console.log(`[normalizeRMS] Normalized from RMS ${currentRMS.toFixed(4)} to ${targetRMS} (gain: ${gain.toFixed(2)}x)`);
   return normalized;
 }
 

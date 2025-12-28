@@ -5,8 +5,11 @@
  * Integrates the MeditationAgent with Gemini, tools, and conversation storage.
  */
 
+// Debug logging - only enabled in development
+const DEBUG = import.meta.env?.DEV ?? false;
+
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { MeditationAgent, getRandomGreeting, type AgentResponse, type ConversationMessage } from '../lib/agent/MeditationAgent';
+import { MeditationAgent, getRandomGreeting, type AgentResponse, type ConversationMessage, type AgentAction } from '../lib/agent/MeditationAgent';
 import { conversationStore } from '../lib/agent/conversationStore';
 import * as agentTools from '../lib/agent/agentTools';
 import { geminiService } from '../../geminiService';
@@ -29,12 +32,8 @@ export interface ChatMessage {
   quote?: { quote: string; teacher: string };
 }
 
-// Discriminated union for type-safe action data
-export type AgentAction =
-  | { type: 'generate_meditation'; label: string; data: { meditationType: MeditationType } }
-  | { type: 'show_options'; label: string; data?: undefined }
-  | { type: 'play_audio'; label: string; data?: undefined }
-  | { type: 'show_quote'; label: string; data?: undefined };
+// Re-export AgentAction type from MeditationAgent for external use
+export type { AgentAction };
 
 export interface MeditationResult {
   script: string;
@@ -205,7 +204,7 @@ export function useMeditationAgent(): UseMeditationAgentReturn {
             readyForReview: true,
           };
           setCurrentMeditation(meditation);
-          console.log("[useMeditationAgent] Pasted script ready for review:", {
+          if (DEBUG) console.log("[useMeditationAgent] Pasted script ready for review:", {
             length: meditation.script.length,
             type: meditation.meditationType,
           });
@@ -300,7 +299,7 @@ export function useMeditationAgent(): UseMeditationAgentReturn {
       };
 
       setCurrentMeditation(meditation);
-      console.log("[useMeditationAgent] Setting meditation:", { script: meditation.script.substring(0, 50) + "...", readyForReview: meditation.readyForReview });
+      if (DEBUG) console.log("[useMeditationAgent] Setting meditation:", { script: meditation.script.substring(0, 50) + "...", readyForReview: meditation.readyForReview });
 
       // Don't add another message - the ScriptEditor modal opens automatically
       // The brief "Creating your meditation..." message was already shown
@@ -379,7 +378,7 @@ export function useMeditationAgent(): UseMeditationAgentReturn {
 
       case 'play_audio':
         // This would be handled by the UI component that has access to voice selection
-        console.log('Play audio action triggered');
+        if (DEBUG) console.log('Play audio action triggered');
         break;
 
       case 'show_quote':

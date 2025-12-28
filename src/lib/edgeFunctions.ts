@@ -9,6 +9,16 @@ import { VoiceMetadata } from '../../types';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
+// Debug logging - only enabled in development
+const DEBUG = import.meta.env?.DEV ?? false;
+
+// Custom error type with additional properties for request tracing
+interface EdgeFunctionError extends Error {
+  requestId?: string;
+  status?: number;
+  isNetworkError?: boolean;
+}
+
 // ============================================================================
 // Auth Token Cache - Avoid fetching session on every API call
 // ============================================================================
@@ -71,10 +81,13 @@ const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
 /**
  * Check if an error is retryable (network issues, server errors)
  */
-function isRetryableError(error: any, status?: number): boolean {
+function isRetryableError(error: unknown, status?: number): boolean {
+  // Type guard for EdgeFunctionError
+  const edgeError = error as EdgeFunctionError;
+
   // Network errors are retryable
-  if (error?.isNetworkError) return true;
-  if (error?.name === 'TypeError' && error?.message === 'Failed to fetch') return true;
+  if (edgeError?.isNetworkError) return true;
+  if (error instanceof Error && error.name === 'TypeError' && error.message === 'Failed to fetch') return true;
 
   // Server errors (5xx) are retryable, except 501
   if (status && status >= 500 && status !== 501) return true;
@@ -196,9 +209,9 @@ async function callEdgeFunction<T>(
 
       if (!response.ok) {
         const errorMessage = data.error || `Edge function error: ${response.status}`;
-        const error = new Error(errorMessage);
-        (error as any).requestId = requestId;
-        (error as any).status = response.status;
+        const error = new Error(errorMessage) as EdgeFunctionError;
+        error.requestId = requestId;
+        error.status = response.status;
 
         // Check if we should retry
         if (attempt < retryOpts.maxRetries && isRetryableError(error, response.status)) {
@@ -212,13 +225,13 @@ async function callEdgeFunction<T>(
       }
 
       return data as T;
-    } catch (error: any) {
+    } catch (error: unknown) {
       clearTimeout(timeoutId);
 
       // Handle abort/timeout errors
-      if (error.name === 'AbortError') {
-        const timeoutError = new Error(`Request timeout after ${timeoutMs}ms`);
-        (timeoutError as any).requestId = requestId;
+      if (error instanceof Error && error.name === 'AbortError') {
+        const timeoutError = new Error(`Request timeout after ${timeoutMs}ms`) as EdgeFunctionError;
+        timeoutError.requestId = requestId;
         lastError = timeoutError;
 
         // Retry on timeout
@@ -232,14 +245,14 @@ async function callEdgeFunction<T>(
       }
 
       // Handle network/offline errors with user-friendly message
-      if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+      if (error instanceof Error && error.name === 'TypeError' && error.message === 'Failed to fetch') {
         const offlineError = new Error(
           navigator.onLine
             ? 'Unable to reach the server. Please check your connection and try again.'
             : 'You appear to be offline. Please check your internet connection.'
-        );
-        (offlineError as any).requestId = requestId;
-        (offlineError as any).isNetworkError = true;
+        ) as EdgeFunctionError;
+        offlineError.requestId = requestId;
+        offlineError.isNetworkError = true;
         lastError = offlineError;
 
         // Retry on network errors
@@ -253,13 +266,14 @@ async function callEdgeFunction<T>(
       }
 
       // Preserve request ID on other errors
-      if (!error.requestId) {
-        error.requestId = requestId;
+      const edgeError = error as EdgeFunctionError;
+      if (!edgeError.requestId) {
+        edgeError.requestId = requestId;
       }
 
       // Check if we should retry this error
       if (attempt < retryOpts.maxRetries && isRetryableError(error, lastStatus)) {
-        lastError = error;
+        lastError = error instanceof Error ? error : new Error(String(error));
         const delay = calculateBackoffDelay(attempt, retryOpts.baseDelayMs, retryOpts.maxDelayMs);
         await sleep(delay);
         continue;
@@ -333,7 +347,7 @@ async function blobToBase64(blob: Blob): Promise<string> {
     throw new Error(`Audio is not WAV format (detected: ${riff === 'RIFF' ? 'RIFF' : riff})`);
   }
 
-  console.log('[blobToBase64] WAV validated, size:', bytes.length, 'type:', blob.type);
+  if (DEBUG) console.log('[blobToBase64] WAV validated, size:', bytes.length, 'type:', blob.type);
 
   // Convert to base64 using chunked approach to avoid call stack issues
   let binary = '';

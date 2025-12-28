@@ -198,8 +198,9 @@ export function useVoiceCloning(
           'Meditation voice clone created with INrVO',
           voiceMetadata
         );
-      } catch (fishError: any) {
-        console.warn('Fish Audio cloning failed, trying Chatterbox fallback:', fishError.message);
+      } catch (fishError: unknown) {
+        const fishErrorMessage = fishError instanceof Error ? fishError.message : 'Unknown error';
+        console.warn('Fish Audio cloning failed, trying Chatterbox fallback:', fishErrorMessage);
 
         // Fallback to Chatterbox
         setCloningStatus({ state: 'uploading_to_chatterbox' });
@@ -214,11 +215,12 @@ export function useVoiceCloning(
             voiceProfileId: chatterboxResult.voiceProfileId,
             voiceSampleUrl: chatterboxResult.voiceSampleUrl,
           };
-        } catch (chatterboxError: any) {
+        } catch (chatterboxError: unknown) {
           console.error('Both Fish Audio and Chatterbox failed:', chatterboxError);
+          const chatterboxErrorMessage = chatterboxError instanceof Error ? chatterboxError.message : 'Voice cloning failed';
           setCloningStatus({
             state: 'error',
-            message: chatterboxError.message || 'Voice cloning failed',
+            message: chatterboxErrorMessage,
             canRetry: true,
           });
           return;
@@ -262,11 +264,12 @@ export function useVoiceCloning(
         voiceId: cloneResult.voiceProfileId,
         voiceName: name,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Voice cloning failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to clone voice';
       setCloningStatus({
         state: 'error',
-        message: error.message || 'Failed to clone voice',
+        message: errorMessage,
         canRetry: true,
       });
     }
@@ -348,8 +351,9 @@ export function useVoiceCloning(
           finalName,
           'Voice clone created with INrVO'
         );
-      } catch (fishError: any) {
-        console.warn('Fish Audio failed, trying Chatterbox:', fishError.message);
+      } catch (fishError: unknown) {
+        const fishErrorMsg = fishError instanceof Error ? fishError.message : 'Unknown error';
+        console.warn('Fish Audio failed, trying Chatterbox:', fishErrorMsg);
         try {
           const chatterboxResult = await chatterboxCloneVoice(
             wavBlob,
@@ -360,9 +364,10 @@ export function useVoiceCloning(
             voiceProfileId: chatterboxResult.voiceProfileId,
             voiceSampleUrl: chatterboxResult.voiceSampleUrl,
           };
-        } catch (cloneError: any) {
+        } catch (cloneError: unknown) {
           console.error('Both Fish Audio and Chatterbox failed:', cloneError);
-          onError?.(`Voice cloning failed: ${cloneError.message}`);
+          const cloneErrorMessage = cloneError instanceof Error ? cloneError.message : 'Unknown error';
+          onError?.(`Voice cloning failed: ${cloneErrorMessage}`);
           setIsSavingVoice(false);
           return;
         }
@@ -419,9 +424,10 @@ export function useVoiceCloning(
 
       setSelectedVoice(newVoice);
       onVoiceCreated?.(newVoice);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to auto-save voice:', error);
-      onError?.(error?.message || 'Failed to save voice. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save voice. Please try again.';
+      onError?.(errorMessage);
     } finally {
       setIsSavingVoice(false);
     }

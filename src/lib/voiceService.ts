@@ -1,5 +1,9 @@
 import { VoiceProfile, VoiceProvider } from '../../types';
 import { webSpeechService, isWebSpeechAvailable } from './webSpeechService';
+
+// Debug logging - only enabled in development
+const DEBUG = import.meta.env?.DEV ?? false;
+
 // Voice service supports multiple providers:
 // - 'fish-audio': Fish Audio API (primary - best quality, real-time)
 // - 'chatterbox': Chatterbox via Replicate (fallback)
@@ -259,7 +263,7 @@ export const voiceService = {
       const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
       // Log successful decode for debugging
-      console.log('[voiceService] Audio decoded successfully:', {
+      if (DEBUG) console.log('[voiceService] Audio decoded successfully:', {
         duration: audioBuffer.duration.toFixed(2) + 's',
         sampleRate: audioBuffer.sampleRate + 'Hz',
         channels: audioBuffer.numberOfChannels,

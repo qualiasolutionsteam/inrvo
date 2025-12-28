@@ -14,6 +14,9 @@ import type { MeditationType } from '../src/lib/agent/knowledgeBase';
 // Lazy load MeditationEditor for bundle optimization
 const MeditationEditor = lazy(() => import('../src/components/MeditationEditor'));
 
+// Error boundary for handling chunk load failures
+import ErrorBoundary from './ErrorBoundary';
+
 // ============================================================================
 // ICONS
 // ============================================================================
@@ -485,28 +488,30 @@ export const AgentChat: React.FC<AgentChatProps> = ({
 
       {/* Meditation Editor - Unified editing experience */}
       {showMeditationPanel && (currentMeditation?.script || restoredMeditationScript) && (
-        <Suspense fallback={
-          <div className="fixed inset-0 z-[60] bg-[#020617] flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-cyan-500 border-t-transparent" />
-          </div>
-        }>
-          <MeditationEditor
-            script={currentMeditation?.script || restoredMeditationScript || ''}
-            meditationType={currentMeditation?.meditationType || 'general'}
-            selectedVoice={selectedVoice || null}
-            selectedMusic={selectedMusic || null}
-            selectedTags={selectedTags}
-            availableMusic={availableMusic}
-            availableTags={availableTags}
-            onVoiceSelect={onRequestVoiceSelection || (() => {})}
-            onMusicSelect={onMusicChange || (() => {})}
-            onTagToggle={handleTagToggle}
-            onGenerate={handleGenerate}
-            onClose={handleCloseMeditationPanel}
-            isGenerating={isGeneratingAudio}
-            source="agent"
-          />
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense fallback={
+            <div className="fixed inset-0 z-[60] bg-[#020617] flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-cyan-500 border-t-transparent" />
+            </div>
+          }>
+            <MeditationEditor
+              script={currentMeditation?.script || restoredMeditationScript || ''}
+              meditationType={currentMeditation?.meditationType || 'general'}
+              selectedVoice={selectedVoice || null}
+              selectedMusic={selectedMusic || null}
+              selectedTags={selectedTags}
+              availableMusic={availableMusic}
+              availableTags={availableTags}
+              onVoiceSelect={onRequestVoiceSelection || (() => {})}
+              onMusicSelect={onMusicChange || (() => {})}
+              onTagToggle={handleTagToggle}
+              onGenerate={handleGenerate}
+              onClose={handleCloseMeditationPanel}
+              isGenerating={isGeneratingAudio}
+              source="agent"
+            />
+          </Suspense>
+        </ErrorBoundary>
       )}
     </div>
   );

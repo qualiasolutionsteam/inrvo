@@ -124,9 +124,10 @@ export function useVoiceGeneration(
       setGenerationStage('idle');
 
       onScriptGenerated?.(enhanced);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to generate script:', error);
-      onError?.(error?.message || 'Failed to generate meditation. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate meditation. Please try again.';
+      onError?.(errorMessage);
       setIsGenerating(false);
       setGenerationStage('idle');
     }
@@ -141,9 +142,10 @@ export function useVoiceGeneration(
     try {
       const extendedScript = await geminiService.extendScript(editableScript);
       setEditableScript(extendedScript);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error extending script:', error);
-      onError?.(error?.message || 'Failed to extend script. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to extend script. Please try again.';
+      onError?.(errorMessage);
     } finally {
       setIsExtending(false);
     }
@@ -193,9 +195,10 @@ export function useVoiceGeneration(
       onAudioGenerated?.(audioBuffer, editableScript, timingMap);
 
       return { audioBuffer, timingMap };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to play edited script:', error);
-      onError?.(error?.message || 'Failed to generate audio. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate audio. Please try again.';
+      onError?.(errorMessage);
       setIsGenerating(false);
       setGenerationStage('idle');
       return null;

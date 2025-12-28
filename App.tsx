@@ -24,6 +24,8 @@ const MeditationPlayer = lazy(() => import('./components/V0MeditationPlayer'));
 // InlinePlayer removed - using only V0MeditationPlayer now
 // AgentChat lazy-loaded to reduce initial bundle (~15KB savings)
 const AgentChat = lazy(() => import('./components/AgentChat').then(m => ({ default: m.AgentChat })));
+// Error boundary for handling chunk load failures gracefully
+import ErrorBoundary from './components/ErrorBoundary';
 // Modal components extracted to reduce App.tsx complexity
 import { MusicSelectorModal } from './src/components/MusicSelectorModal';
 import { NatureSoundSelectorModal } from './src/components/NatureSoundSelectorModal';
@@ -2265,85 +2267,91 @@ const App: React.FC = () => {
 
         {/* MODAL: Script Preview & Edit - Using unified MeditationEditor */}
         {showScriptPreview && (
-          <Suspense fallback={
-            <div className="fixed inset-0 z-[60] bg-[#020617] flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-2 border-cyan-500 border-t-transparent" />
-            </div>
-          }>
-            <MeditationEditor
-              script={editableScript}
-              selectedVoice={selectedVoice}
-              selectedMusic={selectedBackgroundTrack}
-              selectedTags={selectedAudioTags}
-              availableMusic={BACKGROUND_TRACKS}
-              availableTags={AUDIO_TAG_CATEGORIES}
-              onVoiceSelect={() => setShowVoiceManager(true)}
-              onMusicSelect={(track) => setSelectedBackgroundTrack(track)}
-              onTagToggle={(tagId) => {
-                setSelectedAudioTags(prev =>
-                  prev.includes(tagId) ? prev.filter(t => t !== tagId) : [...prev, tagId]
-                );
-              }}
-              onGenerate={(updatedScript) => {
-                setEditableScript(updatedScript);
-                throttledPlayEditedScript(updatedScript);
-              }}
-              onClose={() => !(isGenerating || isExtending) && setShowScriptPreview(false)}
-              isGenerating={isGenerating || isExtending}
-              source="direct"
-            />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={
+              <div className="fixed inset-0 z-[60] bg-[#020617] flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-cyan-500 border-t-transparent" />
+              </div>
+            }>
+              <MeditationEditor
+                script={editableScript}
+                selectedVoice={selectedVoice}
+                selectedMusic={selectedBackgroundTrack}
+                selectedTags={selectedAudioTags}
+                availableMusic={BACKGROUND_TRACKS}
+                availableTags={AUDIO_TAG_CATEGORIES}
+                onVoiceSelect={() => setShowVoiceManager(true)}
+                onMusicSelect={(track) => setSelectedBackgroundTrack(track)}
+                onTagToggle={(tagId) => {
+                  setSelectedAudioTags(prev =>
+                    prev.includes(tagId) ? prev.filter(t => t !== tagId) : [...prev, tagId]
+                  );
+                }}
+                onGenerate={(updatedScript) => {
+                  setEditableScript(updatedScript);
+                  throttledPlayEditedScript(updatedScript);
+                }}
+                onClose={() => !(isGenerating || isExtending) && setShowScriptPreview(false)}
+                isGenerating={isGenerating || isExtending}
+                source="direct"
+              />
+            </Suspense>
+          </ErrorBoundary>
         )}
 
         {/* Auth Modal (lazy-loaded) */}
-        <Suspense fallback={null}>
-          <AuthModal
-            isOpen={showAuthModal}
-            onClose={() => setShowAuthModal(false)}
-            onSuccess={() => {
-              setShowAuthModal(false);
-              checkUser();
-            }}
-          />
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense fallback={null}>
+            <AuthModal
+              isOpen={showAuthModal}
+              onClose={() => setShowAuthModal(false)}
+              onSuccess={() => {
+                setShowAuthModal(false);
+                checkUser();
+              }}
+            />
+          </Suspense>
+        </ErrorBoundary>
 
         {/* Voice Manager Modal (lazy-loaded) */}
-        <Suspense fallback={null}>
-          <VoiceManager
-            isOpen={showVoiceManager}
-            onClose={() => setShowVoiceManager(false)}
-            onSelectVoice={(voice) => {
-              // Determine provider based on available IDs (fish-audio > chatterbox)
-              const provider = voice.fish_audio_model_id ? 'fish-audio' as const : 'chatterbox' as const;
-              const voiceProfile: VoiceProfile = {
-                id: voice.id,
-                name: voice.name,
-                provider,
-                voiceName: voice.name,
-                description: voice.description || 'Your personalized voice clone',
-                isCloned: true,
-                providerVoiceId: voice.provider_voice_id,
-                fishAudioModelId: voice.fish_audio_model_id,
-                voiceSampleUrl: voice.voice_sample_url,
-              };
-              setSelectedVoice(voiceProfile);
-              setShowVoiceManager(false);
-            }}
-            onCloneVoice={() => {
-              openCloneModal();
-              setMicError(null);
-            }}
-            onVoiceDeleted={(deletedVoiceId) => {
-              // Clear selection if deleted voice was selected
-              if (selectedVoice?.id === deletedVoiceId) {
-                setSelectedVoice(null);
-              }
-              // Remove from available voices
-              setAvailableVoices(prev => prev.filter(v => v.id !== deletedVoiceId));
-            }}
-            currentVoiceId={selectedVoice?.id}
-          />
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense fallback={null}>
+            <VoiceManager
+              isOpen={showVoiceManager}
+              onClose={() => setShowVoiceManager(false)}
+              onSelectVoice={(voice) => {
+                // Determine provider based on available IDs (fish-audio > chatterbox)
+                const provider = voice.fish_audio_model_id ? 'fish-audio' as const : 'chatterbox' as const;
+                const voiceProfile: VoiceProfile = {
+                  id: voice.id,
+                  name: voice.name,
+                  provider,
+                  voiceName: voice.name,
+                  description: voice.description || 'Your personalized voice clone',
+                  isCloned: true,
+                  providerVoiceId: voice.provider_voice_id,
+                  fishAudioModelId: voice.fish_audio_model_id,
+                  voiceSampleUrl: voice.voice_sample_url,
+                };
+                setSelectedVoice(voiceProfile);
+                setShowVoiceManager(false);
+              }}
+              onCloneVoice={() => {
+                openCloneModal();
+                setMicError(null);
+              }}
+              onVoiceDeleted={(deletedVoiceId) => {
+                // Clear selection if deleted voice was selected
+                if (selectedVoice?.id === deletedVoiceId) {
+                  setSelectedVoice(null);
+                }
+                // Remove from available voices
+                setAvailableVoices(prev => prev.filter(v => v.id !== deletedVoiceId));
+              }}
+              currentVoiceId={selectedVoice?.id}
+            />
+          </Suspense>
+        </ErrorBoundary>
 
         {/* Sidebar Overlay */}
         {showBurgerMenu && (

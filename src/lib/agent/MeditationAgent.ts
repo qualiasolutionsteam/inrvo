@@ -12,6 +12,9 @@
  * - Children's Stories (toddler 2-4, young child 5-8)
  */
 
+// Debug logging - only enabled in development
+const DEBUG = import.meta.env?.DEV ?? false;
+
 import {
   WISDOM_TEACHERS,
   MEDITATION_TYPES,
@@ -277,7 +280,7 @@ export class MeditationAgent {
     try {
       this.meditationPreferences = await loadMeditationPreferences(this.userId);
       this.preferencesLoaded = true;
-      console.log('[MeditationAgent] Loaded user preferences:', this.meditationPreferences);
+      if (DEBUG) console.log('[MeditationAgent] Loaded user preferences:', this.meditationPreferences);
     } catch (error) {
       console.error('[MeditationAgent] Error loading preferences:', error);
     }
@@ -303,7 +306,7 @@ export class MeditationAgent {
     // SECOND: Check if user pasted a ready-made meditation script
     const pastedScript = this.detectReadyMeditationScript(userMessage);
     if (pastedScript) {
-      console.log('[MeditationAgent] User pasted a ready-made meditation, skipping AI processing');
+      if (DEBUG) console.log('[MeditationAgent] User pasted a ready-made meditation, skipping AI processing');
 
       // Add to context for tracking
       this.context.messages.push({
@@ -343,7 +346,7 @@ export class MeditationAgent {
 
     // Use new intelligent content type detection
     const detection = contentDetector.detect(userMessage);
-    console.log('[MeditationAgent] Content detection result:', {
+    if (DEBUG) console.log('[MeditationAgent] Content detection result:', {
       category: detection.category,
       subType: detection.subType,
       confidence: detection.confidence,
@@ -355,7 +358,7 @@ export class MeditationAgent {
     // and let it flow naturally to the LLM
     if (detection.isConversational || detection.confidence === 0) {
       // Continue to normal conversational flow below (build prompt, generate, etc.)
-      console.log('[MeditationAgent] Conversational input detected, flowing to LLM');
+      if (DEBUG) console.log('[MeditationAgent] Conversational input detected, flowing to LLM');
     }
     // ONLY trigger disambiguation for EXPLICIT generation requests with ambiguous type
     // e.g., "create a meditation" (but what kind?) - NOT casual mentions like "looking for meditation platform"
@@ -420,7 +423,7 @@ export class MeditationAgent {
     // Use the content detector to handle the response
     const updatedResult = contentDetector.handleDisambiguationResponse(userMessage, previousResult);
 
-    console.log('[MeditationAgent] Disambiguation resolved:', {
+    if (DEBUG) console.log('[MeditationAgent] Disambiguation resolved:', {
       category: updatedResult.category,
       subType: updatedResult.subType,
       confidence: updatedResult.confidence,
@@ -438,7 +441,7 @@ export class MeditationAgent {
     // Instead, fall back to natural conversation via Gemini
     // This prevents the annoying "I didn't catch that" loop
     if (updatedResult.needsDisambiguation) {
-      console.log('[MeditationAgent] Disambiguation unclear, falling back to Gemini conversation');
+      if (DEBUG) console.log('[MeditationAgent] Disambiguation unclear, falling back to Gemini conversation');
 
       // Build conversational prompt and let Gemini handle it naturally
       const prompt = this.buildPrompt(userMessage, this.context.sessionState.currentMood);
@@ -734,7 +737,7 @@ Guide:`;
     const isMeditationContent = count >= 3 && (isLongResponse || hasMultipleParagraphs);
 
     if (isMeditationContent) {
-      console.log('[MeditationAgent] Detected meditation content in response:', {
+      if (DEBUG) console.log('[MeditationAgent] Detected meditation content in response:', {
         indicatorCount: count,
         responseLength: response.length,
         paragraphCount,
@@ -847,7 +850,7 @@ Guide:`;
     // - At least 3 meditation indicators AND
     // - Has meditation structure (multiple paragraphs or audio tags)
     if (indicatorCount >= 3 && hasMeditationStructure) {
-      console.log('[MeditationAgent] Detected ready-made meditation script:', {
+      if (DEBUG) console.log('[MeditationAgent] Detected ready-made meditation script:', {
         indicatorCount,
         paragraphCount,
         hasAudioTags,
@@ -896,7 +899,7 @@ Guide:`;
     // The agent must explicitly use creation phrases to trigger generation
 
     // Trigger generation only on explicit phrases
-    console.log("[MeditationAgent] shouldGenerate:", shouldGenerate, "| meditationType:", requestedMeditation, "| emotionalState:", emotionalState);
+    if (DEBUG) console.log("[MeditationAgent] shouldGenerate:", shouldGenerate, "| meditationType:", requestedMeditation, "| emotionalState:", emotionalState);
     if (shouldGenerate) {
       response.shouldGenerateMeditation = true;
       response.meditationType = requestedMeditation || this.inferMeditationType(responseText);
@@ -933,8 +936,8 @@ Guide:`;
       }
     }
 
-    // Add suggested actions based on context
-    response.suggestedActions = this.generateSuggestedActions(responseText, emotionalState);
+    // Suggested actions are intentionally empty - let conversation flow naturally
+    response.suggestedActions = [];
 
     // Add a relevant quote very rarely (5% chance) and only after deeper conversations
     if (Math.random() < 0.05 && emotionalState && this.context.sessionState.messageCount > 3) {
@@ -971,16 +974,6 @@ Guide:`;
     if (lowered.includes('presence') || lowered.includes('present moment')) return 'presence';
 
     return 'guided_visualization'; // Default
-  }
-
-  /**
-   * Generate suggested action buttons
-   * Kept minimal - the agent's conversation should guide the user naturally
-   */
-  private generateSuggestedActions(_responseText: string, _emotionalState?: string): AgentAction[] {
-    // Return empty - let the conversation flow naturally without button prompts
-    // The agent will ask clarifying questions and guide the user through dialogue
-    return [];
   }
 
   /**

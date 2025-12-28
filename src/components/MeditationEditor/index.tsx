@@ -181,10 +181,11 @@ export const MeditationEditor = memo<MeditationEditorProps>(
         toast.success('Script harmonized', {
           description: 'Audio tags have been added for natural pacing',
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Failed to harmonize script:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Please try again';
         toast.error('Failed to harmonize', {
-          description: error?.message || 'Please try again',
+          description: errorMessage,
         });
       } finally {
         setIsHarmonizing(false);
@@ -225,10 +226,11 @@ export const MeditationEditor = memo<MeditationEditorProps>(
         toast.success('Preview ready', {
           description: `Listen to "${selectedVoice.name}" voice sample`,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Failed to generate voice preview:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Could not generate voice preview';
         toast.error('Preview failed', {
-          description: error?.message || 'Could not generate voice preview',
+          description: errorMessage,
         });
       } finally {
         setIsGeneratingPreview(false);
