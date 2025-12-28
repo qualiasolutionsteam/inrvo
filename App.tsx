@@ -217,6 +217,70 @@ const App: React.FC = () => {
   // - Loading voice profiles on login
   // Audio tag preferences are loaded by AudioTagsContext
 
+  // Cleanup audio resources on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Stop and disconnect audio source
+      if (audioSourceRef.current) {
+        try {
+          audioSourceRef.current.stop();
+          audioSourceRef.current.disconnect();
+        } catch {
+          // Ignore errors if already stopped
+        }
+        audioSourceRef.current = null;
+      }
+
+      // Disconnect gain node
+      if (gainNodeRef.current) {
+        try {
+          gainNodeRef.current.disconnect();
+        } catch {
+          // Ignore disconnect errors
+        }
+        gainNodeRef.current = null;
+      }
+
+      // Close audio context to release hardware resources
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
+
+      // Release audio buffer memory (can be 5-10MB)
+      audioBufferRef.current = null;
+
+      // Stop and release background audio
+      if (backgroundAudioRef.current) {
+        backgroundAudioRef.current.pause();
+        backgroundAudioRef.current.src = '';
+        backgroundAudioRef.current.load(); // Force release
+        backgroundAudioRef.current = null;
+      }
+
+      // Stop and release nature sound audio
+      if (natureSoundAudioRef.current) {
+        natureSoundAudioRef.current.pause();
+        natureSoundAudioRef.current.src = '';
+        natureSoundAudioRef.current.load();
+        natureSoundAudioRef.current = null;
+      }
+
+      // Stop preview audio if playing
+      if (previewNatureSoundAudioRef.current) {
+        previewNatureSoundAudioRef.current.pause();
+        previewNatureSoundAudioRef.current.src = '';
+        previewNatureSoundAudioRef.current = null;
+      }
+
+      // Cancel any pending animation frame
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+    };
+  }, []);
+
   // Fetch meditation history when library or burger menu opens
   useEffect(() => {
     if ((showLibrary || showBurgerMenu) && user && meditationHistory.length === 0) {
@@ -424,9 +488,9 @@ const App: React.FC = () => {
 
       recorder.start();
       setIsRecording(true);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Microphone access denied", e);
-      setMicError(e.message || "Microphone not found. Check permissions.");
+      setMicError(e instanceof Error ? e.message : "Microphone not found. Check permissions.");
     }
   };
 
@@ -473,9 +537,9 @@ const App: React.FC = () => {
           stopRecordingClone();
         }
       }, 30000);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Microphone access denied", e);
-      setMicError(e.message || "Microphone not found. Check permissions.");
+      setMicError(e instanceof Error ? e.message : "Microphone not found. Check permissions.");
       setIsRecordingClone(false);
     }
   };
@@ -567,9 +631,9 @@ const App: React.FC = () => {
           finalName,
           'Voice clone created with INrVO'
         );
-      } catch (cloneError: any) {
+      } catch (cloneError: unknown) {
         console.error('Chatterbox voice clone failed:', cloneError);
-        setMicError(`Voice cloning failed: ${cloneError.message}`);
+        setMicError(`Voice cloning failed: ${cloneError instanceof Error ? cloneError.message : 'Unknown error'}`);
         return;
       }
 
@@ -607,9 +671,9 @@ const App: React.FC = () => {
         providerVoiceId: cloneResult.voiceSampleUrl,
       };
       setSelectedVoice(newVoice);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to auto-save voice:', error);
-      setMicError(error?.message || 'Failed to save voice. Please try again.');
+      setMicError(error instanceof Error ? error.message : 'Failed to save voice. Please try again.');
     } finally {
       setIsSavingVoice(false);
     }
@@ -686,11 +750,11 @@ const App: React.FC = () => {
           metadata
         );
         console.log('Voice cloned successfully! Profile ID:', cloneResult.voiceProfileId, 'Fish Audio Model:', cloneResult.fishAudioModelId);
-      } catch (cloneError: any) {
+      } catch (cloneError: unknown) {
         console.error('Voice cloning failed:', cloneError);
         setCloningStatus({
           state: 'error',
-          message: cloneError.message || 'Voice cloning failed',
+          message: cloneError instanceof Error ? cloneError.message : 'Voice cloning failed',
           canRetry: true,
         });
         return;
@@ -708,11 +772,11 @@ const App: React.FC = () => {
         if (!savedVoice) {
           throw new Error('Voice profile not found after cloning');
         }
-      } catch (dbError: any) {
+      } catch (dbError: unknown) {
         console.error('Failed to fetch voice profile:', dbError);
         setCloningStatus({
           state: 'error',
-          message: dbError.message || 'Failed to fetch voice profile',
+          message: dbError instanceof Error ? dbError.message : 'Failed to fetch voice profile',
           canRetry: true,
         });
         return;
@@ -757,11 +821,11 @@ const App: React.FC = () => {
         voiceId: savedVoice.id,
         voiceName: savedVoice.name,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Voice cloning failed:', error);
       setCloningStatus({
         state: 'error',
-        message: error.message || 'Failed to clone voice',
+        message: error instanceof Error ? error.message : 'Failed to clone voice',
         canRetry: true,
       });
     }
@@ -886,11 +950,11 @@ const App: React.FC = () => {
       // Wait for audio to be ready, then play
       await audio.play();
       console.log('[Music] Play called successfully');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[Music] Failed to play background music:', error);
 
       // Handle autoplay policy
-      if (error?.name === 'NotAllowedError') {
+      if (error instanceof Error && error.name === 'NotAllowedError') {
         console.warn('[Music] Autoplay blocked - will retry on user interaction');
         setMusicError('Tap to enable music');
       } else {
@@ -1397,9 +1461,9 @@ const App: React.FC = () => {
       setIsGenerating(false);
       setGenerationStage('idle');
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to generate script:', error);
-      setMicError(error?.message || 'Failed to generate meditation.');
+      setMicError(error instanceof Error ? error.message : 'Failed to generate meditation.');
       setIsGenerating(false);
       setGenerationStage('idle');
     }
@@ -1471,13 +1535,14 @@ const App: React.FC = () => {
         description: 'Review and customize your meditation',
       });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to generate script:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Please try again';
       toast.error('Generation failed', {
         id: toastId,
-        description: error?.message || 'Please try again',
+        description: errorMessage,
       });
-      setMicError(error?.message || 'Failed to generate meditation. Please try again.');
+      setMicError(error instanceof Error ? error.message : 'Failed to generate meditation. Please try again.');
       setIsGenerating(false);
       setGenerationStage('idle');
     }
@@ -1494,9 +1559,9 @@ const App: React.FC = () => {
     try {
       const extendedScript = await geminiService.extendScript(editableScript);
       setEditableScript(extendedScript);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error extending script:', error);
-      setMicError(error?.message || 'Failed to extend script. Please try again.');
+      setMicError(error instanceof Error ? error.message : 'Failed to extend script. Please try again.');
     } finally {
       setIsExtending(false);
     }
@@ -1619,13 +1684,14 @@ const App: React.FC = () => {
           cancelAnimationFrame(animationFrameRef.current);
         }
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to play edited script:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Please try again';
       toast.error('Audio generation failed', {
         id: audioToastId,
-        description: error?.message || 'Please try again',
+        description: errorMessage,
       });
-      setMicError(error?.message || 'Failed to generate audio. Please try again.');
+      setMicError(error instanceof Error ? error.message : 'Failed to generate audio. Please try again.');
       setIsGenerating(false);
       setGenerationStage('idle');
     }
@@ -1741,9 +1807,9 @@ const App: React.FC = () => {
       setCurrentView(View.PLAYER);
 
       source.onended = () => setIsPlaying(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to start playback:', error);
-      setMicError(error?.message || 'Failed to generate audio. Please try again.');
+      setMicError(error instanceof Error ? error.message : 'Failed to generate audio. Please try again.');
       setIsGenerating(false);
     }
   };
@@ -1982,9 +2048,9 @@ const App: React.FC = () => {
                               cancelAnimationFrame(animationFrameRef.current);
                             }
                           };
-                        } catch (error: any) {
+                        } catch (error: unknown) {
                           console.error('Failed to generate audio:', error);
-                          setMicError(error?.message || 'Failed to generate audio. Please try again.');
+                          setMicError(error instanceof Error ? error.message : 'Failed to generate audio. Please try again.');
                           setIsGenerating(false);
                           setGenerationStage('idle');
                         }
