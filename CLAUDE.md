@@ -37,7 +37,7 @@ supabase db push                            # Push migrations to remote
 
 **Routing:** Uses React Router v7 with lazy-loaded pages (`src/router.tsx`). All pages are code-split via `React.lazy()`.
 
-**Routes:** `/` (home), `/play/:id?` (player), `/library` (My Audios), `/templates`, `/voice`, `/clone`, `/how-it-works`, `/about`, `/terms`, `/privacy`, `/pricing`
+**Routes:** `/` (home), `/play/:id?` (player), `/library` (My Audios), `/templates`, `/voice`, `/clone`, `/how-it-works`, `/about`, `/terms`, `/privacy`, `/pricing`, `/marketing`
 
 **State Management:**
 - React Context for cross-cutting concerns (see `src/contexts/index.ts` for exports):
@@ -319,7 +319,7 @@ import { fishAudioCloneVoice } from './src/lib/edgeFunctions';
 - Test setup: `tests/setup.ts` includes mocks for AudioContext, MediaRecorder, and fetch
 - Coverage thresholds: `src/lib/credits.ts` has strict 90% coverage requirement
 
-**Test Files (148 tests total):**
+**Test Files (355 tests total):**
 
 | File | Tests | Coverage |
 |------|-------|----------|
@@ -327,6 +327,12 @@ import { fishAudioCloneVoice } from './src/lib/edgeFunctions';
 | `tests/lib/voiceService.test.ts` | 27 | Provider detection, paralanguage conversion, cost estimation |
 | `tests/lib/edgeFunctions.test.ts` | 27 | Retry logic, timeout handling, error scenarios |
 | `tests/lib/agent/MeditationAgent.test.ts` | 52 | Content detection, disambiguation, context extraction |
+| `tests/hooks/useAudioPlayback.test.ts` | 37 | Audio playback, background music, volume control, callbacks |
+| `tests/hooks/useMeditationAgent.test.ts` | 18 | Message sending, meditation generation, synthesis, actions |
+| `tests/hooks/useVoiceCloning.test.ts` | 29 | Credit checks, Fish Audio/Chatterbox fallback, recording |
+| `tests/hooks/useVoiceGeneration.test.ts` | 27 | Script generation, extension, audio synthesis, tags |
+| `tests/contexts/AppContext.test.tsx` | 42 | All state categories, setters, auth, voices, history |
+| `tests/contexts/ModalContext.test.tsx` | 54 | All 15 modal types, open/close/toggle, convenience setters |
 
 ## Code Quality Patterns
 
@@ -403,6 +409,18 @@ The `ErrorBoundary` component (`src/components/ErrorBoundary.tsx`) catches rende
 | 401/403 Auth Error | ❌ No | Fail immediately |
 
 Default config: 3 retries, 500ms base delay, 5s max delay, with jitter.
+
+### Security Policies
+
+**Authentication (`components/AuthModal.tsx`):**
+- Password minimum: 8 characters (enforced client-side and displayed in UI)
+- Password strength indicator: Weak/Fair/Good/Strong based on length, case mix, digits, special chars
+- Email validation: Regex pattern before form submission
+
+**Storage RLS (`supabase/migrations/021_storage_bucket_rls.sql`):**
+- `meditation-audio` and `voice-samples` buckets have row-level security
+- Users can only access files in their own folder (`{user_id}/{filename}`)
+- Policies enforce SELECT, INSERT, UPDATE, DELETE permissions per-user
 
 ## Architecture Decisions
 

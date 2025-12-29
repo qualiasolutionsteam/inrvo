@@ -39,7 +39,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
   // Validation states
   const isEmailValid = EMAIL_REGEX.test(email);
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
-  const isPasswordValid = password.length >= 6;
+  const isPasswordValid = password.length >= 8;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +51,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
       return;
     }
     if (!isPasswordValid) {
-      setError('Password must be at least 6 characters');
+      setError('Password must be at least 8 characters');
       return;
     }
 
@@ -173,13 +173,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
                 onChange={(e) => setPassword(e.target.value)}
                 onBlur={() => setTouched(t => ({ ...t, password: true }))}
                 required
-                minLength={6}
+                minLength={8}
                 className={`w-full px-4 py-3 rounded-xl bg-white/5 border text-white text-sm placeholder:text-white/30 focus:outline-none focus:bg-white/[0.08] transition-all ${
                   touched.password && !isPasswordValid
                     ? 'border-rose-500/50 focus:border-rose-500/50'
                     : 'border-white/10 focus:border-cyan-500/50'
                 }`}
-                placeholder="Password (min 6 characters)"
+                placeholder="Password (min 8 characters)"
               />
               {mode === 'signup' && password && (
                 <div className="flex items-center gap-2 pl-1">
@@ -205,7 +205,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
                 </div>
               )}
               {touched.password && !isPasswordValid && password && (
-                <p className="text-xs text-rose-400 pl-1">Password must be at least 6 characters</p>
+                <p className="text-xs text-rose-400 pl-1">Password must be at least 8 characters</p>
               )}
             </div>
 
