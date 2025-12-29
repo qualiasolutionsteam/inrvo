@@ -2490,14 +2490,14 @@ const App: React.FC = () => {
           {/* History */}
           <div className="flex-1 flex flex-col min-h-0 p-4">
             <p className="text-[10px] font-medium text-white/70 uppercase tracking-wider mb-3">History</p>
-            <div className="flex-1 overflow-y-auto space-y-1">
+            <div className="flex-1 overflow-y-auto divide-y divide-cyan-500/10">
               {user ? (
                 isLoadingHistory ? (
                   <div className="flex justify-center py-6">
                     <div className="w-5 h-5 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
                   </div>
                 ) : meditationHistory.length > 0 ? (
-                  meditationHistory.slice(0, 10).map((item) => (
+                  meditationHistory.slice(0, 10).map((item, index) => (
                     <button
                       key={item.id}
                       onClick={() => {
@@ -2521,10 +2521,10 @@ const App: React.FC = () => {
                         }
                         setShowBurgerMenu(false);
                       }}
-                      className="w-full text-left p-2.5 rounded-lg hover:bg-white/5 transition-colors group"
+                      className={`w-full text-left p-2.5 rounded-lg hover:bg-cyan-500/5 transition-all group border-l-2 border-transparent hover:border-cyan-500/50 ${index === 0 ? '' : 'pt-3'}`}
                     >
-                      <p className="text-sm text-white group-hover:text-white whitespace-pre-wrap">{item.enhanced_script || item.prompt}</p>
-                      <p className="text-[10px] text-white/50 mt-1">{new Date(item.created_at).toLocaleDateString()}</p>
+                      <p className="text-sm text-white/90 group-hover:text-white whitespace-pre-wrap line-clamp-2">{item.enhanced_script || item.prompt}</p>
+                      <p className="text-[10px] text-cyan-400/50 group-hover:text-cyan-400/70 mt-1">{new Date(item.created_at).toLocaleDateString()}</p>
                     </button>
                   ))
                 ) : (
