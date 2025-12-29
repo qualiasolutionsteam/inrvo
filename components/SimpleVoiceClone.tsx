@@ -93,7 +93,7 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
           echoCancellation: false,     // Preserve natural voice characteristics
           noiseSuppression: false,     // Keep voice qualities for better cloning
           autoGainControl: false,      // Preserve natural volume dynamics
-          sampleRate: 48000,           // Studio-quality sample rate (matches audioConverter.ts)
+          sampleRate: 44100,           // Matches Fish Audio expected rate (eliminates server resampling)
           channelCount: 1,             // Mono for voice clarity
         }
       });

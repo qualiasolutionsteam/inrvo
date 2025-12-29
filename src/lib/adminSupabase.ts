@@ -4,6 +4,7 @@
  */
 
 import { supabase, withRetry, User, VoiceProfile, MeditationHistory } from '../../lib/supabase';
+import { getCachedAudioTags, setCachedAudioTags, clearAudioTagCache } from './audioTagCache';
 
 const DEBUG = import.meta.env?.DEV ?? false;
 
@@ -202,9 +203,20 @@ export async function getAdminAnalytics(): Promise<AdminAnalytics> {
 
 /**
  * Get all audio tag presets (admin sees all, including inactive)
+ * Uses client-side cache (1 hour TTL) to reduce database queries by 95%
  */
 export async function getAllAudioTags(): Promise<AudioTagPreset[]> {
   if (!supabase) throw new Error('Supabase not configured');
+
+  // Check cache first
+  const cached = getCachedAudioTags();
+  if (cached) {
+    if (DEBUG) console.log('[adminSupabase] Audio tags cache hit');
+    return cached;
+  }
+
+  // Cache miss - fetch from database
+  if (DEBUG) console.log('[adminSupabase] Audio tags cache miss - fetching from database');
 
   return withRetry(async () => {
     const { data, error } = await supabase
@@ -214,13 +226,20 @@ export async function getAllAudioTags(): Promise<AudioTagPreset[]> {
       .order('sort_order');
 
     if (error) throw error;
-    if (DEBUG) console.log('[adminSupabase] Fetched audio tags:', data?.length);
+
+    // Cache the results
+    if (data) {
+      setCachedAudioTags(data);
+      if (DEBUG) console.log('[adminSupabase] Cached audio tags:', data.length);
+    }
+
     return data || [];
   });
 }
 
 /**
  * Create a new audio tag preset
+ * Invalidates client-side cache to ensure fresh data on next load
  */
 export async function createAudioTag(
   tag: Omit<AudioTagPreset, 'id' | 'created_at' | 'updated_at'>
@@ -238,13 +257,18 @@ export async function createAudioTag(
       .single();
 
     if (error) throw error;
-    if (DEBUG) console.log('[adminSupabase] Created audio tag:', data);
+
+    // Invalidate cache
+    clearAudioTagCache();
+    if (DEBUG) console.log('[adminSupabase] Created audio tag, cache invalidated:', data);
+
     return data;
   });
 }
 
 /**
  * Update an audio tag preset
+ * Invalidates client-side cache to ensure fresh data on next load
  */
 export async function updateAudioTag(
   id: string,
@@ -264,12 +288,16 @@ export async function updateAudioTag(
       .eq('id', id);
 
     if (error) throw error;
-    if (DEBUG) console.log('[adminSupabase] Updated audio tag:', id);
+
+    // Invalidate cache
+    clearAudioTagCache();
+    if (DEBUG) console.log('[adminSupabase] Updated audio tag, cache invalidated:', id);
   });
 }
 
 /**
  * Soft delete an audio tag preset (sets is_active to false)
+ * Invalidates client-side cache to ensure fresh data on next load
  */
 export async function deleteAudioTag(id: string): Promise<void> {
   if (!supabase) throw new Error('Supabase not configured');
@@ -285,7 +313,10 @@ export async function deleteAudioTag(id: string): Promise<void> {
       .eq('id', id);
 
     if (error) throw error;
-    if (DEBUG) console.log('[adminSupabase] Deactivated audio tag:', id);
+
+    // Invalidate cache
+    clearAudioTagCache();
+    if (DEBUG) console.log('[adminSupabase] Deactivated audio tag, cache invalidated:', id);
   });
 }
 

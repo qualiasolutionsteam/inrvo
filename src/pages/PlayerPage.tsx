@@ -209,24 +209,49 @@ const PlayerPage: React.FC = () => {
   }, [setPlaybackRate, audioSourceRef]);
 
   // Toggle background music
-  const handleBackgroundMusicToggle = useCallback(() => {
-    if (isMusicPlaying) {
-      if (backgroundAudioRef.current) {
-        backgroundAudioRef.current.pause();
+  const handleBackgroundMusicToggle = useCallback(async () => {
+    try {
+      if (isMusicPlaying) {
+        // Pause music
+        if (backgroundAudioRef.current) {
+          backgroundAudioRef.current.pause();
+        }
+        setIsMusicPlaying(false);
+      } else if (selectedBackgroundTrack.id !== 'none' && selectedBackgroundTrack.url) {
+        // Resume AudioContext if suspended (iOS requirement)
+        if (audioContextRef.current?.state === 'suspended') {
+          await audioContextRef.current.resume();
+        }
+
+        // Create or reuse audio element
+        if (!backgroundAudioRef.current) {
+          backgroundAudioRef.current = new Audio();
+          backgroundAudioRef.current.loop = true;
+
+          // iOS-specific: load event ensures audio is ready
+          backgroundAudioRef.current.addEventListener('canplaythrough', () => {
+            console.log('Background music ready to play');
+          }, { once: true });
+        }
+
+        backgroundAudioRef.current.src = selectedBackgroundTrack.url;
+        backgroundAudioRef.current.volume = backgroundVolume;
+
+        // Play and handle iOS autoplay rejection
+        try {
+          await backgroundAudioRef.current.play();
+          setIsMusicPlaying(true);
+        } catch (playError) {
+          console.error('Music playback failed:', playError);
+          // Show user-friendly error (you can add toast notification here)
+          throw playError;
+        }
       }
+    } catch (err) {
+      console.warn('Failed to toggle background music:', err);
       setIsMusicPlaying(false);
-    } else if (selectedBackgroundTrack.id !== 'none' && selectedBackgroundTrack.url) {
-      if (!backgroundAudioRef.current) {
-        backgroundAudioRef.current = new Audio();
-        backgroundAudioRef.current.loop = true;
-      }
-      backgroundAudioRef.current.src = selectedBackgroundTrack.url;
-      backgroundAudioRef.current.volume = backgroundVolume;
-      backgroundAudioRef.current.play()
-        .then(() => setIsMusicPlaying(true))
-        .catch(err => console.warn('Failed to play background music:', err));
     }
-  }, [isMusicPlaying, selectedBackgroundTrack, backgroundVolume, backgroundAudioRef]);
+  }, [isMusicPlaying, selectedBackgroundTrack, backgroundVolume, audioContextRef, backgroundAudioRef]);
 
   // If no audio buffer, redirect home
   useEffect(() => {
@@ -234,6 +259,30 @@ const PlayerPage: React.FC = () => {
       navigate('/');
     }
   }, [audioBufferRef, id, navigate]);
+
+  // Handle visibility change (iOS suspends audio when tab/app backgrounded)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Page hidden - pause might happen automatically on iOS
+      } else {
+        // Page visible again - resume AudioContext if needed
+        if (audioContextRef.current?.state === 'suspended') {
+          audioContextRef.current.resume();
+        }
+
+        // Resume background music if it was playing
+        if (isMusicPlaying && backgroundAudioRef.current?.paused) {
+          backgroundAudioRef.current.play().catch(err => {
+            console.warn('Could not resume music after visibility change:', err);
+          });
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isMusicPlaying, audioContextRef, backgroundAudioRef]);
 
   return (
     <Suspense fallback={

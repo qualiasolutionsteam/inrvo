@@ -381,33 +381,44 @@ export function useAudioPlayback(
     }
 
     try {
+      // iOS: Resume AudioContext if suspended
+      if (audioContextRef.current?.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
+
       const audio = new Audio();
-      audio.crossOrigin = 'anonymous';
-      audio.preload = 'auto';
       audio.loop = true;
       audio.volume = backgroundVolume;
 
+      // Preload audio (iOS requires this)
+      audio.preload = 'auto';
+
+      // Set source
       audio.src = trackToPlay.audioUrl;
       backgroundAudioRef.current = audio;
 
+      // Wait for audio to be loaded enough to play (iOS requirement)
+      await new Promise<void>((resolve, reject) => {
+        audio.addEventListener('canplaythrough', () => resolve(), { once: true });
+        audio.addEventListener('error', (e) => reject(e), { once: true });
+        audio.load(); // Explicitly load on iOS
+      });
+
+      // Attempt playback
       await audio.play();
+
     } catch (error) {
-      // Try without crossOrigin as fallback
-      try {
-        const trackUrl = trackToPlay.audioUrl;
-        if (trackUrl) {
-          const audio = new Audio(trackUrl);
-          audio.loop = true;
-          audio.volume = backgroundVolume;
-          backgroundAudioRef.current = audio;
-          await audio.play();
-        }
-      } catch (fallbackError) {
-        console.error('Failed to play background music:', fallbackError);
-        onError?.(fallbackError as Error);
+      console.error('Failed to start background music:', error);
+
+      // iOS-specific error handling
+      if (error instanceof Error && error.name === 'NotAllowedError') {
+        console.warn('iOS blocked autoplay - user interaction required');
       }
+
+      onError?.(error as Error);
+      throw error; // Re-throw so caller can handle
     }
-  }, [selectedBackgroundTrack, backgroundVolume, stopBackgroundMusic, onError]);
+  }, [selectedBackgroundTrack, backgroundVolume, stopBackgroundMusic, onError, audioContextRef]);
 
   // Update background volume
   const updateBackgroundVolume = useCallback((volume: number) => {

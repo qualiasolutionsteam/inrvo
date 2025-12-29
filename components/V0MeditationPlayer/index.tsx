@@ -1,6 +1,6 @@
 import React, { useCallback, memo, useState, useMemo } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
-import { X, Play, Pause, RotateCcw, RotateCw, Volume2, Gauge } from 'lucide-react';
+import { X, Play, Pause, RotateCcw, RotateCw, ChevronUp, Volume2 } from 'lucide-react';
 import { ICONS } from '../../constants';
 
 /**
@@ -241,42 +241,22 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
             </m.button>
           </div>
 
-          {/* Voice speed, volume toggle, and nature sound button */}
-          <div className="flex items-center justify-center gap-3 mt-4 flex-wrap">
+          {/* Expand controls arrow */}
+          <div className="flex items-center justify-center mt-4">
             <m.button
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowControls(!showControls)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-all backdrop-blur-sm ${
-                showControls
-                  ? 'bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-white/90 border border-cyan-400/30'
-                  : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80 border border-transparent'
-              }`}
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/70 transition-all backdrop-blur-sm"
+              aria-label={showControls ? 'Hide sound controls' : 'Show sound controls'}
             >
-              <Gauge className="h-4 w-4" />
-              <span>{playbackRate.toFixed(1)}x</span>
-              <Volume2 className="h-4 w-4 ml-1" />
-              <span>{Math.round(voiceVolume * 100)}%</span>
-            </m.button>
-
-            {/* Nature Sound Button */}
-            {onOpenNatureSoundModal && (
-              <m.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onOpenNatureSoundModal}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors ${
-                  natureSoundEnabled
-                    ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                    : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80'
-                }`}
+              <m.div
+                animate={{ rotate: showControls ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
               >
-                <span className="text-emerald-400">{renderNatureIcon(natureSoundIcon, "w-4 h-4")}</span>
-                <span className="max-w-[80px] truncate">
-                  {natureSoundEnabled ? natureSoundName : 'Nature'}
-                </span>
-              </m.button>
-            )}
+                <ChevronUp className="h-5 w-5" />
+              </m.div>
+            </m.button>
           </div>
 
           {/* Expanded controls panel - Glassmorphism */}
@@ -289,37 +269,43 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                 className="overflow-hidden"
               >
-                <div className="pt-4 pb-2 px-4 sm:px-5 space-y-5 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
-                  {/* Playback Speed */}
-                  {onPlaybackRateChange && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-white/50 flex items-center gap-2">
-                          <Gauge className="h-4 w-4" />
-                          Voice Speed
+                <div className="pt-4 pb-4 px-4 sm:px-5 space-y-4 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+                  {/* Sound Buttons Row */}
+                  <div className="flex items-center justify-center gap-3">
+                    {/* Background Music Button */}
+                    {onBackgroundMusicToggle && (
+                      <button
+                        onClick={onBackgroundMusicToggle}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors ${
+                          backgroundMusicEnabled
+                            ? 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30'
+                            : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80'
+                        }`}
+                      >
+                        <span>🎵</span>
+                        <span className="max-w-[80px] truncate">
+                          {backgroundMusicEnabled ? backgroundTrackName : 'Music'}
                         </span>
-                        <span className="text-white/80 font-mono">{playbackRate.toFixed(1)}x</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-white/40">0.5x</span>
-                        <input
-                          type="range"
-                          min="0.5"
-                          max="1.5"
-                          step="0.1"
-                          value={playbackRate}
-                          onChange={(e) => onPlaybackRateChange(parseFloat(e.target.value))}
-                          className="flex-1 h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer
-                            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                            [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-cyan-400
-                            [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(94,234,212,0.5)]
-                            [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
-                            [&::-moz-range-thumb]:bg-cyan-400 [&::-moz-range-thumb]:border-0"
-                        />
-                        <span className="text-xs text-white/40">1.5x</span>
-                      </div>
-                    </div>
-                  )}
+                      </button>
+                    )}
+
+                    {/* Nature Sound Button */}
+                    {onOpenNatureSoundModal && (
+                      <button
+                        onClick={onOpenNatureSoundModal}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors ${
+                          natureSoundEnabled
+                            ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                            : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80'
+                        }`}
+                      >
+                        <span className="text-emerald-400">{renderNatureIcon(natureSoundIcon, "w-4 h-4")}</span>
+                        <span className="max-w-[80px] truncate">
+                          {natureSoundEnabled ? natureSoundName : 'Nature'}
+                        </span>
+                      </button>
+                    )}
+                  </div>
 
                   {/* Voice Volume */}
                   {onVoiceVolumeChange && (

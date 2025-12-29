@@ -12,7 +12,7 @@ const DEBUG = import.meta.env?.DEV ?? false;
  * Why this matters for voice cloning:
  * - WebM uses Opus codec with lossy compression (poor for voice cloning)
  * - WAV is uncompressed PCM audio (preserves voice characteristics)
- * - Higher sample rate (48kHz) captures more voice detail
+ * - 44.1kHz sample rate matches Fish Audio expected format (eliminates resampling overhead)
  * - Single channel (mono) is sufficient and reduces file size
  *
  * @param blob - Input audio blob (WebM, MP4, etc.)
@@ -21,8 +21,8 @@ const DEBUG = import.meta.env?.DEV ?? false;
 export async function convertToWAV(blob: Blob): Promise<Blob> {
   if (DEBUG) console.log('[convertToWAV] Starting conversion, input blob size:', blob.size, 'type:', blob.type);
 
-  // Create audio context with high sample rate for better quality
-  const audioContext = new AudioContext({ sampleRate: 48000 });
+  // Create audio context - 44.1kHz matches Fish Audio expected rate (eliminates server resampling)
+  const audioContext = new AudioContext({ sampleRate: 44100 });
 
   try {
     // Decode the input audio to raw PCM data
