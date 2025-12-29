@@ -37,7 +37,7 @@ supabase db push                            # Push migrations to remote
 
 **Routing:** Uses React Router v7 with lazy-loaded pages (`src/router.tsx`). All pages are code-split via `React.lazy()`.
 
-**Routes:** `/` (home), `/play/:id?` (player), `/library` (My Audios), `/templates`, `/voice`, `/clone`, `/how-it-works`, `/about`, `/terms`, `/privacy`, `/pricing`, `/marketing`
+**Routes:** `/` (home), `/play/:id?` (player), `/library` (My Audios), `/templates`, `/voice`, `/clone`, `/how-it-works`, `/about`, `/terms`, `/privacy`, `/pricing`, `/admin` (role-protected), `*` (404)
 
 **State Management:**
 - React Context for cross-cutting concerns (see `src/contexts/index.ts` for exports):
@@ -79,6 +79,7 @@ The chat input has a subtle cyan/purple glow effect that intensifies when record
 
 **Data Layer:**
 - `lib/supabase.ts` - Supabase client and all database operations
+- `src/lib/adminSupabase.ts` - Admin-specific database operations (protected by RLS)
 - `src/lib/edgeFunctions.ts` - Edge function wrappers with retry logic
 - `src/lib/voiceService.ts` - TTS provider routing (Fish Audio primary, Chatterbox fallback, Web Speech API free tier)
 - `src/lib/credits.ts` - Credit system (currently disabled, returns unlimited credits)
@@ -152,13 +153,85 @@ The "Harmonize" button (magic wand icon) in MeditationEditor's Status Row uses A
 
 **Disambiguation triggers** only for explicit generation requests ("create a meditation", "make me a..."), NOT casual mentions of meditation topics.
 
+### Admin System
+
+Protected admin panel at `/admin` for content moderation and analytics. Hidden route (no UI navigation links).
+
+**Files:**
+- `src/pages/AdminPage.tsx` - Tab-based admin UI (~590 lines)
+- `src/lib/adminSupabase.ts` - Admin database functions (~290 lines)
+- `supabase/migrations/20251229034644_admin_access.sql` - RLS policies and analytics function
+
+**Access Control:**
+```typescript
+// Check admin status on mount
+const isAdmin = await checkIsAdmin();
+if (!isAdmin) navigate('/');
+```
+
+**Admin Functions (`src/lib/adminSupabase.ts`):**
+
+| Function | Purpose |
+|----------|---------|
+| `checkIsAdmin()` | Verify current user has ADMIN role |
+| `getAllUsers()` | List all users (protected by RLS) |
+| `deleteUserAdmin(userId)` | Delete user and cascade data |
+| `getAllMeditations(limit)` | List all meditations with user email |
+| `deleteMeditationAdmin(id)` | Delete any meditation |
+| `getAllVoiceProfiles(limit)` | List all voice profiles with user email |
+| `deleteVoiceProfileAdmin(id)` | Soft delete (set status = ARCHIVED) |
+| `getAdminAnalytics()` | Get aggregated counts via RPC |
+| `getAllAudioTags()` | List all audio tag presets |
+| `createAudioTag(tag)` | Create new audio tag preset |
+| `updateAudioTag(id, updates)` | Update tag label/category/order |
+| `deleteAudioTag(id)` | Soft delete (set is_active = false) |
+
+**RLS Policies (Migration 20251229034644):**
+
+All admin policies use this pattern:
+```sql
+CREATE POLICY "Admins can view all X"
+  ON table_name FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM users
+      WHERE users.id = (SELECT auth.uid())
+      AND users.role = 'ADMIN'
+    )
+  );
+```
+
+Tables with admin policies: `users`, `meditation_history`, `voice_profiles`, `audio_tag_presets`
+
+**Analytics Function:**
+```sql
+-- SECURITY DEFINER ensures admin check runs with elevated privileges
+CREATE OR REPLACE FUNCTION get_admin_analytics()
+RETURNS TABLE (total_users, total_meditations, ...)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+```
+
+**Setting Admin Role:**
+```sql
+UPDATE users SET role = 'ADMIN' WHERE email = 'admin@example.com';
+```
+
+**UI Structure (4 tabs):**
+1. **Analytics** - Total counts, 7-day trends
+2. **Users** - User list with delete action (non-admins only)
+3. **Content** - Meditations and voice profiles with delete actions
+4. **Audio Tags** - CRUD for audio tag presets with category grouping
+
 ### Database Schema
 
 Key tables (see `supabase/migrations/` for full schema):
 - `voice_profiles` - User voice clones with Fish Audio model IDs
 - `voice_clones` - Legacy voice sample storage
 - `meditation_history` - Saved meditations with audio URLs
-- `users` - Extended user profile with audio preferences
+- `users` - Extended user profile with audio preferences, `role` field (`USER`/`ADMIN`)
+- `audio_tag_presets` - Configurable audio tags for meditation scripts
 
 Audio files stored in Supabase Storage buckets: `voice-samples`, `meditation-audio`
 
