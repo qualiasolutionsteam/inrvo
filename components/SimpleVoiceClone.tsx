@@ -5,7 +5,9 @@ import {
   CloningStatus,
   CreditInfo,
   VoiceMetadata,
-  DEFAULT_VOICE_METADATA
+  DEFAULT_VOICE_METADATA,
+  VOICE_LANGUAGES,
+  getAccentsForLanguage
 } from '../types';
 import { AIVoiceInput } from './ui/ai-voice-input';
 
@@ -32,6 +34,24 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
   const [profileName, setProfileName] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
+
+  // Voice characteristics state
+  const [gender, setGender] = useState<VoiceMetadata['gender']>(DEFAULT_VOICE_METADATA.gender);
+  const [ageRange, setAgeRange] = useState<VoiceMetadata['ageRange']>(DEFAULT_VOICE_METADATA.ageRange);
+  const [language, setLanguage] = useState(DEFAULT_VOICE_METADATA.language);
+  const [accent, setAccent] = useState(DEFAULT_VOICE_METADATA.accent);
+  const [descriptive, setDescriptive] = useState(DEFAULT_VOICE_METADATA.descriptive || 'calm');
+
+  // Get available accents based on selected language
+  const availableAccents = getAccentsForLanguage(language);
+
+  // Reset accent when language changes
+  useEffect(() => {
+    const accents = getAccentsForLanguage(language);
+    if (!accents.find(a => a.value === accent)) {
+      setAccent(accents[0]?.value || 'native');
+    }
+  }, [language, accent]);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -194,7 +214,19 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
     }
 
     const voiceName = profileName.trim() || `My Voice ${new Date().toLocaleDateString()}`;
-    await onRecordingComplete(recordedBlob, voiceName, DEFAULT_VOICE_METADATA);
+
+    // Build metadata from user selections
+    const metadata: VoiceMetadata = {
+      language,
+      accent,
+      gender,
+      ageRange,
+      hasBackgroundNoise: false, // Recording tips should minimize this
+      useCase: 'meditation',
+      descriptive,
+    };
+
+    await onRecordingComplete(recordedBlob, voiceName, metadata);
   };
 
   const resetRecording = () => {
@@ -335,6 +367,108 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
                 placeholder="My Meditation Voice"
                 className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-slate-600 focus:outline-none focus:border-cyan-500 transition-all"
               />
+            </div>
+          )}
+
+          {/* Voice Characteristics Form */}
+          {!isSuccess && (
+            <div className="space-y-4 p-4 rounded-xl bg-white/5 border border-white/10">
+              <div className="flex items-center gap-2 mb-2">
+                <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  Voice Characteristics
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 -mt-2">
+                Help us create a better voice clone by describing your voice
+              </p>
+
+              {/* Gender & Age Row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs text-slate-400">Gender</label>
+                  <select
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value as VoiceMetadata['gender'])}
+                    className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-500 transition-all appearance-none cursor-pointer"
+                    style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236b7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.5rem center', backgroundSize: '1.25rem' }}
+                  >
+                    <option value="female" className="bg-slate-800">Female</option>
+                    <option value="male" className="bg-slate-800">Male</option>
+                    <option value="other" className="bg-slate-800">Other</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs text-slate-400">Age Range</label>
+                  <select
+                    value={ageRange}
+                    onChange={(e) => setAgeRange(e.target.value as VoiceMetadata['ageRange'])}
+                    className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-500 transition-all appearance-none cursor-pointer"
+                    style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236b7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.5rem center', backgroundSize: '1.25rem' }}
+                  >
+                    <option value="young" className="bg-slate-800">Young (18-30)</option>
+                    <option value="middle-aged" className="bg-slate-800">Middle-aged (30-50)</option>
+                    <option value="mature" className="bg-slate-800">Mature (50+)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Language & Accent Row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs text-slate-400">Language</label>
+                  <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-500 transition-all appearance-none cursor-pointer"
+                    style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236b7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.5rem center', backgroundSize: '1.25rem' }}
+                  >
+                    {VOICE_LANGUAGES.map((lang) => (
+                      <option key={lang.code} value={lang.code} className="bg-slate-800">
+                        {lang.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs text-slate-400">Accent</label>
+                  <select
+                    value={accent}
+                    onChange={(e) => setAccent(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-500 transition-all appearance-none cursor-pointer"
+                    style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236b7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.5rem center', backgroundSize: '1.25rem' }}
+                  >
+                    {availableAccents.map((acc) => (
+                      <option key={acc.value} value={acc.value} className="bg-slate-800">
+                        {acc.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Voice Quality */}
+              <div className="space-y-1.5">
+                <label className="text-xs text-slate-400">Voice Quality</label>
+                <div className="flex flex-wrap gap-2">
+                  {['calm', 'warm', 'soothing', 'gentle', 'deep', 'soft'].map((quality) => (
+                    <button
+                      key={quality}
+                      type="button"
+                      onClick={() => setDescriptive(quality)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                        descriptive === quality
+                          ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                          : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'
+                      }`}
+                    >
+                      {quality.charAt(0).toUpperCase() + quality.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 

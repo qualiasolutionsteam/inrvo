@@ -39,6 +39,9 @@ interface ElevenLabsCloneRequest {
     accent?: string;
     gender?: string;
     ageRange?: string;
+    descriptive?: string;
+    useCase?: string;
+    hasBackgroundNoise?: boolean;
   };
 }
 
@@ -251,6 +254,46 @@ serve(async (req) => {
       audioSize: bytes.length,
     });
 
+    // Build enhanced description from metadata for better voice cloning
+    let enhancedDescription = description || 'Voice clone created with INrVO';
+    if (metadata) {
+      const parts: string[] = [];
+
+      // Voice quality descriptor (calm, warm, soothing, etc.)
+      if (metadata.descriptive) {
+        parts.push(metadata.descriptive);
+      }
+
+      // Gender
+      if (metadata.gender) parts.push(metadata.gender);
+
+      // Age range
+      if (metadata.ageRange) {
+        const ageLabels: Record<string, string> = {
+          'young': 'young adult',
+          'middle-aged': 'middle-aged',
+          'mature': 'mature adult',
+        };
+        parts.push(ageLabels[metadata.ageRange] || metadata.ageRange);
+      }
+
+      // Accent
+      if (metadata.accent && metadata.accent !== 'native') {
+        parts.push(`${metadata.accent} accent`);
+      }
+
+      if (parts.length > 0) {
+        // e.g. "calm female middle-aged american accent voice. Voice clone created with INrVO"
+        enhancedDescription = `${parts.join(' ')} voice. ${enhancedDescription}`;
+      }
+
+      // Use case context
+      if (metadata.useCase) {
+        enhancedDescription += ` Optimized for ${metadata.useCase}.`;
+      }
+    }
+    log.info('Using enhanced description', { enhancedDescription, metadata });
+
     // Create promises for parallel execution
     const uploadPromise = supabase.storage
       .from('voice-samples')
@@ -259,7 +302,7 @@ serve(async (req) => {
     const elevenLabsPromise = createElevenLabsVoiceClone(
       audioBlob,
       voiceName,
-      description || 'Voice clone created with INrVO',
+      enhancedDescription,
       removeBackgroundNoise ?? true,  // Default to noise removal for cleaner clones
       ELEVENLABS_API_KEY!,
       log
