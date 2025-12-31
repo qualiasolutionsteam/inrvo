@@ -145,22 +145,6 @@ const ShootingStarsField: React.FC<ShootingStarsFieldProps> = ({
 
   return (
     <div className="relative w-80 h-48 flex items-center justify-center overflow-hidden">
-      {/* Background glow when active */}
-      <m.div
-        className="absolute inset-0"
-        style={{
-          background: 'radial-gradient(ellipse at center, rgba(34,211,238,0.05) 0%, transparent 70%)',
-        }}
-        animate={{
-          opacity: isActive ? [0.3, 0.6, 0.3] : 0.1,
-        }}
-        transition={{
-          duration: 3,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-      />
-
       {/* Shooting stars */}
       {[...stars, ...activeStars].map((star, i) => (
         <ShootingStar
@@ -572,38 +556,7 @@ export const VoiceAgent: React.FC<VoiceAgentProps> = ({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            {/* Breathing pulse ring */}
-            {!isConnected && !isConnecting && (
-              <m.div
-                className="absolute inset-0 rounded-full border border-cyan-400/30"
-                animate={{
-                  scale: [1, 1.3, 1],
-                  opacity: [0.5, 0, 0.5],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                }}
-              />
-            )}
-
-            {/* Active call pulse */}
-            {isConnected && (
-              <m.div
-                className="absolute inset-0 rounded-full bg-rose-500/20"
-                animate={{
-                  scale: [1, 1.15, 1],
-                  opacity: [0.5, 0, 0.5],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                }}
-              />
-            )}
-
+  
             {/* Button */}
             <div
               className={`
