@@ -27,8 +27,12 @@ vitest run tests/lib/credits.test.ts  # Run single test file
 
 # Supabase Edge Functions (requires supabase CLI)
 supabase functions serve                    # Run all functions locally
-supabase functions deploy <function-name>   # Deploy a single function
+supabase functions deploy <function-name> --no-verify-jwt  # Deploy with anonymous access
 supabase db push                            # Push migrations to remote
+
+# IMPORTANT: Most edge functions need --no-verify-jwt flag for anonymous access
+# Functions requiring this flag: gemini-chat, gemini-script, generate-speech, health
+# Without this flag, Supabase returns 401 before your code runs
 ```
 
 ## Architecture
@@ -55,7 +59,7 @@ Root `components/` - Shared, feature-rich components:
 - `V0MeditationPlayer/` - Main player with BreathingOrb visualization
 - `SimpleVoiceClone.tsx` - Voice cloning UI
 - `AgentChat.tsx` - Conversational AI interface (text + voice toggle)
-- `VoiceAgent.tsx` - Real-time voice conversation interface (Gemini Live API)
+- `VoiceAgent.tsx` - Real-time voice interface with shooting stars animation (Gemini Live API)
 - `ui/chronos-engine.tsx` - Animated gear engine for agent avatar and loading states
 
 `src/components/` - Page-specific components:
@@ -83,7 +87,7 @@ The chat input has a subtle cyan/purple glow effect that intensifies when record
 - `src/lib/adminSupabase.ts` - Admin-specific database operations (protected by RLS)
 - `src/lib/edgeFunctions.ts` - Edge function wrappers with retry logic
 - `src/lib/voiceService.ts` - TTS provider routing (Fish Audio primary, Chatterbox fallback, Web Speech API free tier)
-- `src/lib/credits.ts` - Credit system (currently disabled, returns unlimited credits)
+- `src/lib/credits.ts` - Credit system (DISABLED - all users have unlimited access)
 
 ### Backend (Supabase Edge Functions)
 
@@ -157,30 +161,39 @@ Browser (VoiceAgent.tsx)
 ```
 
 **Files:**
-- `components/VoiceAgent.tsx` - Full-screen voice UI with call controls
+- `components/VoiceAgent.tsx` - Full-screen voice UI with shooting stars animation
 - `src/lib/geminiLive.ts` - Gemini Live WebSocket client
 - `src/lib/audioCapture.ts` - Mic audio capture at 16kHz PCM16
 - `src/lib/audioPlayback.ts` - Audio playback queue with barge-in support
 - `src/lib/voiceSession.ts` - Session lifecycle and transcript management
 - `supabase/functions/gemini-live-token/index.ts` - Token endpoint for API config
 
+**Visual Design (Minimalist Zen):**
+- Dark gradient background (`slate-950` to `slate-900`)
+- Shooting stars animation with cyan/white gradient trails
+- Voice-reactive sparkle particles when agent speaks
+- Minimal voice level bars (5 bars, cyan glow)
+- Soft frosted-glass call buttons
+- No pulsing/radar circles - clean, calm aesthetic
+
 **Voice Session States:**
-- `idle` - Not connected
+- `idle` - Not connected, shooting stars animate slowly
 - `requesting-mic` - Awaiting microphone permission
-- `connecting` - WebSocket connecting
-- `connected` - Ready
-- `listening` - Mic active, waiting for speech
-- `agent-speaking` - Playing audio response
+- `connecting` - WebSocket connecting, loader visible
+- `connected` - Ready, call button visible
+- `listening` - Mic active, voice bars animate
+- `agent-speaking` - Sparkle particles appear, stars intensify
 - `error` / `disconnected` - Session ended
 
 **Access:** Phone icon button in AgentChat input area opens VoiceAgent modal.
 
 **Features:**
 - Barge-in (interrupt agent by speaking)
-- Mute toggle
+- Mute toggle with visual feedback
 - Volume control
 - Real-time transcripts
 - Auto-reconnection (3 attempts)
+- User-friendly error messages for mic/security issues
 
 **Voice Names (meditation-optimized):**
 - Aoede (default) - Calm female
@@ -406,6 +419,7 @@ import { m, AnimatePresence } from 'framer-motion';
 
 **Files using `m` components:**
 - `components/V0MeditationPlayer/index.tsx` - Breathing orb, particles, controls
+- `components/VoiceAgent.tsx` - Shooting stars, sparkle particles, voice bars
 - `components/ui/AudioPreview.tsx` - Play/pause animations, waveform
 - `src/pages/LibraryPage.tsx` - Card expansion animations
 - `src/components/MeditationEditor/components/ControlPanel.tsx` - Tab transitions
@@ -498,6 +512,8 @@ Files using this pattern:
 - `src/lib/voiceService.ts`
 - `src/lib/edgeFunctions.ts`
 - `src/lib/audioConverter.ts`
+- `src/lib/audioCapture.ts`
+- `src/lib/geminiLive.ts`
 - `src/lib/agent/MeditationAgent.ts`
 - `src/hooks/useMeditationAgent.ts`
 
@@ -631,6 +647,14 @@ supabase functions logs gemini-chat
 ```
 
 Edge functions require environment variables set in the Supabase Dashboard (Settings > Edge Functions > Secrets).
+
+**IMPORTANT: JWT Verification**
+Most edge functions must be deployed with `--no-verify-jwt` to allow anonymous access:
+```bash
+supabase functions deploy gemini-chat --no-verify-jwt
+supabase functions deploy generate-speech --no-verify-jwt
+```
+Without this flag, Supabase returns 401 "Missing authorization header" before your function code runs.
 
 ## Deployment
 
@@ -769,6 +793,25 @@ src/lib/historyCache.ts              # Meditation history sessionStorage cache
 src/lib/voiceProfileCache.ts         # Voice profile localStorage cache
 supabase/functions/_shared/voiceProfileCache.ts  # Shared LRU cache for edge functions
 ```
+
+## Credit System (DISABLED)
+
+The credit/subscription system is currently **disabled** for all users:
+
+**Client-side (`src/lib/credits.ts`):**
+- `CREDITS_DISABLED = true` - All functions return unlimited credits
+- `canClone()` always returns `{ can: true }`
+- `deductCredits()` always returns `true` without deducting
+
+**Database defaults:**
+- All users: PRO tier, 10,000,000 credits, 1,000 clone limit
+- New signups: Automatically get PRO tier via `handle_new_user()` trigger
+- No subscription enforcement
+
+**To re-enable credits:**
+1. Set `CREDITS_DISABLED = false` in `src/lib/credits.ts`
+2. Update `handle_new_user()` function to use FREE tier
+3. Reset user credits in database
 
 ## Stack Research
 
