@@ -41,6 +41,13 @@ const SELECT_STYLE = {
   backgroundSize: '1rem',
 } as const;
 
+// Helper function to format duration
+const formatDuration = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
 export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
   onClose,
   onRecordingComplete,
@@ -536,7 +543,7 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
                     value={ageRange}
                     onChange={(e) => setAgeRange(e.target.value as VoiceMetadata['ageRange'])}
                     className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-500/50 transition-all appearance-none cursor-pointer"
-                    style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236b7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.5rem center', backgroundSize: '1rem' }}
+                    style={SELECT_STYLE}
                   >
                     <option value="young" className="bg-slate-900">Young</option>
                     <option value="middle-aged" className="bg-slate-900">Middle</option>
@@ -551,7 +558,7 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
                     value={language}
                     onChange={(e) => setLanguage(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-500/50 transition-all appearance-none cursor-pointer"
-                    style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236b7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.5rem center', backgroundSize: '1rem' }}
+                    style={SELECT_STYLE}
                   >
                     {VOICE_LANGUAGES.map((lang) => (
                       <option key={lang.code} value={lang.code} className="bg-slate-900">
@@ -568,7 +575,7 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
                     value={accent}
                     onChange={(e) => setAccent(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-500/50 transition-all appearance-none cursor-pointer"
-                    style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236b7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.5rem center', backgroundSize: '1rem' }}
+                    style={SELECT_STYLE}
                   >
                     {availableAccents.map((acc) => (
                       <option key={acc.value} value={acc.value} className="bg-slate-900">
@@ -583,7 +590,7 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
               <div className="space-y-2">
                 <label className="text-xs text-slate-500">Voice Quality</label>
                 <div className="flex flex-wrap gap-2">
-                  {voiceQualities.map((q) => (
+                  {VOICE_QUALITIES.map((q) => (
                     <button
                       key={q}
                       onClick={() => setDescriptive(q)}
@@ -609,7 +616,7 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">Recording ready</p>
-                <p className="text-xs text-slate-500">{formatDuration(recordingDuration)} · {recordedBlob ? `${(recordedBlob.size / 1024).toFixed(0)} KB` : ''}</p>
+                <p className="text-xs text-slate-500">{formatDuration(recordingDuration)} · {fileSizeDisplay}</p>
               </div>
               <button
                 onClick={resetRecording}
