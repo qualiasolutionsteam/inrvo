@@ -191,31 +191,6 @@ const ShootingStarsField: React.FC<ShootingStarsFieldProps> = ({
         ))}
       </m.div>
 
-      {/* Sparkle particles when speaking */}
-      {isSpeaking && (
-        <>
-          {[...Array(6)].map((_, i) => (
-            <m.div
-              key={`sparkle-${i}`}
-              className="absolute w-1 h-1 rounded-full bg-cyan-300"
-              style={{
-                left: `${30 + Math.random() * 40}%`,
-                top: `${30 + Math.random() * 40}%`,
-              }}
-              animate={{
-                scale: [0, 1, 0],
-                opacity: [0, 1, 0],
-              }}
-              transition={{
-                duration: 0.8,
-                delay: i * 0.15,
-                repeat: Infinity,
-                repeatDelay: 0.5,
-              }}
-            />
-          ))}
-        </>
-      )}
     </div>
   );
 };
