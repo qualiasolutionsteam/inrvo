@@ -92,7 +92,7 @@ export const GenerateButton = memo<GenerateButtonProps>(
         >
           {/* Shimmer effect for ready state */}
           {!isDisabled && !isGenerating && selectedVoice && (
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] animate-shimmer" />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] animate-shimmer pointer-events-none" />
           )}
 
           {isGenerating ? (
