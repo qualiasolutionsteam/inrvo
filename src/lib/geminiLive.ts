@@ -314,16 +314,17 @@ export class GeminiLiveClient {
   }
 
   private handleOpen(): void {
-    console.log('[GeminiLive] WebSocket connected, sending setup...');
+    if (DEBUG) console.log('[GeminiLive] WebSocket connected, sending setup...');
 
     if (!this.config || !this.ws) return;
 
     // Send setup message
+    // NOTE: Gemini Live API only supports ['AUDIO'] - TEXT causes "invalid argument" error
     const setupMessage: SetupMessage = {
       setup: {
         model: this.config.model,
         generation_config: {
-          response_modalities: ['AUDIO', 'TEXT'],
+          response_modalities: ['AUDIO'],
           speech_config: {
             voice_config: {
               prebuilt_voice_config: {
@@ -338,13 +339,13 @@ export class GeminiLiveClient {
       },
     };
 
-    console.log('[GeminiLive] Setup message:', { model: this.config.model, voice: this.config.voiceName });
+    if (DEBUG) console.log('[GeminiLive] Setup message:', { model: this.config.model, voice: this.config.voiceName });
     this.ws.send(JSON.stringify(setupMessage));
   }
 
   private handleMessage(event: MessageEvent): void {
     try {
-      console.log('[GeminiLive] Message received:', typeof event.data === 'string' ? event.data.substring(0, 200) : 'binary');
+      if (DEBUG) console.log('[GeminiLive] Message received:', typeof event.data === 'string' ? event.data.substring(0, 200) : 'binary');
 
       const message = JSON.parse(event.data as string);
 
@@ -366,7 +367,7 @@ export class GeminiLiveClient {
 
       // Handle setup complete
       if ('setupComplete' in message) {
-        console.log('[GeminiLive] ✅ Setup complete!');
+        if (DEBUG) console.log('[GeminiLive] ✅ Setup complete!');
         this.setupComplete = true;
         this.state = 'connected';
         this.reconnectAttempts = 0;
@@ -450,7 +451,7 @@ export class GeminiLiveClient {
   }
 
   private handleClose(event: CloseEvent): void {
-    console.log('[GeminiLive] WebSocket closed:', { code: event.code, reason: event.reason });
+    if (DEBUG) console.log('[GeminiLive] WebSocket closed:', { code: event.code, reason: event.reason });
 
     const wasConnected = this.state === 'connected';
     const wasConnecting = this.state === 'connecting';
