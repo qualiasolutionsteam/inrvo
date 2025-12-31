@@ -15,6 +15,7 @@ const TermsPage = lazy(() => import('./pages/TermsPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const PricingPage = lazy(() => import('./pages/PricingPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // Loading spinner component - uses ChronosEngine for visual consistency
@@ -87,6 +88,10 @@ export const router = createBrowserRouter([
       {
         path: 'admin',
         element: <AdminPage />,
+      },
+      {
+        path: 'auth/reset-password',
+        element: <ResetPasswordPage />,
       },
       {
         path: '*',

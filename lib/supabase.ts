@@ -307,6 +307,32 @@ export const signOut = async () => {
   if (error) throw error;
 };
 
+/**
+ * Send password reset email to user
+ * @param email - User's email address
+ */
+export const resetPasswordForEmail = async (email: string): Promise<void> => {
+  if (!supabase) throw new Error('Supabase client not initialized');
+
+  const redirectUrl = `${window.location.origin}/auth/reset-password`;
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: redirectUrl,
+  });
+
+  if (error) throw error;
+};
+
+/**
+ * Update the current user's password
+ * @param newPassword - New password (min 8 characters)
+ */
+export const updatePassword = async (newPassword: string): Promise<void> => {
+  if (!supabase) throw new Error('Supabase client not initialized');
+
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw error;
+};
+
 export const getCurrentUser = async () => {
   if (!supabase) return null;
   const { data: { user } } = await supabase.auth.getUser();
