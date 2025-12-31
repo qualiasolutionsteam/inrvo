@@ -138,7 +138,7 @@ describe('useAudioPlayback', () => {
       expect(result.current.currentWordIndex).toBe(-1);
       expect(result.current.timingMap).toBeNull();
       expect(result.current.backgroundVolume).toBe(0.3);
-      expect(result.current.playbackRate).toBe(0.9);
+      expect(result.current.playbackRate).toBe(1.0);
       expect(result.current.voiceVolume).toBe(0.7);
     });
 

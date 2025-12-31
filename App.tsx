@@ -209,10 +209,10 @@ const App: React.FC = () => {
   const previewNatureSoundAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Voice playback controls
-  const [playbackRate, setPlaybackRate] = useState(0.9); // 0.9x default for slower meditation
+  const [playbackRate, setPlaybackRate] = useState(1.0); // Normal playback speed
   const [voiceVolume, setVoiceVolume] = useState(0.7); // 70% default for better music balance
   const gainNodeRef = useRef<GainNode | null>(null);
-  const playbackRateRef = useRef(0.9);
+  const playbackRateRef = useRef(1.0);
 
   // Auth states now managed by AuthContext
 

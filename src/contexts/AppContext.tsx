@@ -133,7 +133,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [selectedBackgroundTrack, setSelectedBackgroundTrack] = useState<BackgroundTrack>(BACKGROUND_TRACKS[0]);
   const [backgroundVolume, setBackgroundVolume] = useState(0.3);
   const [voiceVolume, setVoiceVolume] = useState(0.7);
-  const [playbackRate, setPlaybackRate] = useState(0.9);
+  const [playbackRate, setPlaybackRate] = useState(1.0);
 
   // Script state
   const [script, setScript] = useState('');

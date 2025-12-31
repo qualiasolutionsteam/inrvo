@@ -148,7 +148,7 @@ describe('AppContext', () => {
       expect(result.current.selectedBackgroundTrack.id).toBe('none');
       expect(result.current.backgroundVolume).toBe(0.3);
       expect(result.current.voiceVolume).toBe(0.7);
-      expect(result.current.playbackRate).toBe(0.9);
+      expect(result.current.playbackRate).toBe(1.0);
     });
 
     it('should have correct script initial state', () => {

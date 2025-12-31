@@ -343,7 +343,7 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                       <div className="flex items-center gap-3">
                         <span className="text-xs text-cyan-400/40">0%</span>
                         <div className="relative flex-1 h-4 flex items-center">
-                          <div className="absolute inset-x-0 h-1.5 rounded-full bg-gradient-to-r from-cyan-500/20 to-cyan-400/30" />
+                          <div className="absolute inset-x-0 h-1.5 rounded-full bg-gradient-to-r from-cyan-500/20 to-cyan-400/30 pointer-events-none" />
                           <input
                             type="range"
                             min="0"
@@ -377,7 +377,7 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                       <div className="flex items-center gap-3">
                         <span className="text-xs text-violet-400/40">0%</span>
                         <div className="relative flex-1 h-4 flex items-center">
-                          <div className="absolute inset-x-0 h-1.5 rounded-full bg-gradient-to-r from-cyan-500/20 via-violet-500/25 to-purple-500/20" />
+                          <div className="absolute inset-x-0 h-1.5 rounded-full bg-gradient-to-r from-cyan-500/20 via-violet-500/25 to-purple-500/20 pointer-events-none" />
                           <input
                             type="range"
                             min="0"
@@ -411,7 +411,7 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                       <div className="flex items-center gap-3">
                         <span className="text-xs text-purple-400/40">0%</span>
                         <div className="relative flex-1 h-4 flex items-center">
-                          <div className="absolute inset-x-0 h-1.5 rounded-full bg-gradient-to-r from-purple-500/20 to-purple-400/30" />
+                          <div className="absolute inset-x-0 h-1.5 rounded-full bg-gradient-to-r from-purple-500/20 to-purple-400/30 pointer-events-none" />
                           <input
                             type="range"
                             min="0"
