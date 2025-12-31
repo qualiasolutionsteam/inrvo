@@ -3,7 +3,7 @@ import { m, AnimatePresence } from 'framer-motion';
 
 /**
  * Dark overlay with animated spotlight cutout
- * Uses SVG mask for the spotlight effect
+ * Enhanced glass morphism with subtle glow effects
  */
 
 interface SpotlightRect {
@@ -31,11 +31,11 @@ const overlayVariants = prefersReducedMotion
       hidden: { opacity: 0 },
       visible: {
         opacity: 1,
-        transition: { duration: 0.3, ease: 'easeOut' }
+        transition: { duration: 0.4, ease: [0.32, 0.72, 0, 1] }
       },
       exit: {
         opacity: 0,
-        transition: { duration: 0.2 }
+        transition: { duration: 0.25, ease: 'easeIn' }
       }
     };
 
@@ -68,6 +68,14 @@ export const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({
           onClick={onClick}
           style={{ contain: 'strict' }}
         >
+          {/* Background gradient for depth */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.85) 100%)',
+            }}
+          />
+
           <svg
             className="absolute inset-0 w-full h-full"
             style={{ pointerEvents: 'none' }}
@@ -79,12 +87,12 @@ export const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({
                 {paddedRect && (
                   <m.rect
                     fill="black"
-                    rx="12"
+                    rx="16"
                     initial={prefersReducedMotion ? paddedRect : {
-                      x: paddedRect.x,
-                      y: paddedRect.y,
-                      width: paddedRect.width,
-                      height: paddedRect.height,
+                      x: paddedRect.x + paddedRect.width / 2,
+                      y: paddedRect.y + paddedRect.height / 2,
+                      width: 0,
+                      height: 0,
                       opacity: 0,
                     }}
                     animate={{
@@ -95,18 +103,27 @@ export const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({
                       opacity: 1,
                     }}
                     transition={prefersReducedMotion ? { duration: 0 } : {
-                      duration: 0.4,
+                      duration: 0.5,
                       ease: [0.32, 0.72, 0, 1],
                     }}
                   />
                 )}
               </mask>
+
+              {/* Glow filter for spotlight ring */}
+              <filter id="spotlight-glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
             </defs>
 
             {/* Dark overlay with mask applied */}
             <rect
               fill="black"
-              fillOpacity="0.75"
+              fillOpacity="0.7"
               width="100%"
               height="100%"
               mask="url(#onboarding-spotlight-mask)"
@@ -114,22 +131,52 @@ export const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({
             />
           </svg>
 
-          {/* Spotlight glow effect */}
+          {/* Animated spotlight ring with glow */}
           {paddedRect && (
-            <m.div
-              className="absolute pointer-events-none"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.3 }}
-              style={{
-                left: paddedRect.x - 4,
-                top: paddedRect.y - 4,
-                width: paddedRect.width + 8,
-                height: paddedRect.height + 8,
-                borderRadius: 16,
-                boxShadow: '0 0 0 2px rgba(6, 182, 212, 0.3), 0 0 20px rgba(6, 182, 212, 0.15)',
-              }}
-            />
+            <>
+              {/* Outer glow */}
+              <m.div
+                className="absolute pointer-events-none rounded-2xl"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2, duration: 0.4, ease: 'easeOut' }}
+                style={{
+                  left: paddedRect.x - 8,
+                  top: paddedRect.y - 8,
+                  width: paddedRect.width + 16,
+                  height: paddedRect.height + 16,
+                  boxShadow: `
+                    0 0 0 1px rgba(6, 182, 212, 0.2),
+                    0 0 30px rgba(6, 182, 212, 0.15),
+                    0 0 60px rgba(6, 182, 212, 0.1),
+                    inset 0 0 20px rgba(6, 182, 212, 0.05)
+                  `,
+                }}
+              />
+
+              {/* Inner ring with animated pulse */}
+              <m.div
+                className="absolute pointer-events-none rounded-2xl"
+                initial={{ opacity: 0 }}
+                animate={{
+                  opacity: [0.4, 0.7, 0.4],
+                }}
+                transition={{
+                  delay: 0.3,
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: 'easeInOut'
+                }}
+                style={{
+                  left: paddedRect.x - 2,
+                  top: paddedRect.y - 2,
+                  width: paddedRect.width + 4,
+                  height: paddedRect.height + 4,
+                  border: '2px solid rgba(6, 182, 212, 0.5)',
+                  boxShadow: '0 0 20px rgba(6, 182, 212, 0.3)',
+                }}
+              />
+            </>
           )}
         </m.div>
       )}
