@@ -55,122 +55,183 @@ const CloseIcon = ({ className = '' }: { className?: string }) => (
 );
 
 // ============================================================================
-// BREATHING ORB - Central Visual Element
+// SHOOTING STARS - Central Visual Element
 // ============================================================================
 
-interface BreathingOrbProps {
+interface ShootingStarProps {
+  delay: number;
+  duration: number;
+  startX: number;
+  startY: number;
+  isActive: boolean;
+}
+
+const ShootingStar: React.FC<ShootingStarProps> = ({
+  delay,
+  duration,
+  startX,
+  startY,
+  isActive,
+}) => {
+  const angle = -30 + Math.random() * 20; // Slightly varied angles
+  const length = 60 + Math.random() * 40;
+
+  return (
+    <m.div
+      className="absolute"
+      style={{
+        left: `${startX}%`,
+        top: `${startY}%`,
+        width: `${length}px`,
+        height: '2px',
+        background: `linear-gradient(90deg, transparent, rgba(34,211,238,${isActive ? 0.8 : 0.4}), rgba(255,255,255,${isActive ? 0.9 : 0.5}))`,
+        borderRadius: '2px',
+        transform: `rotate(${angle}deg)`,
+        boxShadow: isActive
+          ? '0 0 6px rgba(34,211,238,0.6), 0 0 12px rgba(34,211,238,0.3)'
+          : '0 0 4px rgba(255,255,255,0.3)',
+      }}
+      initial={{ opacity: 0, x: 0, y: 0 }}
+      animate={{
+        opacity: [0, 1, 1, 0],
+        x: [0, length * 2],
+        y: [0, length * 0.8],
+      }}
+      transition={{
+        duration: duration,
+        delay: delay,
+        repeat: Infinity,
+        repeatDelay: Math.random() * 3 + 2,
+        ease: 'easeOut',
+      }}
+    />
+  );
+};
+
+interface ShootingStarsFieldProps {
   isActive: boolean;
   isSpeaking: boolean;
   isListening: boolean;
   volume: number;
 }
 
-const BreathingOrb: React.FC<BreathingOrbProps> = ({
+const ShootingStarsField: React.FC<ShootingStarsFieldProps> = ({
   isActive,
   isSpeaking,
   isListening,
   volume,
 }) => {
-  // Scale based on voice activity
-  const activeScale = isListening ? 1 + volume * 0.3 : isSpeaking ? 1.1 : 1;
+  // Generate stars with varied positions and timings
+  const stars = [
+    { delay: 0, duration: 1.2, startX: 10, startY: 20 },
+    { delay: 0.8, duration: 1.0, startX: 70, startY: 10 },
+    { delay: 1.5, duration: 1.4, startX: 30, startY: 5 },
+    { delay: 2.2, duration: 1.1, startX: 85, startY: 30 },
+    { delay: 3.0, duration: 1.3, startX: 50, startY: 15 },
+    { delay: 3.8, duration: 1.0, startX: 15, startY: 35 },
+    { delay: 4.5, duration: 1.2, startX: 60, startY: 25 },
+    { delay: 5.2, duration: 1.1, startX: 40, startY: 8 },
+  ];
+
+  // Add more stars when active
+  const activeStars = isActive ? [
+    { delay: 0.3, duration: 0.8, startX: 25, startY: 12 },
+    { delay: 1.0, duration: 0.9, startX: 75, startY: 22 },
+    { delay: 1.8, duration: 0.7, startX: 45, startY: 18 },
+    { delay: 2.5, duration: 0.85, startX: 90, startY: 15 },
+    { delay: 3.3, duration: 0.75, startX: 20, startY: 28 },
+    { delay: 4.0, duration: 0.9, startX: 55, startY: 5 },
+  ] : [];
 
   return (
-    <div className="relative flex items-center justify-center">
-      {/* Outer glow rings */}
+    <div className="relative w-80 h-48 flex items-center justify-center overflow-hidden">
+      {/* Background glow when active */}
       <m.div
-        className="absolute w-48 h-48 rounded-full"
+        className="absolute inset-0"
         style={{
-          background: 'radial-gradient(circle, rgba(34,211,238,0.08) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse at center, rgba(34,211,238,0.05) 0%, transparent 70%)',
         }}
         animate={{
-          scale: isActive ? [1, 1.2, 1] : 1,
-          opacity: isActive ? [0.5, 0.8, 0.5] : 0.3,
-        }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-      />
-
-      <m.div
-        className="absolute w-36 h-36 rounded-full"
-        style={{
-          background: 'radial-gradient(circle, rgba(34,211,238,0.12) 0%, transparent 70%)',
-        }}
-        animate={{
-          scale: isActive ? [1.1, 1, 1.1] : 1,
-          opacity: isActive ? [0.6, 0.9, 0.6] : 0.4,
+          opacity: isActive ? [0.3, 0.6, 0.3] : 0.1,
         }}
         transition={{
           duration: 3,
           repeat: Infinity,
           ease: 'easeInOut',
-          delay: 0.5,
         }}
       />
 
-      {/* Main orb */}
+      {/* Shooting stars */}
+      {[...stars, ...activeStars].map((star, i) => (
+        <ShootingStar
+          key={i}
+          delay={star.delay}
+          duration={isSpeaking ? star.duration * 0.7 : star.duration}
+          startX={star.startX}
+          startY={star.startY}
+          isActive={isActive}
+        />
+      ))}
+
+      {/* Central voice indicator */}
       <m.div
-        className="relative w-24 h-24 rounded-full flex items-center justify-center"
-        style={{
-          background: isActive
-            ? 'linear-gradient(135deg, rgba(34,211,238,0.2) 0%, rgba(34,211,238,0.05) 100%)'
-            : 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
-          boxShadow: isActive
-            ? '0 0 60px rgba(34,211,238,0.2), inset 0 0 30px rgba(34,211,238,0.1)'
-            : '0 0 40px rgba(255,255,255,0.05), inset 0 0 20px rgba(255,255,255,0.02)',
-          border: '1px solid rgba(34,211,238,0.1)',
-        }}
+        className="relative z-10 flex items-center justify-center gap-1"
         animate={{
-          scale: activeScale,
+          scale: isListening ? 1 + volume * 0.2 : 1,
         }}
-        transition={{
-          type: 'spring',
-          stiffness: 300,
-          damping: 20,
-        }}
+        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       >
-        {/* Inner pulse for speaking state */}
-        {isSpeaking && (
+        {/* Subtle voice bars */}
+        {[...Array(5)].map((_, i) => (
           <m.div
-            className="absolute inset-2 rounded-full bg-cyan-400/10"
+            key={i}
+            className="w-0.5 rounded-full"
+            style={{
+              background: isActive
+                ? 'linear-gradient(to top, rgba(34,211,238,0.3), rgba(34,211,238,0.8))'
+                : 'rgba(255,255,255,0.2)',
+            }}
             animate={{
-              scale: [1, 1.1, 1],
-              opacity: [0.5, 0.8, 0.5],
+              height: isListening
+                ? `${8 + volume * 24}px`
+                : isSpeaking
+                  ? `${6 + Math.sin(Date.now() / 150 + i * 0.8) * 10}px`
+                  : '3px',
+              opacity: isActive ? [0.5, 1, 0.5] : 0.3,
             }}
             transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              ease: 'easeInOut',
+              height: { duration: 0.1 },
+              opacity: { duration: 1.5, repeat: Infinity },
             }}
           />
-        )}
+        ))}
+      </m.div>
 
-        {/* Voice visualization bars */}
-        <div className="flex items-center justify-center gap-1">
-          {[...Array(5)].map((_, i) => (
+      {/* Sparkle particles when speaking */}
+      {isSpeaking && (
+        <>
+          {[...Array(6)].map((_, i) => (
             <m.div
-              key={i}
-              className="w-1 rounded-full bg-cyan-400/60"
+              key={`sparkle-${i}`}
+              className="absolute w-1 h-1 rounded-full bg-cyan-300"
+              style={{
+                left: `${30 + Math.random() * 40}%`,
+                top: `${30 + Math.random() * 40}%`,
+              }}
               animate={{
-                height: isListening
-                  ? `${12 + Math.sin(Date.now() / 200 + i) * volume * 20}px`
-                  : isSpeaking
-                    ? `${8 + Math.sin(Date.now() / 150 + i * 0.5) * 12}px`
-                    : '4px',
-                opacity: isActive ? 0.8 : 0.3,
+                scale: [0, 1, 0],
+                opacity: [0, 1, 0],
               }}
               transition={{
-                duration: 0.1,
-              }}
-              style={{
-                height: isActive ? '12px' : '4px',
+                duration: 0.8,
+                delay: i * 0.15,
+                repeat: Infinity,
+                repeatDelay: 0.5,
               }}
             />
           ))}
-        </div>
-      </m.div>
+        </>
+      )}
     </div>
   );
 };
@@ -424,14 +485,14 @@ export const VoiceAgent: React.FC<VoiceAgentProps> = ({
           </div>
         )}
 
-        {/* Central breathing orb */}
+        {/* Shooting stars field */}
         <m.div
-          initial={{ scale: 0.8, opacity: 0 }}
+          initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
+          transition={{ delay: 0.1, duration: 0.6 }}
           className={transcripts.length > 0 ? 'mt-auto mb-8' : ''}
         >
-          <BreathingOrb
+          <ShootingStarsField
             isActive={isConnected}
             isSpeaking={isSpeaking}
             isListening={isListening && !isMuted}
