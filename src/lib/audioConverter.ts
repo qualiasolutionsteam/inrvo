@@ -43,8 +43,10 @@ export async function convertToWAV(blob: Blob): Promise<Blob> {
       throw new Error('Audio decoding produced empty data');
     }
 
-    // Apply RMS normalization for consistent voice levels (improves clone quality 10-15%)
-    const channelData = normalizeRMS(monoData, 0.2);
+    // Apply RMS normalization to ElevenLabs optimal levels
+    // ElevenLabs recommends: -23 to -18 dB RMS with -3dB peak
+    // 0.1 RMS ≈ -20dBFS (center of optimal range)
+    const channelData = normalizeRMS(monoData, 0.1);
 
     // Create WAV file with optimal settings for voice cloning
     const wavBlob = encodeWAV(channelData, audioBuffer.sampleRate);
@@ -97,14 +99,14 @@ function mergeChannels(audioBuffer: AudioBuffer): Float32Array {
  *
  * Why this matters for voice cloning:
  * - Ensures consistent audio levels across all recordings
- * - Prevents under/over-modulation at Fish Audio
- * - Improves voice clone quality by 10-15%
+ * - ElevenLabs recommends: -23 to -18 dB RMS with -3dB peak
+ * - 0.1 RMS ≈ -20dBFS (center of optimal range)
  *
  * @param samples - Float32Array of audio samples
- * @param targetRMS - Target RMS level (default: 0.2 for voice, -14 dBFS equivalent)
+ * @param targetRMS - Target RMS level (default: 0.1 for ElevenLabs, -20 dBFS equivalent)
  * @returns Float32Array - Normalized audio samples
  */
-function normalizeRMS(samples: Float32Array, targetRMS: number = 0.2): Float32Array {
+function normalizeRMS(samples: Float32Array, targetRMS: number = 0.1): Float32Array {
   // Calculate current RMS (Root Mean Square)
   let sumSquares = 0;
   for (let i = 0; i < samples.length; i++) {
@@ -224,6 +226,7 @@ export async function getAudioDuration(blob: Blob): Promise<number> {
 
 /**
  * Validate audio quality for voice cloning
+ * Aligned with ElevenLabs IVC recommendations
  *
  * @returns { valid: boolean, duration: number, message?: string }
  */
@@ -232,8 +235,8 @@ export async function validateAudioForCloning(blob: Blob): Promise<{
   duration: number;
   message?: string;
 }> {
-  const MIN_DURATION = 6; // seconds - Chatterbox recommendation
-  const MAX_DURATION = 90; // seconds
+  const MIN_DURATION = 60; // ElevenLabs: "at least 1 minute of audio"
+  const MAX_DURATION = 120; // ElevenLabs: "avoid exceeding 3 minutes" (we use 2 min for safety)
   const MIN_SIZE = 50000; // bytes (~50KB)
 
   // Check file size
