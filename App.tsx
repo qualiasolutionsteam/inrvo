@@ -1660,11 +1660,16 @@ const App: React.FC = () => {
       }
 
       // Generate speech with the edited script
-      const { audioBuffer, base64 } = await voiceService.generateSpeech(
+      const { audioBuffer, base64, needsReclone } = await voiceService.generateSpeech(
         scriptToPlay,
         selectedVoice,
         audioContextRef.current
       );
+
+      // Check if voice needs to be re-cloned (legacy Fish Audio/Chatterbox voice)
+      if (needsReclone) {
+        throw new Error('This voice needs to be re-cloned. Please go to Voice Settings and re-clone your voice with ElevenLabs.');
+      }
 
       if (!base64 || base64.trim() === '') {
         throw new Error('Failed to generate audio. Please try again.');
@@ -1836,11 +1841,16 @@ const App: React.FC = () => {
       }
 
       // Generate speech with unified voice service
-      const { audioBuffer, base64 } = await voiceService.generateSpeech(
+      const { audioBuffer, base64, needsReclone } = await voiceService.generateSpeech(
         script,
         selectedVoice,
         audioContextRef.current
       );
+
+      // Check if voice needs to be re-cloned (legacy Fish Audio/Chatterbox voice)
+      if (needsReclone) {
+        throw new Error('This voice needs to be re-cloned. Please go to Voice Settings and re-clone your voice with ElevenLabs.');
+      }
 
       if (!base64 || base64.trim() === '') {
         throw new Error('Failed to generate audio. Please check your API key and try again.');
@@ -2040,11 +2050,16 @@ const App: React.FC = () => {
                           }
 
                           // Generate speech
-                          const { audioBuffer, base64 } = await voiceService.generateSpeech(
+                          const { audioBuffer, base64, needsReclone } = await voiceService.generateSpeech(
                             meditationScript,
                             selectedVoice,
                             audioContextRef.current
                           );
+
+                          // Check if voice needs to be re-cloned (legacy Fish Audio/Chatterbox voice)
+                          if (needsReclone) {
+                            throw new Error('This voice needs to be re-cloned. Please go to Voice Settings and re-clone your voice with ElevenLabs.');
+                          }
 
                           if (!base64 || base64.trim() === '') {
                             throw new Error('Failed to generate audio. Please try again.');

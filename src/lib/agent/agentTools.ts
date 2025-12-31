@@ -236,7 +236,15 @@ export async function synthesizeAudio(
 
     // Generate audio
     const ctx = audioContext || new AudioContext();
-    const { audioBuffer, base64 } = await voiceService.generateSpeech(script, voice, ctx);
+    const { audioBuffer, base64, needsReclone } = await voiceService.generateSpeech(script, voice, ctx);
+
+    // Check if voice needs to be re-cloned (legacy Fish Audio/Chatterbox voice)
+    if (needsReclone) {
+      return {
+        success: false,
+        error: 'This voice needs to be re-cloned. Please go to Voice Settings and re-clone your voice with ElevenLabs.',
+      };
+    }
 
     // Deduct credits
     if (user) {

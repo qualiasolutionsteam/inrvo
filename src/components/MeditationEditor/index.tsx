@@ -209,6 +209,11 @@ export const MeditationEditor = memo<MeditationEditorProps>(
           selectedVoice
         );
 
+        // Check if voice needs to be re-cloned (legacy Fish Audio/Chatterbox voice)
+        if (result.needsReclone) {
+          throw new Error('This voice needs to be re-cloned. Please go to Voice Settings and re-clone your voice with ElevenLabs.');
+        }
+
         if (!result.base64) {
           throw new Error('Failed to generate audio');
         }

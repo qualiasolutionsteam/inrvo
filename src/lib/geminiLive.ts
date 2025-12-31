@@ -108,7 +108,16 @@ interface ToolCall {
   };
 }
 
-type ServerMessage = ServerSetupComplete | ServerContent | ToolCall;
+// Error response from Gemini API
+interface ServerError {
+  error: {
+    code?: number;
+    message?: string;
+    status?: string;
+  };
+}
+
+type ServerMessage = ServerSetupComplete | ServerContent | ToolCall | ServerError;
 
 // ============================================================================
 // Gemini Live Client Class
@@ -123,6 +132,11 @@ export class GeminiLiveClient {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 3;
   private reconnectDelay = 1000;
+
+  // Connection promise handlers for proper async flow
+  private connectionResolve: (() => void) | null = null;
+  private connectionReject: ((error: Error) => void) | null = null;
+  private connectionTimeout: ReturnType<typeof setTimeout> | null = null;
 
   // Audio state
   private isReceivingAudio = false;
@@ -175,30 +189,15 @@ export class GeminiLiveClient {
       this.ws.onerror = this.handleError.bind(this);
       this.ws.onclose = this.handleClose.bind(this);
 
-      // Wait for connection with timeout
+      // Wait for connection with timeout using proper promise handling
       await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('Connection timeout'));
+        this.connectionResolve = resolve;
+        this.connectionReject = reject;
+        
+        this.connectionTimeout = setTimeout(() => {
+          this.cleanupConnectionHandlers();
+          reject(new Error('Connection timeout - server did not respond within 10 seconds'));
         }, 10000);
-
-        const checkSetup = setInterval(() => {
-          if (this.setupComplete) {
-            clearTimeout(timeout);
-            clearInterval(checkSetup);
-            resolve();
-          }
-        }, 100);
-
-        // Also check for errors
-        const originalOnError = this.ws!.onerror;
-        this.ws!.onerror = (event) => {
-          clearTimeout(timeout);
-          clearInterval(checkSetup);
-          if (originalOnError) {
-            originalOnError.call(this.ws, event);
-          }
-          reject(new Error('WebSocket connection failed'));
-        };
       });
 
     } catch (error) {
@@ -214,6 +213,8 @@ export class GeminiLiveClient {
           userMessage = 'Connection blocked for security reasons. Voice chat requires HTTPS.';
         } else if (error.message.includes('WebSocket')) {
           userMessage = 'Could not establish voice connection. The service may be temporarily unavailable.';
+        } else if (error.message.includes('Invalid model') || error.message.includes('not found')) {
+          userMessage = 'Voice service configuration error. Please try again later.';
         } else {
           userMessage = `Voice connection error: ${error.message}`;
         }
@@ -229,6 +230,7 @@ export class GeminiLiveClient {
   disconnect(): void {
     if (DEBUG) console.log('[GeminiLive] Disconnecting...');
 
+    this.cleanupConnectionHandlers();
     this.state = 'disconnected';
     this.setupComplete = false;
     this.reconnectAttempts = 0;
@@ -302,6 +304,15 @@ export class GeminiLiveClient {
   // Private Methods
   // ============================================================================
 
+  private cleanupConnectionHandlers(): void {
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout = null;
+    }
+    this.connectionResolve = null;
+    this.connectionReject = null;
+  }
+
   private handleOpen(): void {
     if (DEBUG) console.log('[GeminiLive] WebSocket connected, sending setup...');
 
@@ -327,13 +338,31 @@ export class GeminiLiveClient {
       },
     };
 
+    if (DEBUG) console.log('[GeminiLive] Sending setup message:', JSON.stringify(setupMessage, null, 2));
     this.ws.send(JSON.stringify(setupMessage));
   }
 
   private handleMessage(event: MessageEvent): void {
     try {
       if (DEBUG) console.log('[GeminiLive] Raw message received:', event.data);
-      const message: ServerMessage = JSON.parse(event.data as string);
+      
+      const message = JSON.parse(event.data as string);
+
+      // Handle error responses from Gemini API
+      if ('error' in message) {
+        const errorMsg = message.error?.message || message.error?.status || 'Unknown API error';
+        if (DEBUG) console.error('[GeminiLive] API error received:', message.error);
+        
+        // Reject connection promise if still connecting
+        if (this.connectionReject) {
+          this.cleanupConnectionHandlers();
+          this.connectionReject(new Error(errorMsg));
+        }
+        
+        this.state = 'error';
+        this.callbacks.onError?.(new Error(errorMsg));
+        return;
+      }
 
       // Handle setup complete
       if ('setupComplete' in message) {
@@ -341,6 +370,13 @@ export class GeminiLiveClient {
         this.setupComplete = true;
         this.state = 'connected';
         this.reconnectAttempts = 0;
+        
+        // Resolve connection promise
+        if (this.connectionResolve) {
+          this.cleanupConnectionHandlers();
+          this.connectionResolve();
+        }
+        
         this.callbacks.onConnected?.();
         return;
       }
@@ -391,6 +427,9 @@ export class GeminiLiveClient {
         return;
       }
 
+      // Log unknown message types for debugging
+      if (DEBUG) console.log('[GeminiLive] Unknown message type:', Object.keys(message));
+
     } catch (error) {
       if (DEBUG) console.error('[GeminiLive] Error parsing message:', error);
     }
@@ -404,7 +443,15 @@ export class GeminiLiveClient {
         currentTarget: event.currentTarget,
       });
     }
+    
     this.state = 'error';
+    
+    // Reject connection promise if still connecting
+    if (this.connectionReject) {
+      this.cleanupConnectionHandlers();
+      this.connectionReject(new Error('WebSocket connection failed'));
+    }
+    
     this.callbacks.onError?.(new Error('WebSocket error'));
   }
 
@@ -418,8 +465,17 @@ export class GeminiLiveClient {
     }
 
     const wasConnected = this.state === 'connected';
+    const wasConnecting = this.state === 'connecting';
     this.state = 'disconnected';
     this.setupComplete = false;
+
+    // Reject connection promise if still connecting (connection failed during setup)
+    if (wasConnecting && this.connectionReject) {
+      const reason = event.reason || `Connection closed during setup (code: ${event.code})`;
+      this.cleanupConnectionHandlers();
+      this.connectionReject(new Error(reason));
+      return;
+    }
 
     // Attempt reconnection if unexpectedly disconnected
     if (wasConnected && event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {

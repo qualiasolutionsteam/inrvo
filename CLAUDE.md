@@ -51,6 +51,7 @@ supabase db push                            # Push migrations to remote
   - `AudioTagsContext.tsx` - Audio tag state
   - `AudioContext.tsx` - Audio playback state
   - `ModalContext.tsx` - Modal visibility coordination (with sub-contexts in `src/contexts/modals/`)
+  - `OnboardingContext.tsx` - Post-signup guided tour state
   - `AppContext.tsx` - App-wide state (voices, preferences, remaining cross-cutting concerns)
 
 **Key Components (two locations):**
@@ -86,7 +87,7 @@ The chat input has a subtle cyan/purple glow effect that intensifies when record
 - `lib/supabase.ts` - Supabase client and all database operations
 - `src/lib/adminSupabase.ts` - Admin-specific database operations (protected by RLS)
 - `src/lib/edgeFunctions.ts` - Edge function wrappers with retry logic
-- `src/lib/voiceService.ts` - TTS provider routing (Fish Audio primary, Chatterbox fallback, Web Speech API free tier)
+- `src/lib/voiceService.ts` - TTS provider routing (ElevenLabs primary, Web Speech API fallback)
 - `src/lib/credits.ts` - Credit system (DISABLED - all users have unlimited access)
 
 ### Backend (Supabase Edge Functions)
@@ -95,16 +96,13 @@ All API keys are server-side only. Edge functions in `supabase/functions/`:
 
 | Function | Purpose |
 |----------|---------|
-| `generate-speech` | Unified TTS with provider routing (Fish Audio primary, Chatterbox fallback) |
-| `fish-audio-tts` | Fish Audio TTS with automatic Chatterbox fallback |
-| `fish-audio-clone` | Voice cloning via Fish Audio API |
+| `generate-speech` | Unified TTS with provider routing |
+| `elevenlabs-tts` | ElevenLabs TTS (primary provider, best quality) |
+| `elevenlabs-clone` | Voice cloning via ElevenLabs API |
 | `gemini-chat` | **Conversational AI** - respects agent's system prompt for natural dialogue |
 | `gemini-script` | Meditation script generation via Gemini API (NOT for chat) |
 | `gemini-live-token` | **Real-time voice** - returns Gemini Live API config for frontend WebSocket |
-| `chatterbox-tts` | Fallback TTS via Replicate |
-| `chatterbox-clone` | Fallback voice cloning via Replicate |
 | `delete-user-data` | GDPR-compliant user data deletion |
-| `delete-fish-audio-model` | Remove Fish Audio voice models |
 | `export-user-data` | GDPR-compliant user data export |
 | `health` | Health check endpoint |
 
@@ -284,71 +282,105 @@ UPDATE users SET role = 'ADMIN' WHERE email = 'admin@example.com';
 3. **Content** - Meditations and voice profiles with delete actions
 4. **Audio Tags** - CRUD for audio tag presets with category grouping
 
+### Onboarding System
+
+Post-signup guided tour with spotlight overlays and tooltips. Triggers automatically 1.5s after new user signup.
+
+**Files:**
+- `src/contexts/OnboardingContext.tsx` - State management and auth listener
+- `src/components/Onboarding/OnboardingOverlay.tsx` - Spotlight overlay with cutout
+- `src/components/Onboarding/OnboardingTooltip.tsx` - Positioned tooltip
+- `src/components/Onboarding/OnboardingProgress.tsx` - Step indicator dots
+- `src/components/Onboarding/steps.ts` - Step definitions
+- `src/lib/onboardingStorage.ts` - localStorage persistence
+
+**8 Steps:**
+1. Welcome modal (centered)
+2. Agent Chat - main conversation interface
+3. Voice Toggle - speak to the agent
+4. Clone Voice button - key feature highlight
+5. Voice Collection - voice list
+6. Templates - quick start options
+7. Library - saved meditations
+8. Complete modal (centered)
+
+**Targeting:** Steps use `data-onboarding="step-id"` attributes for element targeting with fallback selectors.
+
+**Storage:** Per-user localStorage (`inrvo_onboarding_{userId}`) tracks completion state.
+
+### Audit Logging
+
+Admin action tracking for security compliance. Immutable logs stored in `audit_log` table.
+
+**Files:**
+- `supabase/migrations/20251231030000_audit_log.sql` - Table, RLS, and functions
+- `src/lib/adminSupabase.ts` - Client-side logging calls
+
+**Logged Operations:** `INSERT`, `UPDATE`, `DELETE`, `ADMIN_DELETE`, `ADMIN_VIEW`, `DATA_EXPORT`
+
+**Functions:**
+```sql
+-- Log an admin action
+SELECT log_admin_action('users', user_id, 'ADMIN_DELETE', target_user_id, old_data, NULL);
+
+-- Get recent admin activity
+SELECT * FROM get_recent_admin_activity(50, 0);
+```
+
+**RLS:** Only admins can SELECT audit logs. No UPDATE/DELETE allowed (immutable).
+
+**Retention:** 2-year retention recommended (GDPR compliance). Cleanup via pg_cron.
+
 ### Database Schema
 
 Key tables (see `supabase/migrations/` for full schema):
-- `voice_profiles` - User voice clones with Fish Audio model IDs
+- `voice_profiles` - User voice clones with ElevenLabs voice IDs
 - `voice_clones` - Legacy voice sample storage
 - `meditation_history` - Saved meditations with audio URLs
 - `users` - Extended user profile with audio preferences, `role` field (`USER`/`ADMIN`)
 - `audio_tag_presets` - Configurable audio tags for meditation scripts
+- `audit_log` - Admin action tracking (immutable)
+- `tts_response_cache` - Cached TTS responses (24hr TTL)
 
 Audio files stored in Supabase Storage buckets: `voice-samples`, `meditation-audio`
 
 ## Voice Providers
 
-Three-tier TTS provider system:
-1. **Fish Audio** (primary) - Best quality, uses `fish_audio_model_id` from voice profile
-2. **Chatterbox** (fallback) - Via Replicate, uses `voice_sample_url` for zero-shot cloning
-3. **Web Speech API** - Free browser-based fallback
+Two-tier TTS provider system:
+1. **ElevenLabs** (primary) - Industry-leading voice quality and cloning, uses `elevenLabsVoiceId` from voice profile
+2. **Web Speech API** (fallback) - Free browser-based fallback for offline/free tier
 
 Provider selection happens in `voiceService.detectProvider()` based on voice profile fields.
 
-## Voice Quality Optimization
-
-### Fish Audio Settings (Edge Functions)
-
-Optimized for speed with good quality (long meditations can take 35-76s):
-
+**ElevenLabs Settings (optimized for meditation):**
 | Setting | Value | Purpose |
 |---------|-------|---------|
-| `mp3_bitrate` | 128 | Good quality, faster encoding |
-| `chunk_length` | 300 | Larger chunks for faster processing |
-| `model` header | `speech-1.6` | Enables paralanguage effects |
-| `normalize` | true | Consistent volume levels |
-| `latency` | `balanced` | Faster generation (vs `normal`) |
-| `train_mode` | `fast_high_quality` | Better voice clone fidelity |
+| `model` | `eleven_multilingual_v2` | Best quality model |
+| `stability` | 0.6 | Calm, consistent delivery |
+| `similarity_boost` | 0.75 | Good voice matching |
+| `style` | 0.3 | Subtle expression |
+
+**Voice Migration:** Legacy Fish Audio/Chatterbox voices need re-cloning. The `needsReclone()` function in `voiceService.ts` detects this and prompts users to re-record.
+
+## Voice Quality Optimization
+
+### Audio Tag Processing
+
+The `voiceService.ts` converts meditation script tags to natural pauses for ElevenLabs:
+
+| Script Tag | Conversion | Result |
+|------------|-----------|--------|
+| `[pause]` | `...` | Short pause |
+| `[long pause]` | `......` | Extended pause |
+| `[deep breath]` | `... take a deep breath ...` | Breathing cue |
+| `[exhale slowly]` | `... and exhale slowly ...` | Exhale cue |
+| `[silence]` | `........` | Long silence |
+
+ElevenLabs handles natural pauses through punctuation - no special API effects needed.
 
 **Timeout Configuration:**
 - Client-side (`edgeFunctions.ts`): 120s for TTS calls
 - Server-side: 120s timeout on edge functions
-- Fish Audio can take 35-76s for long meditation scripts
-
-### Fish Audio V1.6 Paralanguage Effects
-
-The `voiceService.ts` converts meditation script tags to Fish Audio effects:
-
-| Script Tag | Fish Audio Effect | Result |
-|------------|------------------|--------|
-| `[pause]` | `(break)` | Short pause |
-| `[long pause]` | `(long-break)` | Extended pause |
-| `[deep breath]` | `(breath)` | Breathing sound |
-| `[exhale slowly]` | `(sigh)` | Sighing sound |
-
-Additional meditation pacing is applied automatically:
-- `(long-break)` after sentences
-- `(break)` after commas
-- `(breath)` after "breathe in/inhale"
-- `(sigh)` after "breathe out/exhale"
-
-### Chatterbox Settings
-
-Optimized for calm meditation delivery:
-
-| Setting | Value | Purpose |
-|---------|-------|---------|
-| `exaggeration` | 0.35 | Lower = calmer, less emphatic (default 0.5) |
-| `cfg_weight` | 0.5-0.6 | Deliberate pacing |
 
 ### Voice Recording Settings
 
@@ -379,9 +411,8 @@ Frontend (`.env.local`):
 - `VITE_SENTRY_DSN` - Optional error tracking
 
 Edge Functions (set in Supabase Dashboard):
-- `FISH_AUDIO_API_KEY` - Primary TTS/cloning
-- `GEMINI_API_KEY` - Script generation
-- `ELEVENLABS_API_KEY` - Legacy voice support (optional)
+- `ELEVENLABS_API_KEY` - Primary TTS/cloning
+- `GEMINI_API_KEY` - Script generation and chat
 
 ## Bundle Optimization
 
@@ -435,7 +466,7 @@ import { m, AnimatePresence } from 'framer-motion';
 `index.html` includes preconnect hints for external APIs:
 - Supabase (`jcvfnkuppbvkbzltkioa.supabase.co`)
 - Gemini API (`generativelanguage.googleapis.com`)
-- Fish Audio (`api.fish.audio`)
+- ElevenLabs (`api.elevenlabs.io`)
 - Google Fonts (`fonts.googleapis.com`, `fonts.gstatic.com`)
 
 **Important:** Always use dynamic imports for `edgeFunctions.ts` to maintain code splitting:
@@ -463,7 +494,7 @@ import { fishAudioCloneVoice } from './src/lib/edgeFunctions';
 | `tests/lib/agent/MeditationAgent.test.ts` | 52 | Content detection, disambiguation, context extraction |
 | `tests/hooks/useAudioPlayback.test.ts` | 37 | Audio playback, background music, volume control, callbacks |
 | `tests/hooks/useMeditationAgent.test.ts` | 18 | Message sending, meditation generation, synthesis, actions |
-| `tests/hooks/useVoiceCloning.test.ts` | 29 | Credit checks, Fish Audio/Chatterbox fallback, recording |
+| `tests/hooks/useVoiceCloning.test.ts` | 29 | Credit checks, ElevenLabs cloning, recording |
 | `tests/hooks/useVoiceGeneration.test.ts` | 27 | Script generation, extension, audio synthesis, tags |
 | `tests/contexts/AppContext.test.tsx` | 42 | All state categories, setters, auth, voices, history |
 | `tests/contexts/ModalContext.test.tsx` | 54 | All 15 modal types, open/close/toggle, convenience setters |
@@ -673,15 +704,6 @@ supabase functions deploy <name>   # Deploy single function
 
 See `docs/OPTIMIZATION_ROADMAP.md` for full details. Key optimizations applied:
 
-### Voice Cloning Quality
-- **Sample rate alignment:** 48kHz → 44.1kHz (matches Fish Audio expected rate, eliminates resampling overhead, ~10% faster)
-- **Files:** `SimpleVoiceClone.tsx:96`, `audioConverter.ts:25`
-
-### TTS Generation Performance
-- **Bitrate:** 128kbps (Fish Audio only accepts 64, 128, 192)
-- **Cache TTL extension:** 5 min → 1 hour (reduces DB queries by 70-80%)
-- **Files:** `fish-audio-tts/index.ts`, `generate-speech/index.ts`
-
 ### AI Script Generation Quality
 - **Few-shot prompting:** Added example meditation script to system prompt (40-50% quality improvement)
 - **Temperature optimization:** 0.7 → 0.5 (better consistency + creativity balance)
@@ -689,19 +711,10 @@ See `docs/OPTIMIZATION_ROADMAP.md` for full details. Key optimizations applied:
 - **topP/topK sampling:** Added for better quality control
 - **File:** `gemini-script/index.ts`
 
-### Database Performance (Migrations Ready)
-- **Materialized view for admin analytics:** 90% faster dashboard load (`023_admin_analytics_materialized_view.sql`)
-- **Optimized admin RLS:** STABLE `is_admin()` function, 30% faster admin queries (`024_optimize_admin_rls.sql`)
-- **Covering index:** Voice profile index-only scans, 30% faster lookups (`025_voice_profile_covering_index.sql`)
-- **Audio tag client cache:** Already implemented in `src/lib/audioTagCache.ts`
-
-### Expected Performance Gains
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Voice cloning | ~60s | ~53s | 10% faster |
-| Script quality variance | High | Low | 40% more consistent |
-| Admin dashboard | 30-50ms | 2-5ms | 90% faster |
-| Voice profile lookup | 0.5-1ms | 0.3-0.7ms | 30% faster |
+### Database Performance
+- **Optimized admin RLS:** STABLE `is_admin()` function, 30% faster admin queries
+- **Covering index:** Voice profile index-only scans, 30% faster lookups
+- **Audio tag client cache:** Implemented in `src/lib/audioTagCache.ts`
 
 ## Applied Optimizations (2025-12-31)
 
@@ -727,7 +740,7 @@ Sprint-based performance optimizations across client, server, and database layer
 **TTS Cache Functions:**
 ```sql
 -- Get cached TTS (updates access tracking)
-SELECT * FROM get_tts_cache(script_hash, voice_id, 'fish-audio');
+SELECT * FROM get_tts_cache(script_hash, voice_id, 'elevenlabs');
 
 -- Store TTS response (24hr TTL default)
 SELECT set_tts_cache(script_hash, voice_id, audio_base64, 'mp3', duration_seconds);
@@ -811,6 +824,21 @@ The credit/subscription system is currently **disabled** for all users:
 1. Set `CREDITS_DISABLED = false` in `src/lib/credits.ts`
 2. Update `handle_new_user()` function to use FREE tier
 3. Reset user credits in database
+
+## Production Monitoring
+
+See `docs/MONITORING.md` for setup instructions. Key monitoring layers:
+
+| Layer | Tool | Purpose |
+|-------|------|---------|
+| Uptime | BetterStack/Pingdom | Health endpoint monitoring |
+| Errors | Sentry | Exception tracking, session replay |
+| Performance | Vercel Analytics | Web Vitals, page speed |
+| Backend | Supabase Dashboard | DB queries, Edge Functions |
+
+**Health Endpoint:** `GET /functions/v1/health` returns service status, API key configs, and database latency.
+
+**Sentry Alerts:** Configure for error spikes (>10 in 10min), new issues, and poor Web Vitals.
 
 ## Stack Research
 
