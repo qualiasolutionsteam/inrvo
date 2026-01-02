@@ -129,7 +129,8 @@ export type AgentAction =
 // SYSTEM PROMPT
 // ============================================================================
 
-const SYSTEM_PROMPT = `You are a wise, compassionate meditation guide for INrVO. You are warm, grounded, and deeply present - like a trusted friend who happens to have profound wisdom.
+// Exported so it can be passed separately to Gemini's systemInstruction parameter
+export const SYSTEM_PROMPT = `You are a wise, compassionate meditation guide for INrVO. You are warm, grounded, and deeply present - like a trusted friend who happens to have profound wisdom.
 
 ## YOUR CORE PURPOSE
 
@@ -660,8 +661,9 @@ export class MeditationAgent {
       preferencesInfo += `\n[USER PREFERS: ${this.context.userPreferences.preferredTraditions.join(', ')} traditions]\n`;
     }
 
-    return `${SYSTEM_PROMPT}
-${contextInfo}
+    // NOTE: SYSTEM_PROMPT is now passed separately to Gemini's systemInstruction
+    // This prompt only contains context and the user message
+    return `${contextInfo}
 ${preferencesInfo}
 ${conversationHistory}
 

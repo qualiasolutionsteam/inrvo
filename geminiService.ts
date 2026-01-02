@@ -51,10 +51,10 @@ export const geminiService = {
    * Uses Edge Functions for secure API key handling
    * This method respects the agent's system prompt for natural conversation
    *
-   * @param prompt - Full prompt including system instructions and conversation
-   * @param options - Optional settings for temperature and max tokens
+   * @param prompt - User message and context (without system instructions)
+   * @param options - Optional settings for temperature, max tokens, and system prompt
    */
-  async chat(prompt: string, options?: { maxTokens?: number; temperature?: number }): Promise<string> {
+  async chat(prompt: string, options?: { maxTokens?: number; temperature?: number; systemPrompt?: string }): Promise<string> {
     try {
       const { geminiChat } = await import('./src/lib/edgeFunctions');
       return geminiChat(prompt, options);

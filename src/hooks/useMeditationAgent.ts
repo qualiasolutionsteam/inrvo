@@ -9,7 +9,7 @@
 const DEBUG = import.meta.env?.DEV ?? false;
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { MeditationAgent, getRandomGreeting, type AgentResponse, type ConversationMessage, type AgentAction } from '../lib/agent/MeditationAgent';
+import { MeditationAgent, getRandomGreeting, SYSTEM_PROMPT, type AgentResponse, type ConversationMessage, type AgentAction } from '../lib/agent/MeditationAgent';
 import { conversationStore } from '../lib/agent/conversationStore';
 import * as agentTools from '../lib/agent/agentTools';
 import { geminiService } from '../../geminiService';
@@ -116,12 +116,13 @@ export function useMeditationAgent(options: UseMeditationAgentOptions = {}): Use
   // Initialize agent on mount
   useEffect(() => {
     // Create the Gemini content generator function for conversational chat
-    // This uses geminiService.chat() which respects the agent's system prompt
-    // (NOT enhanceScript which is for meditation generation only)
+    // This uses geminiService.chat() with the SYSTEM_PROMPT passed separately
+    // to Gemini's systemInstruction parameter (NOT embedded in content)
+    // This ensures Gemini FOLLOWS the instructions rather than summarizing them
     const generateContent = async (prompt: string): Promise<string> => {
       try {
-        // Use geminiService.chat() for natural conversation
-        const response = await geminiService.chat(prompt);
+        // Pass SYSTEM_PROMPT separately so Gemini treats it as instructions
+        const response = await geminiService.chat(prompt, { systemPrompt: SYSTEM_PROMPT });
         return response;
       } catch (error) {
         console.error('Error generating content:', error);

@@ -504,18 +504,20 @@ export interface GeminiChatResponse {
  * Unlike geminiGenerateScript, this respects the agent's system prompt
  * and returns natural conversational responses (not meditation scripts)
  *
- * @param prompt - Full prompt including system instructions and conversation history
- * @param options - Optional settings for temperature and max tokens
+ * @param prompt - User message and context (without system instructions)
+ * @param options - Optional settings for temperature, max tokens, and system prompt
  */
 export async function geminiChat(
   prompt: string,
   options?: {
     maxTokens?: number;
     temperature?: number;
+    systemPrompt?: string;  // System instructions sent as proper Gemini parameter
   }
 ): Promise<string> {
   const response = await callEdgeFunction<GeminiChatResponse>('gemini-chat', {
     prompt,
+    systemPrompt: options?.systemPrompt,
     maxTokens: options?.maxTokens ?? 500,
     temperature: options?.temperature ?? 0.8,
   });

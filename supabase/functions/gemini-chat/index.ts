@@ -19,7 +19,8 @@ import {
  */
 
 interface GeminiChatRequest {
-  prompt: string;  // Full prompt including system instructions and conversation
+  prompt: string;  // User message and context (without system instructions)
+  systemPrompt?: string;  // System instructions sent separately to Gemini
   maxTokens?: number;
   temperature?: number;
 }
@@ -100,6 +101,7 @@ serve(async (req) => {
     // Parse request body
     const {
       prompt: rawPrompt,
+      systemPrompt,
       maxTokens = 500,  // Shorter responses for chat
       temperature = 0.8,  // Slightly more creative for natural conversation
     }: GeminiChatRequest = await req.json();
@@ -153,25 +155,34 @@ serve(async (req) => {
         const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout for chat
 
         try {
+          // Build request body - use systemInstruction if provided
+          const requestBody: Record<string, unknown> = {
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature,
+              maxOutputTokens: maxTokens,
+            },
+            // Safety settings for conversational AI
+            safetySettings: [
+              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+            ],
+          };
+
+          // Add system instruction as a proper Gemini parameter (not in content)
+          // This tells Gemini to FOLLOW these instructions, not summarize them
+          if (systemPrompt) {
+            requestBody.systemInstruction = { parts: [{ text: systemPrompt }] };
+          }
+
           const response = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                  temperature,
-                  maxOutputTokens: maxTokens,
-                },
-                // Safety settings for conversational AI
-                safetySettings: [
-                  { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-                  { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-                  { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-                  { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-                ],
-              }),
+              body: JSON.stringify(requestBody),
               signal: controller.signal,
             }
           );
