@@ -976,3 +976,170 @@ export async function incrementTemplateUsage(id: string): Promise<void> {
     if (DEBUG) console.warn('[adminSupabase] Error incrementing template usage:', e);
   }
 }
+
+// ============================================================================
+// Rich Dashboard Analytics
+// ============================================================================
+
+export interface RecentSignup {
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  tier: string;
+  created_at: string;
+}
+
+export interface RecentMeditation {
+  id: string;
+  prompt: string;
+  user_email: string | null;
+  created_at: string;
+  category: string | null;
+}
+
+export interface TemplateStats {
+  totalTemplates: number;
+  activeTemplates: number;
+  totalCategories: number;
+  mostUsedCategory: string | null;
+  mostUsedCategoryCount: number;
+}
+
+/**
+ * Get recent signups for admin dashboard
+ */
+export async function getRecentSignups(limit: number = 5): Promise<RecentSignup[]> {
+  try {
+    const data = await supabaseFetch<RecentSignup[]>('users', {
+      params: {
+        select: 'id,email,first_name,last_name,tier,created_at',
+        order: 'created_at.desc',
+        limit: limit.toString(),
+      },
+    });
+    if (DEBUG) console.log('[adminSupabase] Fetched recent signups:', data?.length);
+    return data || [];
+  } catch (error) {
+    console.error('[adminSupabase] Error fetching recent signups:', error);
+    return [];
+  }
+}
+
+/**
+ * Get recent meditations for admin dashboard
+ */
+export async function getRecentMeditations(limit: number = 5): Promise<RecentMeditation[]> {
+  try {
+    const data = await supabaseFetch<Array<{
+      id: string;
+      prompt: string;
+      created_at: string;
+      category: string | null;
+      users: { email: string } | null;
+    }>>('meditation_history', {
+      params: {
+        select: 'id,prompt,created_at,category,users(email)',
+        order: 'created_at.desc',
+        limit: limit.toString(),
+      },
+    });
+
+    if (DEBUG) console.log('[adminSupabase] Fetched recent meditations:', data?.length);
+
+    return (data || []).map(m => ({
+      id: m.id,
+      prompt: m.prompt,
+      user_email: m.users?.email || null,
+      created_at: m.created_at,
+      category: m.category,
+    }));
+  } catch (error) {
+    console.error('[adminSupabase] Error fetching recent meditations:', error);
+    return [];
+  }
+}
+
+/**
+ * Get template statistics for admin dashboard
+ */
+export async function getTemplateStats(): Promise<TemplateStats> {
+  try {
+    // Get all templates
+    const templates = await supabaseFetch<Array<{
+      id: string;
+      is_active: boolean;
+      category_id: string;
+      usage_count: number;
+    }>>('templates', {
+      params: {
+        select: 'id,is_active,category_id,usage_count',
+      },
+    });
+
+    // Get all categories
+    const categories = await supabaseFetch<Array<{
+      id: string;
+      name: string;
+      is_active: boolean;
+    }>>('template_categories', {
+      params: {
+        select: 'id,name,is_active',
+      },
+    });
+
+    const templateList = templates || [];
+    const categoryList = categories || [];
+
+    // Calculate stats
+    const totalTemplates = templateList.length;
+    const activeTemplates = templateList.filter(t => t.is_active).length;
+    const totalCategories = categoryList.filter(c => c.is_active).length;
+
+    // Find most used category by usage_count
+    const categoryUsage: Record<string, number> = {};
+    for (const t of templateList) {
+      if (t.category_id) {
+        categoryUsage[t.category_id] = (categoryUsage[t.category_id] || 0) + (t.usage_count || 0);
+      }
+    }
+
+    let mostUsedCategoryId: string | null = null;
+    let mostUsedCategoryCount = 0;
+    for (const [catId, count] of Object.entries(categoryUsage)) {
+      if (count > mostUsedCategoryCount) {
+        mostUsedCategoryId = catId;
+        mostUsedCategoryCount = count;
+      }
+    }
+
+    const mostUsedCategory = mostUsedCategoryId
+      ? categoryList.find(c => c.id === mostUsedCategoryId)?.name || null
+      : null;
+
+    if (DEBUG) console.log('[adminSupabase] Template stats:', {
+      totalTemplates,
+      activeTemplates,
+      totalCategories,
+      mostUsedCategory,
+      mostUsedCategoryCount,
+    });
+
+    return {
+      totalTemplates,
+      activeTemplates,
+      totalCategories,
+      mostUsedCategory,
+      mostUsedCategoryCount,
+    };
+  } catch (error) {
+    console.error('[adminSupabase] Error fetching template stats:', error);
+    return {
+      totalTemplates: 0,
+      activeTemplates: 0,
+      totalCategories: 0,
+      mostUsedCategory: null,
+      mostUsedCategoryCount: 0,
+    };
+  }
+}

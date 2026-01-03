@@ -58,6 +58,7 @@ function base64ToBlob(base64: string, mimeType: string): Blob {
 }
 import { throttleLeading } from './src/utils/debounce';
 import { supabase, signOut, createVoiceProfile, getUserVoiceProfiles, getVoiceProfileById, VoiceProfile as DBVoiceProfile, createVoiceClone, saveMeditationHistory, deleteMeditationHistory, MeditationHistory, updateAudioTagPreferences, AudioTagPreference, getMeditationAudioSignedUrl, toggleMeditationFavorite } from './lib/supabase';
+import { checkIsAdmin } from './src/lib/adminSupabase';
 
 // Rotating taglines - one shown randomly per session
 const TAGLINES = [
@@ -144,6 +145,9 @@ const App: React.FC = () => {
     clonesRemaining: 0,
     cloneCost: 5000,
   });
+
+  // Admin state
+  const [isAdmin, setIsAdmin] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubgroup, setSelectedSubgroup] = useState<string | null>(null);
   const [selectedBackgroundTrack, setSelectedBackgroundTrack] = useState<BackgroundTrack>(BACKGROUND_TRACKS[0]);
@@ -314,6 +318,24 @@ const App: React.FC = () => {
       refreshChatHistory();
     }
   }, [showBurgerMenu, user, chatHistory.length, refreshChatHistory]);
+
+  // Check admin status when user changes
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user?.id) {
+        setIsAdmin(false);
+        return;
+      }
+      try {
+        const adminStatus = await checkIsAdmin(user.id);
+        setIsAdmin(adminStatus);
+      } catch (error) {
+        console.error('Failed to check admin status:', error);
+        setIsAdmin(false);
+      }
+    };
+    checkAdminStatus();
+  }, [user?.id]);
 
   // loadMoreHistory is now provided by LibraryContext
 
@@ -2549,6 +2571,7 @@ const App: React.FC = () => {
           onSignOut={handleSignOut}
           onSignIn={() => setShowAuthModal(true)}
           Logo={ICONS.Logo}
+          isAdmin={isAdmin}
         />
 
         {/* MODAL: How It Works */}

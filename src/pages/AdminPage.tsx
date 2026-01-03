@@ -30,6 +30,9 @@ import {
   createTemplateCategory,
   updateTemplateCategory,
   createTemplateSubgroup,
+  getRecentSignups,
+  getRecentMeditations,
+  getTemplateStats,
   type AdminAnalytics,
   type AudioTagPreset,
   type AuditLogEntry,
@@ -38,6 +41,9 @@ import {
   type TemplateCategory,
   type TemplateSubgroup,
   type TemplateWithDetails,
+  type RecentSignup,
+  type RecentMeditation,
+  type TemplateStats,
 } from '../lib/adminSupabase';
 import type { User, MeditationHistory, VoiceProfile } from '../../lib/supabase';
 
@@ -73,6 +79,11 @@ const AdminPage: React.FC = () => {
   const [templates, setTemplates] = useState<TemplateWithDetails[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  // Rich dashboard data
+  const [recentSignups, setRecentSignups] = useState<RecentSignup[]>([]);
+  const [recentMeditations, setRecentMeditations] = useState<RecentMeditation[]>([]);
+  const [templateStats, setTemplateStats] = useState<TemplateStats | null>(null);
 
   // UI state
   const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -179,8 +190,18 @@ const AdminPage: React.FC = () => {
             setVoices(voicesData);
             break;
           case 'analytics':
-            const analyticsData = await getAdminAnalytics(user?.id);
-            setAnalytics(analyticsData);
+            const [dashboardAnalytics, dashboardSignups, dashboardMeditations, dashboardTemplateStats, dashboardSummary] = await Promise.all([
+              getAdminAnalytics(user?.id),
+              getRecentSignups(5),
+              getRecentMeditations(5),
+              getTemplateStats(),
+              getUserActivitySummary(),
+            ]);
+            setAnalytics(dashboardAnalytics);
+            setRecentSignups(dashboardSignups);
+            setRecentMeditations(dashboardMeditations);
+            setTemplateStats(dashboardTemplateStats);
+            setActivitySummary(dashboardSummary);
             break;
           case 'tags':
             const tagsData = await getAllAudioTags();
@@ -469,39 +490,154 @@ const AdminPage: React.FC = () => {
 
         {/* Tab Content */}
         {activeTab === 'analytics' && (
-          <GlassCard className="!p-4 sm:!p-6 md:!p-8 !rounded-xl sm:!rounded-2xl">
-            <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">System Analytics</h2>
-            {analytics ? (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+          <div className="space-y-4 sm:space-y-6">
+            {/* Section 1: Key Metrics */}
+            <GlassCard className="!p-4 sm:!p-6 md:!p-8 !rounded-xl sm:!rounded-2xl">
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">Key Metrics</h2>
+              {analytics ? (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+                  <StatCard
+                    label="Total Users"
+                    value={analytics.totalUsers}
+                    subtext={`+${analytics.newUsers7d} this week`}
+                    color="cyan"
+                  />
+                  <StatCard
+                    label="Total Meditations"
+                    value={analytics.totalMeditations}
+                    subtext={`+${analytics.newMeditations7d} this week`}
+                    color="emerald"
+                  />
+                  <StatCard
+                    label="Voice Profiles"
+                    value={analytics.totalVoiceProfiles}
+                    color="purple"
+                  />
+                  <StatCard
+                    label="Audio Tags"
+                    value={analytics.totalAudioTags}
+                    color="amber"
+                  />
+                </div>
+              ) : (
+                <div className="flex justify-center py-12">
+                  <div className="w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
+                </div>
+              )}
+            </GlassCard>
+
+            {/* Section 2: Engagement Overview */}
+            {activitySummary && (
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 <StatCard
-                  label="Total Users"
-                  value={analytics.totalUsers}
-                  subtext={`+${analytics.newUsers7d} this week`}
-                  color="cyan"
-                />
-                <StatCard
-                  label="Total Meditations"
-                  value={analytics.totalMeditations}
-                  subtext={`+${analytics.newMeditations7d} this week`}
+                  label="Active (7d)"
+                  value={activitySummary.total_active_7d}
                   color="emerald"
                 />
                 <StatCard
-                  label="Voice Profiles"
-                  value={analytics.totalVoiceProfiles}
+                  label="Active (30d)"
+                  value={activitySummary.total_active_30d}
+                  color="cyan"
+                />
+                <StatCard
+                  label="Avg/User"
+                  value={Math.round(activitySummary.avg_meditations_per_user * 10) / 10}
+                  color="purple"
+                />
+              </div>
+            )}
+
+            {/* Section 3: Recent Activity */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+              {/* Recent Signups */}
+              <GlassCard className="!p-4 sm:!p-6 !rounded-xl sm:!rounded-2xl">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-cyan-400" />
+                  Recent Signups
+                </h3>
+                {recentSignups.length > 0 ? (
+                  <div className="space-y-3">
+                    {recentSignups.map(signup => (
+                      <div
+                        key={signup.id}
+                        className="flex items-center justify-between p-3 bg-white/[0.02] rounded-lg border border-white/[0.06]"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-white text-sm font-medium truncate">{signup.email}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-slate-500 text-xs">
+                              {new Date(signup.created_at).toLocaleDateString()}
+                            </span>
+                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-cyan-500/20 text-cyan-400">
+                              {signup.tier}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-slate-500 text-sm text-center py-4">No recent signups</p>
+                )}
+              </GlassCard>
+
+              {/* Recent Meditations */}
+              <GlassCard className="!p-4 sm:!p-6 !rounded-xl sm:!rounded-2xl">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-emerald-400" />
+                  Recent Meditations
+                </h3>
+                {recentMeditations.length > 0 ? (
+                  <div className="space-y-3">
+                    {recentMeditations.map(med => (
+                      <div
+                        key={med.id}
+                        className="p-3 bg-white/[0.02] rounded-lg border border-white/[0.06]"
+                      >
+                        <p className="text-white text-sm line-clamp-2">{med.prompt}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-slate-500 text-xs">
+                            {new Date(med.created_at).toLocaleDateString()}
+                          </span>
+                          {med.user_email && (
+                            <span className="text-cyan-400/70 text-xs truncate max-w-[150px]">
+                              {med.user_email}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-slate-500 text-sm text-center py-4">No recent meditations</p>
+                )}
+              </GlassCard>
+            </div>
+
+            {/* Section 4: Quick Insights */}
+            {templateStats && (
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                <StatCard
+                  label="Templates"
+                  value={templateStats.activeTemplates}
+                  subtext={`${templateStats.totalCategories} categories`}
+                  color="amber"
+                />
+                <StatCard
+                  label="Top Category"
+                  value={templateStats.mostUsedCategoryCount}
+                  subtext={templateStats.mostUsedCategory || 'None'}
                   color="purple"
                 />
                 <StatCard
-                  label="Audio Tags"
-                  value={analytics.totalAudioTags}
-                  color="amber"
+                  label="Template Usage"
+                  value={templateStats.totalTemplates}
+                  subtext="total created"
+                  color="cyan"
                 />
               </div>
-            ) : (
-              <div className="flex justify-center py-12">
-                <div className="w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
-              </div>
             )}
-          </GlassCard>
+          </div>
         )}
 
         {activeTab === 'users' && (
