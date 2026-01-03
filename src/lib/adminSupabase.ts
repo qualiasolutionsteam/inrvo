@@ -484,22 +484,40 @@ export async function deleteAudioTag(id: string): Promise<void> {
  * @param userId - User ID to check (required)
  */
 export async function checkIsAdmin(userId: string): Promise<boolean> {
-  console.log('[checkIsAdmin] Starting RPC check, supabase exists:', !!supabase, 'userId:', userId);
-  if (!supabase || !userId) return false;
+  console.log('[checkIsAdmin] Starting check, userId:', userId);
+  if (!userId) return false;
 
   try {
-    // Use RPC function which has SECURITY DEFINER to bypass RLS
-    console.log('[checkIsAdmin] Calling check_is_admin RPC...');
-    const { data, error } = await supabase.rpc('check_is_admin', { user_id: userId });
+    // Use direct fetch to bypass potential Supabase client issues
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    console.log('[checkIsAdmin] RPC result:', { data, error: error?.message });
-
-    if (error) {
-      console.error('[checkIsAdmin] RPC error:', error);
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('[checkIsAdmin] Missing Supabase credentials');
       return false;
     }
 
-    console.log('[checkIsAdmin] Admin status:', data);
+    console.log('[checkIsAdmin] Making direct fetch to RPC...');
+    const response = await fetch(`${supabaseUrl}/rest/v1/rpc/check_is_admin`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+      },
+      body: JSON.stringify({ user_id: userId }),
+    });
+
+    console.log('[checkIsAdmin] Fetch response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[checkIsAdmin] Fetch error:', errorText);
+      return false;
+    }
+
+    const data = await response.json();
+    console.log('[checkIsAdmin] Result:', data);
     return data === true;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
