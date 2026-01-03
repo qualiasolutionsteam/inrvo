@@ -36,6 +36,7 @@ import { MusicSelectorModal } from './src/components/MusicSelectorModal';
 import { NatureSoundSelectorModal } from './src/components/NatureSoundSelectorModal';
 import { AudioTagsModal } from './src/components/AudioTagsModal';
 import OfflineIndicator from './components/OfflineIndicator';
+import { Sidebar } from './components/Sidebar';
 import { buildTimingMap, getCurrentWordIndex } from './src/lib/textSync';
 import { geminiService, blobToBase64 } from './geminiService';
 import { voiceService } from './src/lib/voiceService';
@@ -2535,168 +2536,20 @@ const App: React.FC = () => {
           </Suspense>
         </ErrorBoundary>
 
-        {/* Sidebar Overlay */}
-        {showBurgerMenu && (
-          <div
-            className="fixed inset-0 z-[90] bg-black/70"
-            onClick={() => setShowBurgerMenu(false)}
-          />
-        )}
-
-        {/* Sidebar */}
-        <div
-          className={`fixed top-0 left-0 h-full w-72 z-[95] flex flex-col transition-transform duration-300 ${
-            showBurgerMenu ? 'translate-x-0' : '-translate-x-full'
-          }`}
-          style={{ backgroundColor: '#030712' }}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between p-5 border-b border-white/5">
-            <div
-              className="cursor-pointer"
-              onClick={() => { setCurrentView(View.HOME); setShowBurgerMenu(false); }}
-            >
-              <ICONS.Logo className="h-5 text-white" />
-            </div>
-            <button
-              onClick={() => setShowBurgerMenu(false)}
-              className="w-9 h-9 flex items-center justify-center rounded-lg text-white hover:bg-white/5 transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Navigation */}
-          <div className="p-4 space-y-1">
-            <button
-              onClick={() => { setShowBurgerMenu(false); navigate('/how-it-works'); }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-white hover:bg-white/10 transition-colors text-sm"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
-              </svg>
-              How It Works
-            </button>
-            <button
-              onClick={() => { setShowBurgerMenu(false); navigate('/library'); }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-white hover:bg-white/10 transition-colors text-sm"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-              </svg>
-              Library
-            </button>
-            <button
-              onClick={() => { setShowBurgerMenu(false); navigate('/templates'); }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-white hover:bg-white/10 transition-colors text-sm"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-              </svg>
-              Templates
-            </button>
-          </div>
-
-          {/* Divider */}
-          <div className="mx-4 h-px bg-white/5" />
-
-          {/* Chat History */}
-          <div className="flex-1 flex flex-col min-h-0 p-4">
-            {user && chatHistory.length > 0 && (
-              <div className="flex justify-end mb-2">
-                <button
-                  onClick={async () => {
-                    await startNewConversation();
-                    setResumeConversationId(null);
-                    setShowBurgerMenu(false);
-                  }}
-                  className="text-[10px] text-cyan-400/70 hover:text-cyan-400 transition-colors flex items-center gap-1"
-                  title="Start new chat"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  New
-                </button>
-              </div>
-            )}
-            <div className="flex-1 overflow-y-auto space-y-1">
-              {user ? (
-                isLoadingChatHistory ? (
-                  <div className="flex justify-center py-6">
-                    <div className="w-5 h-5 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
-                  </div>
-                ) : chatHistory.length > 0 ? (
-                  chatHistory.slice(0, 15).map((item, index) => (
-                    <div key={item.id}>
-                      {index > 0 && (
-                        <div className="h-px bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent" />
-                      )}
-                      <button
-                        onClick={async () => {
-                          const conversation = await loadConversation(item.id);
-                          if (conversation) {
-                            setResumeConversationId(item.id);
-                            setShowBurgerMenu(false);
-                          }
-                        }}
-                        className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-cyan-500/10 transition-all group border-l-2 border-transparent hover:border-cyan-400/60"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="flex-1 text-[13px] text-white/80 group-hover:text-white truncate">
-                            {item.preview}
-                          </span>
-                          {item.mood && (
-                            <span className="text-[9px] px-1 py-0.5 rounded bg-purple-500/20 text-purple-300/80 flex-shrink-0">
-                              {item.mood}
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-white/60 text-center py-6">No chats yet</p>
-                )
-              ) : (
-                <div className="text-center py-6">
-                  <p className="text-sm text-white/70 mb-3">Sign in to view history</p>
-                  <button
-                    onClick={() => { setShowBurgerMenu(false); setShowAuthModal(true); }}
-                    className="px-4 py-2 rounded-lg bg-cyan-500/20 text-cyan-400 text-sm hover:bg-cyan-500/30 transition-colors"
-                  >
-                    Sign In
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="p-4 border-t border-white/5 space-y-3">
-            {user && (
-              <button
-                onClick={() => { setShowBurgerMenu(false); handleSignOut(); }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-white hover:text-rose-400 hover:bg-white/5 transition-colors text-sm"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                Sign Out
-              </button>
-            )}
-            <div className="flex items-center justify-center gap-3 text-[10px] text-white/70">
-              <button onClick={() => { setShowBurgerMenu(false); navigate('/about'); }} className="hover:text-white transition-colors">About</button>
-              <span>·</span>
-              <button onClick={() => { setShowBurgerMenu(false); navigate('/terms'); }} className="hover:text-white transition-colors">Terms</button>
-              <span>·</span>
-              <button onClick={() => { setShowBurgerMenu(false); navigate('/privacy'); }} className="hover:text-white transition-colors">Privacy</button>
-            </div>
-            <p className="text-[9px] text-white/50 text-center">© {new Date().getFullYear()} INrVO</p>
-          </div>
-        </div>
+        {/* ChatGPT-style Sidebar */}
+        <Sidebar
+          isOpen={showBurgerMenu}
+          onClose={() => setShowBurgerMenu(false)}
+          user={user}
+          chatHistory={chatHistory}
+          isLoadingChatHistory={isLoadingChatHistory}
+          onLoadConversation={loadConversation}
+          onStartNewConversation={startNewConversation}
+          onConversationSelected={setResumeConversationId}
+          onSignOut={handleSignOut}
+          onSignIn={() => setShowAuthModal(true)}
+          Logo={ICONS.Logo}
+        />
 
         {/* MODAL: How It Works */}
         {showHowItWorks && (
