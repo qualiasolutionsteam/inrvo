@@ -425,10 +425,14 @@ interface AdminAnalyticsRow {
 /**
  * Get admin analytics (aggregated counts)
  * Uses the get_admin_analytics() function which verifies admin role internally
+ * @param userId - User ID to verify admin status (required for consistent auth)
  */
-export async function getAdminAnalytics(): Promise<AdminAnalytics> {
+export async function getAdminAnalytics(userId?: string): Promise<AdminAnalytics> {
   try {
-    const data = await supabaseRpc<AdminAnalyticsRow>('get_admin_analytics');
+    // Pass user_id to the function for consistent auth (like check_is_admin)
+    const data = await supabaseRpc<AdminAnalyticsRow>('get_admin_analytics',
+      userId ? { p_user_id: userId } : {}
+    );
     if (DEBUG) console.log('[adminSupabase] Fetched analytics:', data);
 
     return {

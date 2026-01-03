@@ -3,6 +3,14 @@ import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { VoiceProfile, ScriptTimingMap, CloningStatus, CreditInfo } from '../../types';
 import { VOICE_PROFILES, BACKGROUND_TRACKS, BackgroundTrack } from '../../constants';
 import { supabase, getCurrentUser, getUserVoiceProfiles, VoiceProfile as DBVoiceProfile, getMeditationHistoryPaginated, MeditationHistory, getAudioTagPreferences } from '../../lib/supabase';
+import {
+  getCachedVoiceProfiles,
+  setCachedVoiceProfiles,
+  clearVoiceProfileCache,
+  addToCachedVoiceProfiles,
+  updateCachedVoiceProfile,
+  removeFromCachedVoiceProfiles,
+} from '../lib/voiceProfileCache';
 
 interface AppContextType {
   // Auth
@@ -94,7 +102,12 @@ interface AppContextType {
   setMicError: (error: string | null) => void;
 
   // Helper functions
-  loadUserVoices: () => Promise<void>;
+  loadUserVoices: (forceRefresh?: boolean) => Promise<void>;
+  // Voice cache management
+  invalidateVoiceCache: () => void;
+  addVoiceToCache: (voice: DBVoiceProfile) => void;
+  updateVoiceInCache: (id: string, updates: Partial<DBVoiceProfile>) => void;
+  removeVoiceFromCache: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -188,34 +201,98 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     }
   };
 
-  // Load user voices
-  const loadUserVoices = useCallback(async () => {
+  // Helper to transform DB voice profiles to UI voice profiles
+  const transformVoicesToUI = useCallback((voices: DBVoiceProfile[]) => {
+    const clonedVoiceProfiles = voices
+      .filter(v => v.fish_audio_model_id || v.voice_sample_url || v.provider_voice_id)
+      .map(v => {
+        const provider = v.fish_audio_model_id ? 'fish-audio' as const : 'chatterbox' as const;
+        return {
+          id: v.id,
+          name: v.name,
+          provider,
+          voiceName: v.name,
+          description: v.description || 'Your personalized voice clone',
+          isCloned: true,
+          providerVoiceId: v.provider_voice_id,
+          fishAudioModelId: v.fish_audio_model_id,
+          voiceSampleUrl: v.voice_sample_url,
+        };
+      });
+    return [...VOICE_PROFILES, ...clonedVoiceProfiles];
+  }, []);
+
+  // Load user voices (with cache support)
+  const loadUserVoices = useCallback(async (forceRefresh = false) => {
     try {
+      const currentUser = await getCurrentUser();
+      const userId = currentUser?.id;
+
+      // Try cache first (unless force refresh)
+      if (!forceRefresh && userId) {
+        const cached = getCachedVoiceProfiles(userId);
+        if (cached) {
+          setSavedVoices(cached as DBVoiceProfile[]);
+          setAvailableVoices(transformVoicesToUI(cached as DBVoiceProfile[]));
+          return; // Cache hit - skip DB query
+        }
+      }
+
+      // Cache miss or force refresh - fetch from DB
       const voices = await getUserVoiceProfiles();
       setSavedVoices(voices);
+      setAvailableVoices(transformVoicesToUI(voices));
 
-      const clonedVoiceProfiles = voices
-        .filter(v => v.fish_audio_model_id || v.voice_sample_url || v.provider_voice_id)
-        .map(v => {
-          const provider = v.fish_audio_model_id ? 'fish-audio' as const : 'chatterbox' as const;
-          return {
-            id: v.id,
-            name: v.name,
-            provider,
-            voiceName: v.name,
-            description: v.description || 'Your personalized voice clone',
-            isCloned: true,
-            providerVoiceId: v.provider_voice_id,
-            fishAudioModelId: v.fish_audio_model_id,
-            voiceSampleUrl: v.voice_sample_url,
-          };
-        });
-
-      setAvailableVoices([...VOICE_PROFILES, ...clonedVoiceProfiles]);
+      // Update cache
+      if (userId) {
+        setCachedVoiceProfiles(userId, voices);
+      }
     } catch (err) {
       console.error('Failed to load user voices:', err);
     }
+  }, [transformVoicesToUI]);
+
+  // Voice cache management functions
+  const invalidateVoiceCache = useCallback(() => {
+    clearVoiceProfileCache();
   }, []);
+
+  const addVoiceToCache = useCallback(async (voice: DBVoiceProfile) => {
+    const currentUser = await getCurrentUser();
+    if (currentUser?.id) {
+      addToCachedVoiceProfiles(currentUser.id, voice);
+      // Also update local state immediately
+      setSavedVoices(prev => {
+        const newVoices = [voice, ...prev];
+        // Update availableVoices with the new list
+        setAvailableVoices(transformVoicesToUI(newVoices));
+        return newVoices;
+      });
+    }
+  }, [transformVoicesToUI]);
+
+  const updateVoiceInCache = useCallback(async (id: string, updates: Partial<DBVoiceProfile>) => {
+    const currentUser = await getCurrentUser();
+    if (currentUser?.id) {
+      updateCachedVoiceProfile(currentUser.id, id, updates);
+      // Also update local state immediately
+      setSavedVoices(prev => prev.map(v => v.id === id ? { ...v, ...updates } : v));
+    }
+  }, []);
+
+  const removeVoiceFromCache = useCallback(async (id: string) => {
+    const currentUser = await getCurrentUser();
+    if (currentUser?.id) {
+      removeFromCachedVoiceProfiles(currentUser.id, id);
+      // Also update local state immediately
+      setSavedVoices(prev => {
+        const newVoices = prev.filter(v => v.id !== id);
+        // Update availableVoices with the new list
+        setAvailableVoices(transformVoicesToUI(newVoices));
+        return newVoices;
+      });
+    }
+  }, [transformVoicesToUI]);
 
   // Check user auth
   const checkUser = useCallback(async () => {
@@ -347,6 +424,10 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     micError,
     setMicError,
     loadUserVoices,
+    invalidateVoiceCache,
+    addVoiceToCache,
+    updateVoiceInCache,
+    removeVoiceFromCache,
   }), [
     user, checkUser, availableVoices, selectedVoice, savedVoices,
     cloningStatus, creditInfo, selectedBackgroundTrack, backgroundVolume,
@@ -355,6 +436,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     isLoadingHistory, hasMoreHistory, loadMoreHistory, refreshHistory,
     isPlaying, currentTime, duration, currentWordIndex, timingMap,
     isGenerating, generationStage, chatStarted, restoredScript, micError, loadUserVoices,
+    invalidateVoiceCache, addVoiceToCache, updateVoiceInCache, removeVoiceFromCache,
   ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -179,7 +179,7 @@ const AdminPage: React.FC = () => {
             setVoices(voicesData);
             break;
           case 'analytics':
-            const analyticsData = await getAdminAnalytics();
+            const analyticsData = await getAdminAnalytics(user?.id);
             setAnalytics(analyticsData);
             break;
           case 'tags':
