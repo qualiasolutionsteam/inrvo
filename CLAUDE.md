@@ -78,7 +78,12 @@ Each category has color theming, custom icons (Sparkle, Affirmation heart, Hypno
 
 **UI Components (`components/ui/`):**
 - `chronos-engine.tsx` - Animated gear component with variants: `avatar` (32px), `mini` (24px), `loading` (120px). Exports: `ChronosEngine`, `ChronosAvatar`, `ChronosLoader`, `ChronosMiniLoader`
-- `ai-voice-input.tsx` - Standalone voice recording button with visualizer bars, timer, and auto-stop at 30s
+- `ai-voice-input.tsx` - Voice recording button with real-time frequency visualizer, timer, auto-stop at 30s. Accepts `audioLevelData` prop for real audio data.
+- `volume-meter.tsx` - Audio level indicators with ElevenLabs IVC color zones. Exports: `VolumeMeter` (bar), `VolumeIndicator` (dot), `VolumeBadge` (label)
+
+**Audio Utilities (`src/lib/`):**
+- `audioAnalyzer.ts` - Real-time audio level analysis using Web Audio API. Provides RMS/peak detection, frequency bins for visualizers, and ElevenLabs-optimized level zones (optimal: -18 to -23 dB, clipping: >-3 dB peak). Exports: `AudioAnalyzer` class, `useAudioAnalyzer` hook, `getLevelZone` helper.
+- `audioConverter.ts` - Converts WebM recordings to high-quality WAV. Normalizes to ElevenLabs specs (-18dB RMS, -3dB peak limit) with soft-knee compression.
 
 **Chat Input Styling:**
 The chat input has a subtle cyan/purple glow effect that intensifies when recording. Recording button uses solid cyan (not red).
@@ -507,6 +512,22 @@ audio: {
 }
 ```
 
+### Audio Normalization (ElevenLabs IVC Specs)
+
+`audioConverter.ts` normalizes recordings to ElevenLabs Instant Voice Cloning optimal levels:
+
+| Parameter | Target | Purpose |
+|-----------|--------|---------|
+| RMS Level | -18 dB | Center of optimal range (-23 to -18 dB) |
+| Peak Limit | -3 dB | Prevents clipping artifacts |
+| Compression | Soft-knee | Natural sound vs hard clipping |
+
+**Level Zones (shown in UI via `VolumeBadge`):**
+- 🟢 **Optimal** (-18 to -23 dB RMS): Perfect for cloning
+- 🔵 **Good** (-23 to -30 dB RMS): Acceptable
+- 🟠 **Quiet** (< -30 dB RMS): Too quiet
+- 🔴 **Clipping** (> -3 dB peak): Too loud
+
 ### Script Generation Emotional Markers
 
 `gemini-script` and `_shared/contentTemplates.ts` include emotional markers for TTS:
@@ -528,7 +549,7 @@ Edge Functions (set in Supabase Dashboard):
 
 ## Bundle Optimization
 
-**Path Alias:** `@/` maps to project root (configured in `tsconfig.json` and `vite.config.ts`).
+**Path Alias:** `@/` maps to repository root (not `src/`), configured in `tsconfig.json` and `vite.config.ts`. Use `@/src/...` for src files, `@/lib/...` for root lib, `@/components/...` for root components.
 
 Vite config includes manual chunks for:
 - `react-vendor` - React/ReactDOM
@@ -577,10 +598,10 @@ import { m, AnimatePresence } from 'framer-motion';
 **Important:** Always use dynamic imports for `edgeFunctions.ts` to maintain code splitting:
 ```typescript
 // ✅ Good - dynamic import
-const { fishAudioCloneVoice } = await import('./src/lib/edgeFunctions');
+const { callElevenLabsClone } = await import('./src/lib/edgeFunctions');
 
 // ❌ Bad - static import pulls into main bundle
-import { fishAudioCloneVoice } from './src/lib/edgeFunctions';
+import { callElevenLabsClone } from './src/lib/edgeFunctions';
 ```
 
 ## Testing
@@ -588,9 +609,33 @@ import { fishAudioCloneVoice } from './src/lib/edgeFunctions';
 - Test environment: happy-dom (configured in `vitest.config.ts`)
 - Test setup: `tests/setup.ts` includes mocks for AudioContext, MediaRecorder, and fetch
 - Coverage thresholds: `src/lib/credits.ts` has strict 90% coverage requirement
-- **357 tests** across `tests/lib/`, `tests/hooks/`, and `tests/contexts/`
+- Tests located in `tests/lib/`, `tests/hooks/`, and `tests/contexts/`
+
+**Note:** `tsconfig.json` excludes `tests/` directory - tests use Vitest's own TypeScript handling.
 
 ## Code Quality Patterns
+
+### TypeScript Strict Mode
+
+The project uses TypeScript with **strict mode enabled** (`tsconfig.json`). Key patterns:
+
+```typescript
+// Null checks required - use guards or non-null assertions
+if (!supabase) throw new Error('Supabase not initialized');
+const data = supabase!.from('table');  // After guard check
+
+// AudioBuffer null handling
+const { audioBuffer } = await generateSpeech(...);
+if (!audioBuffer) throw new Error('Failed to generate audio');
+
+// Discriminated unions - access properties after narrowing
+if (cloningStatus.state === 'success') {
+  console.log(cloningStatus.voiceName);  // Now TypeScript knows voiceName exists
+}
+
+// Framer Motion ease arrays need 'as const'
+ease: [0.32, 0.72, 0, 1] as const
+```
 
 ### Error Handling
 
@@ -804,6 +849,8 @@ supabase functions logs gemini-chat
 
 Edge functions require environment variables set in the Supabase Dashboard (Settings > Edge Functions > Secrets).
 
+**Note:** Edge functions use Deno runtime (excluded from `tsconfig.json`). They have their own import system using URL imports.
+
 **IMPORTANT: JWT Verification**
 Most edge functions must be deployed with `--no-verify-jwt` to allow anonymous access:
 ```bash
@@ -874,6 +921,12 @@ See `docs/MONITORING.md` for setup instructions. Key monitoring layers:
 
 **Sentry Alerts:** Configure for error spikes (>10 in 10min), new issues, and poor Web Vitals.
 
+**Event Tracking (`src/lib/tracking.ts`):** Sentry breadcrumbs for debugging context:
+- `trackVoice`: clone started/completed/failed, deleted, selected
+- `trackMeditation`: script generated/extended, audio generated, saved
+- `trackAudio`: playback started/stopped/completed
+- `trackAuth`: sign in/up, failures, sign out
+
 ## Troubleshooting
 
 | Issue | Cause | Solution |
@@ -887,6 +940,8 @@ See `docs/MONITORING.md` for setup instructions. Key monitoring layers:
 | Audio not playing | AudioContext suspended | User interaction required before `audioContext.resume()` |
 | Lock screen controls not showing (iOS) | Missing silent audio element | Ensure `startIOSMediaSession()` called on play |
 | Session persists after "Remember Me" unchecked | Old localStorage data | Call `clearAuthStorage()` on sign out |
+| TypeScript errors in edge functions | Using `npx tsc` instead of Deno | Edge functions use Deno - run `supabase functions serve` to check |
+| Tests fail with import errors | Test file outside `tests/` | Tests must be in `tests/` directory (excluded from tsconfig) |
 
 ## Stack Research
 
