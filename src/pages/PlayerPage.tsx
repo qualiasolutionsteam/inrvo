@@ -221,7 +221,7 @@ const PlayerPage: React.FC = () => {
           backgroundAudioRef.current.pause();
         }
         setIsMusicPlaying(false);
-      } else if (selectedBackgroundTrack.id !== 'none' && selectedBackgroundTrack.url) {
+      } else if (selectedBackgroundTrack.id !== 'none' && selectedBackgroundTrack.audioUrl) {
         // Resume AudioContext if suspended (iOS requirement)
         if (audioContextRef.current?.state === 'suspended') {
           await audioContextRef.current.resume();
@@ -238,7 +238,7 @@ const PlayerPage: React.FC = () => {
           }, { once: true });
         }
 
-        backgroundAudioRef.current.src = selectedBackgroundTrack.url;
+        backgroundAudioRef.current.src = selectedBackgroundTrack.audioUrl;
         backgroundAudioRef.current.volume = backgroundVolume;
 
         // Play and handle iOS autoplay rejection

@@ -660,7 +660,7 @@ const App: React.FC = () => {
       // Clone voice with Chatterbox via Replicate
       // Dynamically import for code splitting
       const { chatterboxCloneVoice } = await import('./src/lib/edgeFunctions');
-      let cloneResult: { voiceProfileId: string; voiceSampleUrl: string };
+      let cloneResult: { voiceProfileId: string; voiceSampleUrl: string | null };
       try {
         cloneResult = await chatterboxCloneVoice(
           wavBlob,
@@ -679,7 +679,7 @@ const App: React.FC = () => {
           finalName,
           audioData,
           'Voice sample for cloned voice',
-          { providerVoiceId: cloneResult.voiceSampleUrl }
+          { providerVoiceId: cloneResult.voiceSampleUrl || undefined }
         );
       } catch (e) {
         console.warn('Failed to save voice sample:', e);
@@ -704,7 +704,7 @@ const App: React.FC = () => {
         voiceName: finalName,
         description: 'Your personalized cloned voice',
         isCloned: true,
-        providerVoiceId: cloneResult.voiceSampleUrl,
+        providerVoiceId: cloneResult.voiceSampleUrl || undefined,
       };
       setSelectedVoice(newVoice);
     } catch (error: unknown) {
@@ -1681,6 +1681,10 @@ const App: React.FC = () => {
         throw new Error('This voice needs to be re-cloned. Please go to Voice Settings and re-clone your voice with ElevenLabs.');
       }
 
+      if (!audioBuffer) {
+        throw new Error('Failed to generate audio buffer. Please try again.');
+      }
+
       if (!base64 || base64.trim() === '') {
         throw new Error('Failed to generate audio. Please try again.');
       }
@@ -1826,7 +1830,7 @@ const App: React.FC = () => {
   };
 
   const startPlayback = async () => {
-    if (!script) return;
+    if (!script || !selectedVoice) return;
     setIsGenerating(true);
     setMicError(null);
 
@@ -2039,6 +2043,7 @@ const App: React.FC = () => {
                           setShowVoiceManager(true);
                           return;
                         }
+                        const voice = selectedVoice;
                         // Set script and tags, then synthesize
                         setEditableScript(meditationScript);
                         setSelectedAudioTags(tags);
@@ -2062,13 +2067,17 @@ const App: React.FC = () => {
                           // Generate speech
                           const { audioBuffer, base64, needsReclone } = await voiceService.generateSpeech(
                             meditationScript,
-                            selectedVoice,
+                            voice,
                             audioContextRef.current
                           );
 
                           // Check if voice needs to be re-cloned (legacy Fish Audio/Chatterbox voice)
                           if (needsReclone) {
                             throw new Error('This voice needs to be re-cloned. Please go to Voice Settings and re-clone your voice with ElevenLabs.');
+                          }
+
+                          if (!audioBuffer) {
+                            throw new Error('Failed to generate audio buffer. Please try again.');
                           }
 
                           if (!base64 || base64.trim() === '') {
@@ -2124,11 +2133,11 @@ const App: React.FC = () => {
                           startBackgroundMusic(selectedBackgroundTrack);
 
                           // Deduct credits if cloned voice
-                          if (selectedVoice.isCloned) {
+                          if (voice.isCloned) {
                             creditService.deductCredits(
                               creditService.calculateTTSCost(meditationScript),
                               'TTS_GENERATE',
-                              selectedVoice.id,
+                              voice.id,
                               user?.id
                             ).catch(err => console.warn('Failed to deduct credits:', err));
                           }
@@ -2137,13 +2146,13 @@ const App: React.FC = () => {
                           saveMeditationHistory(
                             meditationScript.substring(0, 100),
                             meditationScript,
-                            selectedVoice.id,
-                            selectedVoice.name,
+                            voice.id,
+                            voice.name,
                             selectedBackgroundTrack?.id,
                             selectedBackgroundTrack?.name,
                             Math.round(audioBuffer.duration),
                             tags.length > 0 ? tags : undefined,
-                            selectedVoice.isCloned ? base64 : undefined // Save audio only for cloned voices
+                            voice.isCloned ? base64 : undefined // Save audio only for cloned voices
                           ).catch(err => console.warn('Failed to save history:', err));
 
                           source.onended = () => {

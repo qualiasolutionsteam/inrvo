@@ -251,6 +251,10 @@ export async function synthesizeAudio(
       await creditService.deductCredits(estimatedCost, 'TTS_GENERATE', undefined, user.id, script.length);
     }
 
+    if (!audioBuffer) {
+      return { success: false, error: 'Failed to decode audio buffer.' };
+    }
+
     return {
       success: true,
       data: {

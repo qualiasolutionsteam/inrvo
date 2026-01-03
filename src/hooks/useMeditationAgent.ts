@@ -254,7 +254,7 @@ export function useMeditationAgent(options: UseMeditationAgentOptions = {}): Use
             msg.id === loadingId
               ? {
                   ...msg,
-                  content: `Creating your personalized ${response.meditationType.replace('_', ' ')} meditation...`,
+                  content: `Creating your personalized ${(response.meditationType || 'guided').replace('_', ' ')} meditation...`,
                   isLoading: false,
                 }
               : msg

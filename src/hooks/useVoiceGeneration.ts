@@ -186,6 +186,10 @@ export function useVoiceGeneration(
         throw new Error('Failed to generate audio. Please try again.');
       }
 
+      if (!audioBuffer) {
+        throw new Error('Failed to decode audio. Please try again.');
+      }
+
       setGenerationStage('ready');
 
       // Update script state

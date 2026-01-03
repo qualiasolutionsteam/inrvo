@@ -119,7 +119,7 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
       trackVoice.cloneFailed(profileName || 'Unknown', cloningStatus.message || 'Unknown error');
       setStep('describe');
     }
-  }, [cloningStatus.state, cloningStatus.voiceName, cloningStatus.message]);
+  }, [cloningStatus, profileName]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -334,7 +334,7 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
       case 'success': return `Voice "${cloningStatus.voiceName}" created!`;
       default: return null;
     }
-  }, [cloningStatus.state, cloningStatus.progress, cloningStatus.voiceName]);
+  }, [cloningStatus]);
 
   // Memoize formatted duration
   const formattedDuration = useMemo(() => {

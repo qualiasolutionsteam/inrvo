@@ -1,5 +1,16 @@
 import { supabase } from '../../lib/supabase';
 
+/**
+ * Get non-null Supabase client or throw
+ * Used for TypeScript strict mode compliance
+ */
+function getSupabase() {
+  if (!supabase) {
+    throw new Error('Supabase client not initialized');
+  }
+  return supabase;
+}
+
 // CREDIT SYSTEM DISABLED - All users have unlimited access
 // Set to false in production to enable credit limits
 let CREDITS_DISABLED = true;
@@ -56,7 +67,7 @@ export const creditService = {
     }
 
     if (!userId) {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await getSupabase().auth.getUser();
       if (!user) throw new Error('User not authenticated');
       userId = user.id;
     }
@@ -69,7 +80,7 @@ export const creditService = {
       }
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('user_credits')
       .select('credits_remaining')
       .eq('user_id', userId)
@@ -108,12 +119,12 @@ export const creditService = {
    */
   async getCreditsUncached(userId?: string): Promise<number> {
     if (!userId) {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await getSupabase().auth.getUser();
       if (!user) throw new Error('User not authenticated');
       userId = user.id;
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('user_credits')
       .select('credits_remaining')
       .eq('user_id', userId)
@@ -137,7 +148,7 @@ export const creditService = {
    * Initialize user credits on first use
    */
   async initializeUserCredits(userId: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('user_credits')
       .upsert({
         user_id: userId,
@@ -165,13 +176,13 @@ export const creditService = {
     }
 
     if (!userId) {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await getSupabase().auth.getUser();
       if (!user) throw new Error('User not authenticated');
       userId = user.id;
     }
 
     // Try atomic RPC first (70% faster - 1 call instead of 3-4)
-    const { data, error } = await supabase.rpc('perform_credit_operation', {
+    const { data, error } = await getSupabase().rpc('perform_credit_operation', {
       p_user_id: userId,
       p_amount: amount,
       p_operation_type: operationType,
@@ -203,7 +214,7 @@ export const creditService = {
       }
 
       // Use old deduct_credits RPC
-      const { error: updateError } = await supabase.rpc('deduct_credits', {
+      const { error: updateError } = await getSupabase().rpc('deduct_credits', {
         p_user_id: userId,
         p_amount: amount,
       });
@@ -252,12 +263,12 @@ export const creditService = {
     }
 
     if (!userId) {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await getSupabase().auth.getUser();
       if (!user) throw new Error('User not authenticated');
       userId = user.id;
     }
 
-    const { data, error } = await supabase.rpc('check_user_credits_status', {
+    const { data, error } = await getSupabase().rpc('check_user_credits_status', {
       p_user_id: userId
     });
 
@@ -299,7 +310,7 @@ export const creditService = {
     }
 
     if (!userId) {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await getSupabase().auth.getUser();
       if (!user) return { can: false, reason: 'User not authenticated' };
       userId = user.id;
     }
@@ -333,7 +344,7 @@ export const creditService = {
    */
   async getClonesRemaining(userId?: string): Promise<number> {
     if (!userId) {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await getSupabase().auth.getUser();
       if (!user) return 0;
       userId = user.id;
     }
@@ -355,7 +366,7 @@ export const creditService = {
    */
   async getMonthlyUsageLimits(userId: string): Promise<UsageLimits> {
     const monthStart = this.getMonthStart();
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('voice_usage_limits')
       .select('*')
       .eq('user_id', userId)
@@ -386,7 +397,7 @@ export const creditService = {
    * Initialize monthly usage limits
    */
   async initializeMonthlyLimits(userId: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('voice_usage_limits')
       .upsert({
         user_id: userId,
@@ -404,7 +415,7 @@ export const creditService = {
    * Update monthly clone count
    */
   async updateMonthlyClones(userId: string): Promise<void> {
-    const { error } = await supabase.rpc('increment_clone_count', {
+    const { error } = await getSupabase().rpc('increment_clone_count', {
       p_user_id: userId,
     });
 
@@ -422,7 +433,7 @@ export const creditService = {
     creditsConsumed: number,
     operationType: string
   ): Promise<void> {
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('voice_cloning_usage')
       .insert({
         user_id: userId,

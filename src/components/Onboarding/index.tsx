@@ -33,8 +33,8 @@ export const Onboarding: React.FC = () => {
 
   const [spotlightRect, setSpotlightRect] = useState<SpotlightRect | null>(null);
   const [isWaitingForElement, setIsWaitingForElement] = useState(false);
-  const waitTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-  const positionUpdateRef = useRef<ReturnType<typeof setTimeout>>();
+  const waitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const positionUpdateRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Handle route navigation
   useEffect(() => {

@@ -83,7 +83,7 @@ export async function getAllUsers(): Promise<User[]> {
   if (!supabase) throw new Error('Supabase not configured');
 
   return withRetry(async () => {
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('users')
       .select('*')
       .order('created_at', { ascending: false });
@@ -103,14 +103,14 @@ export async function deleteUserAdmin(userId: string): Promise<void> {
 
   return withRetry(async () => {
     // Get user data for audit log before deletion
-    const { data: userData } = await supabase
+    const { data: userData } = await supabase!
       .from('users')
       .select('id, email, role, created_at')
       .eq('id', userId)
       .single();
 
     // Delete from users table - FK constraints will cascade to meditation_history, voice_profiles
-    const { error } = await supabase
+    const { error } = await supabase!
       .from('users')
       .delete()
       .eq('id', userId);
@@ -135,7 +135,7 @@ export async function getAllMeditations(limit: number = 100): Promise<Meditation
   if (!supabase) throw new Error('Supabase not configured');
 
   return withRetry(async () => {
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('meditation_history')
       .select('*, users:user_id(email)')
       .order('created_at', { ascending: false })
@@ -156,13 +156,13 @@ export async function deleteMeditationAdmin(meditationId: string): Promise<void>
 
   return withRetry(async () => {
     // Get meditation data for audit log before deletion
-    const { data: meditationData } = await supabase
+    const { data: meditationData } = await supabase!
       .from('meditation_history')
       .select('id, user_id, prompt, voice_name, created_at')
       .eq('id', meditationId)
       .single();
 
-    const { error } = await supabase
+    const { error } = await supabase!
       .from('meditation_history')
       .delete()
       .eq('id', meditationId);
@@ -189,7 +189,7 @@ export async function getAllVoiceProfiles(limit: number = 100): Promise<VoicePro
   if (!supabase) throw new Error('Supabase not configured');
 
   return withRetry(async () => {
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('voice_profiles')
       .select('*, users:user_id(email)')
       .neq('status', 'ARCHIVED')
@@ -211,14 +211,14 @@ export async function deleteVoiceProfileAdmin(profileId: string): Promise<void> 
 
   return withRetry(async () => {
     // Get profile data for audit log before archiving
-    const { data: profileData } = await supabase
+    const { data: profileData } = await supabase!
       .from('voice_profiles')
       .select('id, user_id, name, status, created_at')
       .eq('id', profileId)
       .single();
 
     // Soft delete by setting status to ARCHIVED (existing pattern)
-    const { error } = await supabase
+    const { error } = await supabase!
       .from('voice_profiles')
       .update({
         status: 'ARCHIVED',
@@ -264,7 +264,7 @@ export async function getAdminAnalytics(): Promise<AdminAnalytics> {
   if (!supabase) throw new Error('Supabase not configured');
 
   return withRetry(async () => {
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .rpc('get_admin_analytics')
       .single<AdminAnalyticsRow>();
 
@@ -304,7 +304,7 @@ export async function getAllAudioTags(): Promise<AudioTagPreset[]> {
   if (DEBUG) console.log('[adminSupabase] Audio tags cache miss - fetching from database');
 
   return withRetry(async () => {
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('audio_tag_presets')
       .select('*')
       .order('category')
@@ -332,7 +332,7 @@ export async function createAudioTag(
   if (!supabase) throw new Error('Supabase not configured');
 
   return withRetry(async () => {
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('audio_tag_presets')
       .insert({
         ...tag,
@@ -364,7 +364,7 @@ export async function updateAudioTag(
   if (Object.keys(updates).length === 0) throw new Error('No fields to update');
 
   return withRetry(async () => {
-    const { error } = await supabase
+    const { error } = await supabase!
       .from('audio_tag_presets')
       .update({
         ...updates,
@@ -389,7 +389,7 @@ export async function deleteAudioTag(id: string): Promise<void> {
   if (!id) throw new Error('Tag ID required');
 
   return withRetry(async () => {
-    const { error } = await supabase
+    const { error } = await supabase!
       .from('audio_tag_presets')
       .update({
         is_active: false,

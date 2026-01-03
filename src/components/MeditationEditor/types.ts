@@ -18,7 +18,7 @@ export interface MeditationEditorProps {
   script: string;
 
   /** Type of meditation for display purposes */
-  meditationType?: MeditationType;
+  meditationType?: MeditationType | 'general';
 
   /** Currently selected voice profile */
   selectedVoice: VoiceProfile | null;

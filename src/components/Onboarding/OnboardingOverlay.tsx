@@ -31,11 +31,11 @@ const overlayVariants = prefersReducedMotion
       hidden: { opacity: 0 },
       visible: {
         opacity: 1,
-        transition: { duration: 0.4, ease: [0.32, 0.72, 0, 1] }
+        transition: { duration: 0.4, ease: [0.32, 0.72, 0, 1] as const }
       },
       exit: {
         opacity: 0,
-        transition: { duration: 0.25, ease: 'easeIn' }
+        transition: { duration: 0.25, ease: 'easeIn' as const }
       }
     };
 

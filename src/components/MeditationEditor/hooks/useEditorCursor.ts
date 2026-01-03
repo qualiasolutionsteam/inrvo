@@ -21,7 +21,7 @@ export interface UseEditorCursorReturn {
 }
 
 export function useEditorCursor(
-  editorRef: RefObject<HTMLDivElement>
+  editorRef: RefObject<HTMLDivElement | null>
 ): UseEditorCursorReturn {
   /**
    * Save the current cursor position as a character offset from the start
