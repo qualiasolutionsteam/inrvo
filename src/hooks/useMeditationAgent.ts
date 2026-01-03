@@ -14,6 +14,7 @@ import { conversationStore } from '../lib/agent/conversationStore';
 import * as agentTools from '../lib/agent/agentTools';
 import { geminiService } from '../../geminiService';
 import { voiceService } from '../lib/voiceService';
+import { trackMeditation } from '../lib/tracking';
 import type { VoiceProfile } from '../../types';
 import type { MeditationType } from '../lib/agent/knowledgeBase';
 
@@ -336,6 +337,7 @@ export function useMeditationAgent(options: UseMeditationAgentOptions = {}): Use
       };
 
       setCurrentMeditation(meditation);
+      trackMeditation.scriptGenerated(prompt.length);
       if (DEBUG) console.log("[useMeditationAgent] Setting meditation:", { script: meditation.script.substring(0, 50) + "...", readyForReview: meditation.readyForReview });
 
       // Don't add another message - the ScriptEditor modal opens automatically

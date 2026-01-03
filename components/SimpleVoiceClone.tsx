@@ -9,6 +9,7 @@ import {
 import { AIVoiceInput } from './ui/ai-voice-input';
 import { VolumeBadge } from './ui/volume-meter';
 import { useAudioAnalyzer, type AudioLevelData } from '@/src/lib/audioAnalyzer';
+import { trackVoice } from '@/src/lib/tracking';
 
 interface SimpleVoiceCloneProps {
   onClose: () => void;
@@ -109,11 +110,13 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
         id: 'voice-clone',
         description: `"${cloningStatus.voiceName}" is ready to use`,
       });
+      trackVoice.cloneCompleted(cloningStatus.voiceName || 'Unknown', cloningStatus.voiceId || '');
     } else if (cloningStatus.state === 'error') {
       toast.error('Voice cloning failed', {
         id: 'voice-clone',
         description: cloningStatus.message || 'Please try again',
       });
+      trackVoice.cloneFailed(profileName || 'Unknown', cloningStatus.message || 'Unknown error');
       setStep('describe');
     }
   }, [cloningStatus.state, cloningStatus.voiceName, cloningStatus.message]);
@@ -293,6 +296,7 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
     };
 
     setStep('processing');
+    trackVoice.cloneStarted(voiceName);
     await onRecordingComplete(recordedBlob, voiceName, metadata);
   };
 

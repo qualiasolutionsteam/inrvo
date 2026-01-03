@@ -27,3 +27,6 @@ dist-ssr
 
 # v0 generated reference folder (not part of main project)
 meditation-player-page/
+
+# Supabase temp files (may contain connection strings)
+supabase/.temp/

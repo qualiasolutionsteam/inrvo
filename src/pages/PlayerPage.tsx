@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, useRef, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
+import { trackAudio } from '../lib/tracking';
 
 const MeditationPlayer = lazy(() => import('../../components/V0MeditationPlayer'));
 
@@ -74,6 +75,7 @@ const PlayerPage: React.FC = () => {
       }
       pauseOffsetRef.current = currentTime;
       setIsPlaying(false);
+      trackAudio.playbackStopped(currentTime * 1000, duration * 1000);
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
@@ -98,12 +100,14 @@ const PlayerPage: React.FC = () => {
       audioSourceRef.current = source;
       playbackStartTimeRef.current = audioContextRef.current.currentTime;
       setIsPlaying(true);
+      trackAudio.playbackStarted();
 
       source.onended = () => {
         if (pauseOffsetRef.current + 0.1 >= duration) {
           setIsPlaying(false);
           pauseOffsetRef.current = 0;
           setCurrentTime(0);
+          trackAudio.playbackCompleted(duration * 1000);
         }
       };
     }
