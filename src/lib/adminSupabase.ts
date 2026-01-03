@@ -17,6 +17,13 @@ const getSupabaseConfig = () => ({
   key: import.meta.env.VITE_SUPABASE_ANON_KEY as string,
 });
 
+// Get the user's access token from the Supabase session
+async function getAccessToken(): Promise<string | null> {
+  if (!supabase) return null;
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token || null;
+}
+
 async function supabaseFetch<T>(
   endpoint: string,
   options: {
@@ -27,6 +34,10 @@ async function supabaseFetch<T>(
 ): Promise<T> {
   const { url, key } = getSupabaseConfig();
   if (!url || !key) throw new Error('Supabase not configured');
+
+  // Get user's access token for authenticated requests
+  const accessToken = await getAccessToken();
+  const authToken = accessToken || key;
 
   const { method = 'GET', body, params } = options;
 
@@ -41,7 +52,7 @@ async function supabaseFetch<T>(
     headers: {
       'Content-Type': 'application/json',
       'apikey': key,
-      'Authorization': `Bearer ${key}`,
+      'Authorization': `Bearer ${authToken}`,
       'Prefer': method === 'GET' ? 'return=representation' : 'return=minimal',
     },
     body: body ? JSON.stringify(body) : undefined,
@@ -63,12 +74,16 @@ async function supabaseRpc<T>(functionName: string, params?: Record<string, unkn
   const { url, key } = getSupabaseConfig();
   if (!url || !key) throw new Error('Supabase not configured');
 
+  // Get user's access token for authenticated requests
+  const accessToken = await getAccessToken();
+  const authToken = accessToken || key;
+
   const response = await fetch(`${url}/rest/v1/rpc/${functionName}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'apikey': key,
-      'Authorization': `Bearer ${key}`,
+      'Authorization': `Bearer ${authToken}`,
     },
     body: JSON.stringify(params || {}),
   });
