@@ -207,8 +207,15 @@ function normalizeToElevenLabsSpecs(
     normalized[i] = sample;
   }
 
-  const finalRms = Math.sqrt(normalized.reduce((sum, s) => sum + s * s, 0) / normalized.length);
-  const finalPeak = Math.max(...normalized.map(Math.abs));
+  // Calculate final stats using iterative approach (avoid spread operator stack overflow)
+  let finalSumSquares = 0;
+  let finalPeak = 0;
+  for (let i = 0; i < normalized.length; i++) {
+    finalSumSquares += normalized[i] * normalized[i];
+    const abs = Math.abs(normalized[i]);
+    if (abs > finalPeak) finalPeak = abs;
+  }
+  const finalRms = Math.sqrt(finalSumSquares / normalized.length);
 
   if (DEBUG) {
     console.log(`[normalizeToElevenLabsSpecs] Normalized:`, {
