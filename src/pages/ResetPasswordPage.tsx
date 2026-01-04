@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase, updatePassword } from '../../lib/supabase';
+import { supabase, updatePassword } from '@/lib/supabase';
 import { CheckCircle, AlertCircle, KeyRound, Home } from 'lucide-react';
 
 // Password strength calculation (same as AuthModal)
