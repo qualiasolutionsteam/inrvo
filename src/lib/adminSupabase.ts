@@ -588,7 +588,7 @@ export async function checkIsAdmin(userId: string): Promise<boolean> {
   if (!userId) return false;
 
   try {
-    // Use direct fetch to bypass potential Supabase client issues
+    // Use direct fetch with user's access token for proper auth.uid()
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -597,13 +597,17 @@ export async function checkIsAdmin(userId: string): Promise<boolean> {
       return false;
     }
 
-    console.log('[checkIsAdmin] Making direct fetch to RPC...');
+    // Get user's access token for proper RLS
+    const accessToken = await getAccessToken();
+    const authToken = accessToken || supabaseKey;
+
+    console.log('[checkIsAdmin] Making direct fetch to RPC, hasAccessToken:', !!accessToken);
     const response = await fetch(`${supabaseUrl}/rest/v1/rpc/check_is_admin`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'apikey': supabaseKey,
-        'Authorization': `Bearer ${supabaseKey}`,
+        'Authorization': `Bearer ${authToken}`,
       },
       body: JSON.stringify({ user_id: userId }),
     });
