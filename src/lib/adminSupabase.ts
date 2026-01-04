@@ -27,10 +27,25 @@ const getSupabaseConfig = () => ({
 });
 
 // Get the user's access token from the Supabase session
+// Has a 5s timeout to prevent hanging
 async function getAccessToken(): Promise<string | null> {
   if (!supabase) return null;
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token || null;
+
+  try {
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise<null>((resolve) => {
+      setTimeout(() => resolve(null), 5000);
+    });
+
+    const sessionPromise = supabase.auth.getSession().then(({ data: { session } }) => {
+      return session?.access_token || null;
+    });
+
+    return await Promise.race([sessionPromise, timeoutPromise]);
+  } catch (error) {
+    console.error('[getAccessToken] Error:', error);
+    return null;
+  }
 }
 
 async function supabaseFetch<T>(
