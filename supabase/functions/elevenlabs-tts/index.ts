@@ -18,11 +18,12 @@ import { addSecurityHeaders } from "../_shared/securityHeaders.ts";
  * - Stable API with good uptime
  * - Character-level timing for sync (optional)
  *
- * Settings optimized for meditation:
+ * Settings optimized for cloned voices (meditation):
  * - Model: eleven_multilingual_v2 (best quality)
- * - Stability: 0.6 (calm, consistent delivery)
- * - Similarity: 0.75 (good voice matching)
- * - Style: 0.3 (subtle expression)
+ * - Stability: 0.5 (balanced output)
+ * - Similarity: 0.85 (high voice matching for clones)
+ * - Style: 0.0 (keeps natural voice character)
+ * - Speaker Boost: true (improves similarity to original)
  */
 
 const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1';
@@ -185,9 +186,9 @@ async function runElevenLabsTTS(
         model_id: options?.modelId ?? 'eleven_multilingual_v2',
         voice_settings: {
           stability: options?.stability ?? 0.5,           // ElevenLabs recommends 0.5 for balanced output
-          similarity_boost: options?.similarityBoost ?? 0.75,
+          similarity_boost: options?.similarityBoost ?? 0.85, // Higher for better voice matching on clones
           style: options?.style ?? 0.0,                   // Critical: Keep at 0.0 per ElevenLabs docs
-          use_speaker_boost: options?.useSpeakerBoost ?? false, // Only enable if similarity issues
+          use_speaker_boost: options?.useSpeakerBoost ?? true, // Enable for cloned voices - boosts similarity
         },
       }),
     }

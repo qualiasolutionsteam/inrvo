@@ -285,7 +285,7 @@ serve(async (req) => {
       audioBlob,
       voiceName,
       simpleDescription,
-      removeBackgroundNoise ?? true,  // Default to noise removal for cleaner clones
+      removeBackgroundNoise ?? false,  // Disabled by default - can degrade clean recordings per ElevenLabs docs
       ELEVENLABS_API_KEY!,
       log,
       metadata  // Pass metadata for voice labels
