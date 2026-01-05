@@ -405,12 +405,12 @@ serve(async (req) => {
       );
     }
 
-    // Get Gemini API key from environment
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
-    if (!geminiApiKey) {
-      log.error('Gemini API key not configured');
+    // Get OpenRouter API key from environment
+    const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
+    if (!openRouterApiKey) {
+      log.error('OpenRouter API key not configured');
       return new Response(
-        JSON.stringify({ error: 'Gemini API key not configured', requestId }),
+        JSON.stringify({ error: 'OpenRouter API key not configured', requestId }),
         { status: 500, headers: { ...allHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -473,7 +473,7 @@ serve(async (req) => {
       maxOutputTokens = Math.max(1200, durationMinutes * 60 * 2 * 1.5);
     }
 
-    // Call Gemini API with circuit breaker and timeout
+    // Call OpenRouter API with circuit breaker and timeout
     const script = await withCircuitBreaker(
       'gemini',
       CIRCUIT_CONFIGS.gemini,
@@ -483,18 +483,21 @@ serve(async (req) => {
 
         try {
           const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+            'https://openrouter.ai/api/v1/chat/completions',
             {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${openRouterApiKey}`,
+                'HTTP-Referer': Deno.env.get('SUPABASE_URL') || 'https://inrvo.app',
+                'X-Title': 'INrVO Meditation App',
+              },
               body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                  temperature,
-                  maxOutputTokens,
-                  topP: 0.9,   // Nucleus sampling - consider top 90% probability mass
-                  topK: 40,    // Consider top 40 tokens at each step
-                }
+                model: 'google/gemini-3-flash-preview',
+                messages: [{ role: 'user', content: prompt }],
+                temperature,
+                max_tokens: maxOutputTokens,
+                top_p: 0.9,   // Nucleus sampling - consider top 90% probability mass
               }),
               signal: controller.signal,
             }
@@ -504,15 +507,15 @@ serve(async (req) => {
 
           if (!response.ok) {
             const error = await response.json();
-            console.error('Gemini API error:', error);
-            throw new Error(`Gemini API error: ${error.error?.message || 'Unknown error'}`);
+            console.error('OpenRouter API error:', error);
+            throw new Error(`OpenRouter API error: ${error.error?.message || 'Unknown error'}`);
           }
 
           const data = await response.json();
-          const scriptText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          const scriptText = data.choices?.[0]?.message?.content;
 
           if (!scriptText?.trim()) {
-            throw new Error('Empty response from Gemini API');
+            throw new Error('Empty response from OpenRouter API');
           }
 
           return scriptText.trim();

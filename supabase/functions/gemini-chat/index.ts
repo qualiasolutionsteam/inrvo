@@ -130,12 +130,12 @@ serve(async (req) => {
       );
     }
 
-    // Get Gemini API key from environment
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
-    if (!geminiApiKey) {
-      log.error('Gemini API key not configured');
+    // Get OpenRouter API key from environment
+    const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
+    if (!openRouterApiKey) {
+      log.error('OpenRouter API key not configured');
       return new Response(
-        JSON.stringify({ error: 'Gemini API key not configured', requestId }),
+        JSON.stringify({ error: 'OpenRouter API key not configured', requestId }),
         { status: 500, headers: { ...allHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -146,7 +146,7 @@ serve(async (req) => {
       temperature,
     });
 
-    // Call Gemini API with circuit breaker and timeout
+    // Call OpenRouter API with circuit breaker and timeout
     const message = await withCircuitBreaker(
       'gemini',
       CIRCUIT_CONFIGS.gemini,
@@ -155,34 +155,33 @@ serve(async (req) => {
         const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout for chat
 
         try {
-          // Build request body - use systemInstruction if provided
-          const requestBody: Record<string, unknown> = {
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              temperature,
-              maxOutputTokens: maxTokens,
-            },
-            // Safety settings for conversational AI
-            safetySettings: [
-              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-            ],
-          };
+          // Build messages array for OpenAI-compatible format
+          const messages: Array<{ role: string; content: string }> = [];
 
-          // Add system instruction as a proper Gemini parameter (not in content)
-          // This tells Gemini to FOLLOW these instructions, not summarize them
+          // Add system prompt if provided
           if (systemPrompt) {
-            requestBody.systemInstruction = { parts: [{ text: systemPrompt }] };
+            messages.push({ role: 'system', content: systemPrompt });
           }
 
+          // Add user message
+          messages.push({ role: 'user', content: prompt });
+
           const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+            'https://openrouter.ai/api/v1/chat/completions',
             {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(requestBody),
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${openRouterApiKey}`,
+                'HTTP-Referer': Deno.env.get('SUPABASE_URL') || 'https://inrvo.app',
+                'X-Title': 'INrVO Meditation App',
+              },
+              body: JSON.stringify({
+                model: 'google/gemini-3-flash-preview',
+                messages,
+                temperature,
+                max_tokens: maxTokens,
+              }),
               signal: controller.signal,
             }
           );
@@ -191,15 +190,15 @@ serve(async (req) => {
 
           if (!response.ok) {
             const error = await response.json();
-            console.error('Gemini API error:', error);
-            throw new Error(`Gemini API error: ${error.error?.message || 'Unknown error'}`);
+            console.error('OpenRouter API error:', error);
+            throw new Error(`OpenRouter API error: ${error.error?.message || 'Unknown error'}`);
           }
 
           const data = await response.json();
-          const messageText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          const messageText = data.choices?.[0]?.message?.content;
 
           if (!messageText?.trim()) {
-            throw new Error('Empty response from Gemini API');
+            throw new Error('Empty response from OpenRouter API');
           }
 
           return messageText.trim();
