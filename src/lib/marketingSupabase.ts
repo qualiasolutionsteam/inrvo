@@ -4,16 +4,8 @@
  */
 
 import { supabase, withRetry } from '../../lib/supabase';
-import {
-  getCached,
-  setCache,
-  MARKETING_CACHE_KEYS,
-  invalidateDeliverableCaches,
-  invalidateCalendarCaches,
-  invalidateInfluencerCaches,
-  invalidatePartnershipCaches,
-  invalidateCommunicationCaches,
-} from './marketingDataCache';
+// NOTE: localStorage caching disabled - all data fetched fresh from Supabase
+// This improves reliability at the cost of slightly more API calls
 import type {
   MarketingDeliverable,
   MarketingClientInput,
@@ -34,21 +26,35 @@ import type {
 
 const DEBUG = import.meta.env?.DEV ?? false;
 
+// Check if error is due to missing table
+function isTableMissingError(error: any): boolean {
+  const msg = String(error?.message || error?.code || '');
+  return msg.includes('relation') && msg.includes('does not exist');
+}
+
+// Empty defaults for graceful degradation
+const EMPTY_STATS: MarketingDashboardStats = {
+  totalDeliverables: 0,
+  completedDeliverables: 0,
+  inProgressDeliverables: 0,
+  pendingReviewDeliverables: 0,
+  upcomingContent: 0,
+  activeInfluencers: 0,
+  activePartnerships: 0,
+  unreadMessages: 0,
+};
+
 // ============================================================================
 // Dashboard Analytics
 // ============================================================================
 
-export async function getMarketingDashboardStats(
-  useCache: boolean = true
-): Promise<MarketingDashboardStats> {
-  if (useCache) {
-    const cached = getCached<MarketingDashboardStats>(MARKETING_CACHE_KEYS.DASHBOARD_STATS);
-    if (cached) return cached;
+export async function getMarketingDashboardStats(): Promise<MarketingDashboardStats> {
+  if (!supabase) {
+    if (DEBUG) console.warn('[marketingSupabase] Supabase not configured, returning empty stats');
+    return EMPTY_STATS;
   }
 
-  if (!supabase) throw new Error('Supabase not configured');
-
-  return withRetry(async () => {
+  try {
     const [
       deliverablesRes,
       calendarRes,
@@ -56,12 +62,18 @@ export async function getMarketingDashboardStats(
       partnershipsRes,
       communicationsRes,
     ] = await Promise.all([
-      supabase!.from('marketing_deliverables').select('status'),
-      supabase!.from('marketing_content_calendar').select('id').gte('scheduled_date', new Date().toISOString().split('T')[0]),
-      supabase!.from('marketing_influencers').select('id').in('status', ['contacted', 'negotiating', 'agreed', 'content_live']),
-      supabase!.from('marketing_partnerships').select('id').in('status', ['outreach', 'discussing', 'agreed', 'active']),
-      supabase!.from('marketing_communications').select('id').eq('is_resolved', false),
+      supabase.from('marketing_deliverables').select('status'),
+      supabase.from('marketing_content_calendar').select('id').gte('scheduled_date', new Date().toISOString().split('T')[0]),
+      supabase.from('marketing_influencers').select('id').in('status', ['contacted', 'negotiating', 'agreed', 'content_live']),
+      supabase.from('marketing_partnerships').select('id').in('status', ['outreach', 'discussing', 'agreed', 'active']),
+      supabase.from('marketing_communications').select('id').eq('is_resolved', false),
     ]);
+
+    // Check for table-not-found errors and return empty data gracefully
+    if (deliverablesRes.error && isTableMissingError(deliverablesRes.error)) {
+      if (DEBUG) console.warn('[marketingSupabase] Marketing tables not found, returning empty stats');
+      return EMPTY_STATS;
+    }
 
     const deliverables = deliverablesRes.data || [];
     const completedCount = deliverables.filter(d => d.status === 'completed').length;
@@ -79,22 +91,37 @@ export async function getMarketingDashboardStats(
       unreadMessages: communicationsRes.data?.length || 0,
     };
 
-    setCache(MARKETING_CACHE_KEYS.DASHBOARD_STATS, result);
     return result;
-  });
+  } catch (error) {
+    if (isTableMissingError(error)) {
+      if (DEBUG) console.warn('[marketingSupabase] Marketing tables not found, returning empty stats');
+      return EMPTY_STATS;
+    }
+    throw error;
+  }
 }
 
 export async function getCategoryProgress(): Promise<CategoryProgress[]> {
-  if (!supabase) throw new Error('Supabase not configured');
+  const categories: DeliverableCategory[] = ['strategy', 'social', 'influencer', 'analytics'];
+  const emptyProgress = categories.map(category => ({ category, total: 0, completed: 0, progress: 0 }));
 
-  return withRetry(async () => {
-    const { data, error } = await supabase!
+  if (!supabase) {
+    if (DEBUG) console.warn('[marketingSupabase] Supabase not configured');
+    return emptyProgress;
+  }
+
+  try {
+    const { data, error } = await supabase
       .from('marketing_deliverables')
       .select('category, status, progress');
 
-    if (error) throw error;
-
-    const categories: DeliverableCategory[] = ['strategy', 'social', 'influencer', 'analytics'];
+    if (error) {
+      if (isTableMissingError(error)) {
+        if (DEBUG) console.warn('[marketingSupabase] marketing_deliverables table not found');
+        return emptyProgress;
+      }
+      throw error;
+    }
 
     return categories.map(category => {
       const items = data?.filter(d => d.category === category) || [];
@@ -111,7 +138,12 @@ export async function getCategoryProgress(): Promise<CategoryProgress[]> {
         progress: avgProgress,
       };
     });
-  });
+  } catch (error) {
+    if (isTableMissingError(error)) {
+      return emptyProgress;
+    }
+    throw error;
+  }
 }
 
 // ============================================================================
@@ -124,10 +156,13 @@ export async function getDeliverables(
     status?: DeliverableStatus;
   }
 ): Promise<MarketingDeliverable[]> {
-  if (!supabase) throw new Error('Supabase not configured');
+  if (!supabase) {
+    if (DEBUG) console.warn('[marketingSupabase] Supabase not configured');
+    return [];
+  }
 
-  return withRetry(async () => {
-    let query = supabase!
+  try {
+    let query = supabase
       .from('marketing_deliverables')
       .select('*')
       .order('due_date', { ascending: true, nullsFirst: false });
@@ -140,19 +175,26 @@ export async function getDeliverables(
     }
 
     const { data, error } = await query;
-    if (error) throw error;
+
+    if (error) {
+      if (isTableMissingError(error)) {
+        if (DEBUG) console.warn('[marketingSupabase] marketing_deliverables table not found');
+        return [];
+      }
+      throw error;
+    }
 
     if (DEBUG) console.log('[marketingSupabase] Fetched deliverables:', data?.length);
     return data || [];
-  });
+  } catch (error) {
+    if (isTableMissingError(error)) {
+      return [];
+    }
+    throw error;
+  }
 }
 
 export async function getDeliverablesByCategory(): Promise<Record<DeliverableCategory, MarketingDeliverable[]>> {
-  const cached = getCached<Record<DeliverableCategory, MarketingDeliverable[]>>(
-    MARKETING_CACHE_KEYS.DELIVERABLES_BY_CATEGORY
-  );
-  if (cached) return cached;
-
   const all = await getDeliverables();
 
   const result: Record<DeliverableCategory, MarketingDeliverable[]> = {
@@ -168,7 +210,6 @@ export async function getDeliverablesByCategory(): Promise<Record<DeliverableCat
     }
   });
 
-  setCache(MARKETING_CACHE_KEYS.DELIVERABLES_BY_CATEGORY, result);
   return result;
 }
 
@@ -194,7 +235,6 @@ export async function updateDeliverableStatus(
       .eq('id', id);
 
     if (error) throw error;
-    invalidateDeliverableCaches();
   });
 }
 
@@ -211,7 +251,6 @@ export async function updateDeliverableFeedback(
       .eq('id', id);
 
     if (error) throw error;
-    invalidateDeliverableCaches();
   });
 }
 
@@ -220,17 +259,32 @@ export async function updateDeliverableFeedback(
 // ============================================================================
 
 export async function getClientInputs(): Promise<MarketingClientInput[]> {
-  if (!supabase) throw new Error('Supabase not configured');
+  if (!supabase) {
+    if (DEBUG) console.warn('[marketingSupabase] Supabase not configured');
+    return [];
+  }
 
-  return withRetry(async () => {
-    const { data, error } = await supabase!
+  try {
+    const { data, error } = await supabase
       .from('marketing_client_inputs')
       .select('*')
       .order('submitted_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      if (isTableMissingError(error)) {
+        if (DEBUG) console.warn('[marketingSupabase] marketing_client_inputs table not found');
+        return [];
+      }
+      throw error;
+    }
     return data || [];
-  });
+  } catch (error) {
+    if (isTableMissingError(error)) {
+      return [];
+    }
+    console.error('[marketingSupabase] Error fetching client inputs:', error);
+    return [];
+  }
 }
 
 export async function updateClientInput(
@@ -278,10 +332,13 @@ export async function getContentCalendar(
     status?: CalendarStatus;
   }
 ): Promise<MarketingContentCalendar[]> {
-  if (!supabase) throw new Error('Supabase not configured');
+  if (!supabase) {
+    if (DEBUG) console.warn('[marketingSupabase] Supabase not configured');
+    return [];
+  }
 
-  return withRetry(async () => {
-    let query = supabase!
+  try {
+    let query = supabase
       .from('marketing_content_calendar')
       .select('*')
       .order('scheduled_date', { ascending: true });
@@ -300,10 +357,22 @@ export async function getContentCalendar(
     }
 
     const { data, error } = await query;
-    if (error) throw error;
+    if (error) {
+      if (isTableMissingError(error)) {
+        if (DEBUG) console.warn('[marketingSupabase] marketing_content_calendar table not found');
+        return [];
+      }
+      throw error;
+    }
 
     return data || [];
-  });
+  } catch (error) {
+    if (isTableMissingError(error)) {
+      return [];
+    }
+    console.error('[marketingSupabase] Error fetching content calendar:', error);
+    return [];
+  }
 }
 
 export async function approveContent(id: string): Promise<void> {
@@ -316,7 +385,6 @@ export async function approveContent(id: string): Promise<void> {
       .eq('id', id);
 
     if (error) throw error;
-    invalidateCalendarCaches();
   });
 }
 
@@ -344,8 +412,6 @@ export async function requestContentChanges(
       .eq('id', id);
 
     if (error) throw error;
-    invalidateCalendarCaches();
-    invalidateCommunicationCaches();
   });
 }
 
@@ -356,10 +422,13 @@ export async function requestContentChanges(
 export async function getInfluencers(
   options?: { status?: InfluencerStatus }
 ): Promise<MarketingInfluencer[]> {
-  if (!supabase) throw new Error('Supabase not configured');
+  if (!supabase) {
+    if (DEBUG) console.warn('[marketingSupabase] Supabase not configured');
+    return [];
+  }
 
-  return withRetry(async () => {
-    let query = supabase!
+  try {
+    let query = supabase
       .from('marketing_influencers')
       .select('*')
       .order('created_at', { ascending: false });
@@ -369,10 +438,22 @@ export async function getInfluencers(
     }
 
     const { data, error } = await query;
-    if (error) throw error;
+    if (error) {
+      if (isTableMissingError(error)) {
+        if (DEBUG) console.warn('[marketingSupabase] marketing_influencers table not found');
+        return [];
+      }
+      throw error;
+    }
 
     return data || [];
-  });
+  } catch (error) {
+    if (isTableMissingError(error)) {
+      return [];
+    }
+    console.error('[marketingSupabase] Error fetching influencers:', error);
+    return [];
+  }
 }
 
 export async function getInfluencersByStatus(): Promise<Record<InfluencerStatus, MarketingInfluencer[]>> {
@@ -410,7 +491,6 @@ export async function updateInfluencerStatus(
       .eq('id', id);
 
     if (error) throw error;
-    invalidateInfluencerCaches();
   });
 }
 
@@ -433,8 +513,6 @@ export async function suggestInfluencer(
       content: `Suggested influencer: ${suggestion.name} (@${suggestion.handle || 'N/A'}) on ${suggestion.platform}. Notes: ${suggestion.notes || 'None'}`,
       from_agency: false,
     });
-
-  invalidateCommunicationCaches();
 }
 
 // ============================================================================
@@ -444,10 +522,13 @@ export async function suggestInfluencer(
 export async function getPartnerships(
   options?: { status?: PartnershipStatus }
 ): Promise<MarketingPartnership[]> {
-  if (!supabase) throw new Error('Supabase not configured');
+  if (!supabase) {
+    if (DEBUG) console.warn('[marketingSupabase] Supabase not configured');
+    return [];
+  }
 
-  return withRetry(async () => {
-    let query = supabase!
+  try {
+    let query = supabase
       .from('marketing_partnerships')
       .select('*')
       .order('created_at', { ascending: false });
@@ -457,10 +538,22 @@ export async function getPartnerships(
     }
 
     const { data, error } = await query;
-    if (error) throw error;
+    if (error) {
+      if (isTableMissingError(error)) {
+        if (DEBUG) console.warn('[marketingSupabase] marketing_partnerships table not found');
+        return [];
+      }
+      throw error;
+    }
 
     return data || [];
-  });
+  } catch (error) {
+    if (isTableMissingError(error)) {
+      return [];
+    }
+    console.error('[marketingSupabase] Error fetching partnerships:', error);
+    return [];
+  }
 }
 
 export async function suggestPartnership(
@@ -481,8 +574,6 @@ export async function suggestPartnership(
       content: `Suggested partner: ${suggestion.organization_name} (${suggestion.partnership_type || 'TBD'}). Notes: ${suggestion.notes || 'None'}`,
       from_agency: false,
     });
-
-  invalidateCommunicationCaches();
 }
 
 // ============================================================================
@@ -492,10 +583,13 @@ export async function suggestPartnership(
 export async function getReports(
   options?: { limit?: number }
 ): Promise<MarketingReport[]> {
-  if (!supabase) throw new Error('Supabase not configured');
+  if (!supabase) {
+    if (DEBUG) console.warn('[marketingSupabase] Supabase not configured');
+    return [];
+  }
 
-  return withRetry(async () => {
-    let query = supabase!
+  try {
+    let query = supabase
       .from('marketing_reports')
       .select('*')
       .order('report_date', { ascending: false });
@@ -505,10 +599,22 @@ export async function getReports(
     }
 
     const { data, error } = await query;
-    if (error) throw error;
+    if (error) {
+      if (isTableMissingError(error)) {
+        if (DEBUG) console.warn('[marketingSupabase] marketing_reports table not found');
+        return [];
+      }
+      throw error;
+    }
 
     return data || [];
-  });
+  } catch (error) {
+    if (isTableMissingError(error)) {
+      return [];
+    }
+    console.error('[marketingSupabase] Error fetching reports:', error);
+    return [];
+  }
 }
 
 export async function acknowledgeReport(id: string): Promise<void> {
@@ -531,10 +637,13 @@ export async function acknowledgeReport(id: string): Promise<void> {
 export async function getCommunications(
   options?: { unreadOnly?: boolean; limit?: number }
 ): Promise<MarketingCommunication[]> {
-  if (!supabase) throw new Error('Supabase not configured');
+  if (!supabase) {
+    if (DEBUG) console.warn('[marketingSupabase] Supabase not configured');
+    return [];
+  }
 
-  return withRetry(async () => {
-    let query = supabase!
+  try {
+    let query = supabase
       .from('marketing_communications')
       .select('*')
       .order('created_at', { ascending: false });
@@ -547,10 +656,22 @@ export async function getCommunications(
     }
 
     const { data, error } = await query;
-    if (error) throw error;
+    if (error) {
+      if (isTableMissingError(error)) {
+        if (DEBUG) console.warn('[marketingSupabase] marketing_communications table not found');
+        return [];
+      }
+      throw error;
+    }
 
     return data || [];
-  });
+  } catch (error) {
+    if (isTableMissingError(error)) {
+      return [];
+    }
+    console.error('[marketingSupabase] Error fetching communications:', error);
+    return [];
+  }
 }
 
 export async function createCommunication(
@@ -566,7 +687,6 @@ export async function createCommunication(
       .single();
 
     if (error) throw error;
-    invalidateCommunicationCaches();
     return data;
   });
 }
@@ -581,7 +701,6 @@ export async function markCommunicationResolved(id: string): Promise<void> {
       .eq('id', id);
 
     if (error) throw error;
-    invalidateCommunicationCaches();
   });
 }
 
@@ -592,10 +711,13 @@ export async function markCommunicationResolved(id: string): Promise<void> {
 export async function getDocuments(
   options?: { type?: string; clientVisible?: boolean }
 ): Promise<MarketingDocument[]> {
-  if (!supabase) throw new Error('Supabase not configured');
+  if (!supabase) {
+    if (DEBUG) console.warn('[marketingSupabase] Supabase not configured');
+    return [];
+  }
 
-  return withRetry(async () => {
-    let query = supabase!
+  try {
+    let query = supabase
       .from('marketing_documents')
       .select('*')
       .order('created_at', { ascending: false });
@@ -605,10 +727,22 @@ export async function getDocuments(
     }
 
     const { data, error } = await query;
-    if (error) throw error;
+    if (error) {
+      if (isTableMissingError(error)) {
+        if (DEBUG) console.warn('[marketingSupabase] marketing_documents table not found');
+        return [];
+      }
+      throw error;
+    }
 
     return data || [];
-  });
+  } catch (error) {
+    if (isTableMissingError(error)) {
+      return [];
+    }
+    console.error('[marketingSupabase] Error fetching documents:', error);
+    return [];
+  }
 }
 
 export async function approveDocument(id: string): Promise<void> {

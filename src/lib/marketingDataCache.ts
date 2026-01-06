@@ -1,15 +1,22 @@
 /**
  * Marketing Portal Data Cache
  * Client-side caching for marketing data
+ *
+ * Features:
+ * - Version tracking to invalidate stale cache on schema changes
+ * - TTL-based expiration
+ * - Graceful degradation on localStorage errors
  */
 
 const CACHE_PREFIX = 'inrvo_marketing_';
+const CACHE_VERSION = 2; // Increment when schema changes
 const DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes
 
 interface CacheEntry<T> {
   data: T;
   timestamp: number;
   ttl: number;
+  version: number; // Track cache schema version
 }
 
 export const MARKETING_CACHE_KEYS = {
@@ -27,6 +34,7 @@ export const MARKETING_CACHE_KEYS = {
 
 /**
  * Get cached data if still valid
+ * Returns null on cache miss, expiration, or version mismatch
  */
 export function getCached<T>(key: string): T | null {
   try {
@@ -36,30 +44,59 @@ export function getCached<T>(key: string): T | null {
     const entry: CacheEntry<T> = JSON.parse(stored);
     const now = Date.now();
 
+    // Check version - invalidate if schema has changed
+    if (entry.version !== CACHE_VERSION) {
+      localStorage.removeItem(CACHE_PREFIX + key);
+      return null;
+    }
+
+    // Check TTL expiration
     if (now - entry.timestamp > entry.ttl) {
+      localStorage.removeItem(CACHE_PREFIX + key);
+      return null;
+    }
+
+    // Validate that data exists and is truthy
+    if (!entry.data) {
       localStorage.removeItem(CACHE_PREFIX + key);
       return null;
     }
 
     return entry.data;
   } catch {
+    // On any error, clear corrupted cache entry
+    try {
+      localStorage.removeItem(CACHE_PREFIX + key);
+    } catch {
+      // Ignore cleanup errors
+    }
     return null;
   }
 }
 
 /**
- * Set cache with TTL
+ * Set cache with TTL and version tracking
  */
 export function setCache<T>(key: string, data: T, ttl: number = DEFAULT_TTL): void {
   try {
+    // Don't cache null/undefined data
+    if (data === null || data === undefined) {
+      return;
+    }
+
     const entry: CacheEntry<T> = {
       data,
       timestamp: Date.now(),
       ttl,
+      version: CACHE_VERSION,
     };
     localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(entry));
   } catch (error) {
-    console.warn('[marketingDataCache] Failed to set cache:', error);
+    // localStorage quota exceeded or disabled - log once and fail silently
+    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+      console.warn('[marketingDataCache] localStorage quota exceeded, clearing old caches');
+      clearAllMarketingCache();
+    }
   }
 }
 

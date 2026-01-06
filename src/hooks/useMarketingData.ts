@@ -27,7 +27,6 @@ import {
   getDocuments,
   approveDocument,
 } from '../lib/marketingSupabase';
-import { clearAllMarketingCache } from '../lib/marketingDataCache';
 import type {
   MarketingDashboardStats,
   CategoryProgress,
@@ -535,11 +534,13 @@ export function useDocuments(): UseDocumentsResult {
 }
 
 // ============================================================================
-// Global Refresh
+// Global Refresh (no-op since caching is disabled)
 // ============================================================================
 
 export function useMarketingRefresh() {
+  // No-op: caching has been disabled in favor of direct Supabase fetches
+  // Components can still call this, but it doesn't do anything
   return useCallback(() => {
-    clearAllMarketingCache();
+    // Data is fetched fresh on each hook mount/refetch
   }, []);
 }
