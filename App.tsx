@@ -527,11 +527,23 @@ const App: React.FC = () => {
   }, [savedVoices, selectedVoice]);
 
   const handleSignOut = async () => {
-    await signOut();
-    // AuthContext's auth listener will handle clearing user and voices
-    // We just need to clear local UI state
-    setAvailableVoices([]);
-    setSelectedVoice(null);
+    try {
+      await signOut();
+      // AuthContext's auth listener will handle clearing user and voices
+      // We need to clear all local UI state
+      setAvailableVoices([]);
+      setSelectedVoice(null);
+      setScript('');
+      setCurrentView(View.HOME);
+      setShowLibrary(false);
+      setIsSidebarOpen(false);
+      // Navigate to home page
+      navigate('/');
+      toast.success('Signed out successfully');
+    } catch (error) {
+      console.error('Sign out error:', error);
+      toast.error('Failed to sign out. Please try again.');
+    }
   };
 
   const handleDeleteHistory = async (id: string) => {
