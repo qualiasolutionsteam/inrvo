@@ -40,12 +40,15 @@ const ClonePage: React.FC = () => {
       let cloneResult: { voiceProfileId: string; elevenLabsVoiceId: string; voiceSampleUrl: string | null };
       try {
         const { elevenLabsCloneVoice } = await import('../lib/edgeFunctions');
+        // Use hasBackgroundNoise from metadata to control noise removal
+        // If user indicated they have background noise, enable removal
+        const shouldRemoveNoise = metadata.hasBackgroundNoise ?? false;
         cloneResult = await elevenLabsCloneVoice(
           wavBlob,
           name,
           'Meditation voice clone created with INrVO',
           metadata,
-          true // removeBackgroundNoise
+          shouldRemoveNoise
         );
         console.log('Voice cloned successfully! Profile ID:', cloneResult.voiceProfileId, 'ElevenLabs Voice:', cloneResult.elevenLabsVoiceId);
       } catch (cloneError: unknown) {

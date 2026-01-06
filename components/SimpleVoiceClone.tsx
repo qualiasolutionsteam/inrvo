@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
-import { Play, Pause } from 'lucide-react';
+import { Play, Pause, ChevronDown, ChevronUp, Mic, Volume2, Clock, Sparkles } from 'lucide-react';
 import {
   CloningStatus,
   CreditInfo,
@@ -53,6 +53,10 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
   const [profileName, setProfileName] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
+
+  // Recording tips and noise removal state
+  const [showRecordingTips, setShowRecordingTips] = useState(false);
+  const [removeBackgroundNoise, setRemoveBackgroundNoise] = useState(false); // Default OFF per ElevenLabs docs
 
   // Audio preview state - optimized for smooth playback
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
@@ -318,12 +322,13 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
     const voiceName = profileName.trim() || `My Voice ${new Date().toLocaleDateString()}`;
 
     // Simplified metadata - let ElevenLabs auto-detect voice characteristics
+    // hasBackgroundNoise controls noise removal on the server
     const metadata: VoiceMetadata = {
       language: 'en',
       accent: 'native',
       gender: 'other',  // ElevenLabs will auto-detect
       ageRange: 'middle-aged',  // Default, not used
-      hasBackgroundNoise: false,
+      hasBackgroundNoise: removeBackgroundNoise, // User toggle - enables noise removal if true
       useCase: 'meditation',
     };
 
@@ -584,6 +589,64 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
                         : `Record 1-2 minutes for best quality`}
                     </p>
                   </div>
+
+                  {/* Recording Tips - Collapsible */}
+                  {!isRecording && (
+                    <div className="w-full max-w-sm mt-6">
+                      <button
+                        onClick={() => setShowRecordingTips(!showRecordingTips)}
+                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                      >
+                        <span className="flex items-center gap-2 text-sm font-medium text-slate-300">
+                          <Sparkles className="w-4 h-4 text-cyan-400" />
+                          Recording Tips for Best Quality
+                        </span>
+                        {showRecordingTips ? (
+                          <ChevronUp className="w-4 h-4 text-slate-400" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-slate-400" />
+                        )}
+                      </button>
+
+                      {showRecordingTips && (
+                        <div className="mt-3 p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
+                          <div className="flex gap-3">
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                              <Mic className="w-4 h-4 text-cyan-400" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-white">Quiet Environment</p>
+                              <p className="text-xs text-slate-500">Record in a quiet room without echo. Soft furnishings help reduce reverb.</p>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-3">
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                              <Volume2 className="w-4 h-4 text-emerald-400" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-white">Consistent Volume</p>
+                              <p className="text-xs text-slate-500">Stay about 2 fists away from your mic. Watch the volume badge stay in the green zone.</p>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-3">
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+                              <Clock className="w-4 h-4 text-amber-400" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-white">Natural Pacing</p>
+                              <p className="text-xs text-slate-500">Speak naturally and consistently. Read in the calm tone you want your meditation voice to have.</p>
+                            </div>
+                          </div>
+
+                          <p className="text-xs text-slate-600 pt-2 border-t border-white/5">
+                            Tip: The AI will replicate your recording style exactly, including any background noise or inconsistencies.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </>
               ) : (
                 /* Recording Complete - with Preview */
@@ -684,6 +747,43 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
               <p className="text-xs text-slate-500">
                 Voice characteristics will be auto-detected from your recording
               </p>
+            </div>
+
+            {/* Noise Removal Toggle */}
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+              <div className="flex items-start gap-3">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={removeBackgroundNoise}
+                  onClick={() => setRemoveBackgroundNoise(!removeBackgroundNoise)}
+                  className={`relative mt-0.5 flex-shrink-0 w-11 h-6 rounded-full transition-colors ${
+                    removeBackgroundNoise ? 'bg-cyan-500' : 'bg-white/10'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                      removeBackgroundNoise ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-white">Remove Background Noise</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {removeBackgroundNoise
+                      ? 'AI will attempt to remove background noise. Only enable if your recording has noticeable noise.'
+                      : 'Disabled (recommended for clean recordings). Enable only if you recorded in a noisy environment.'}
+                  </p>
+                </div>
+              </div>
+              {removeBackgroundNoise && (
+                <p className="mt-3 text-xs text-amber-400/80 flex items-start gap-2">
+                  <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span>Noise removal can sometimes reduce voice quality on clean recordings. Only use if needed.</span>
+                </p>
+              )}
             </div>
 
             {/* Recording info with preview */}

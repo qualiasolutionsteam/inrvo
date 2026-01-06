@@ -185,12 +185,14 @@ export function useVoiceCloning(
       // Dynamically import cloning function for code splitting
       const { elevenLabsCloneVoice } = await import('../lib/edgeFunctions');
 
+      // Use hasBackgroundNoise from metadata to control noise removal
+      const shouldRemoveNoise = voiceMetadata.hasBackgroundNoise ?? false;
       const cloneResult = await elevenLabsCloneVoice(
         wavBlob,
         name,
         'Meditation voice clone created with INrVO',
         voiceMetadata,
-        true // removeBackgroundNoise
+        shouldRemoveNoise
       );
 
       // Create voice profile for UI
@@ -311,12 +313,13 @@ export function useVoiceCloning(
       // Dynamically import cloning function for code splitting
       const { elevenLabsCloneVoice } = await import('../lib/edgeFunctions');
 
+      // Default to no noise removal for auto-save (assumes clean recording)
       const cloneResult = await elevenLabsCloneVoice(
         wavBlob,
         finalName,
         'Voice clone created with INrVO',
         undefined, // Use default metadata
-        true // removeBackgroundNoise
+        false // removeBackgroundNoise - disabled by default per ElevenLabs docs
       );
 
       // Save audio sample backup (non-critical)
