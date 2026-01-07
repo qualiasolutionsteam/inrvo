@@ -529,17 +529,8 @@ const App: React.FC = () => {
   const handleSignOut = async () => {
     try {
       await signOut();
-      // AuthContext's auth listener will handle clearing user and voices
-      // We need to clear all local UI state
-      setAvailableVoices([]);
-      setSelectedVoice(null);
-      setScript('');
-      setCurrentView(View.HOME);
-      setShowLibrary(false);
-      setIsSidebarOpen(false);
-      // Navigate to home page
-      navigate('/');
-      toast.success('Signed out successfully');
+      // Hard refresh to ensure clean state
+      window.location.href = '/';
     } catch (error) {
       console.error('Sign out error:', error);
       toast.error('Failed to sign out. Please try again.');
