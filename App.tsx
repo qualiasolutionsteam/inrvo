@@ -136,7 +136,7 @@ const App: React.FC = () => {
   // Use domain-specific contexts for shared state
   const {
     user, checkUser, savedVoices, setSavedVoices, currentClonedVoice, setCurrentClonedVoice,
-    loadUserVoices, isLoadingVoices
+    loadUserVoices, isLoadingVoices, isSessionReady
   } = useAuth();
 
   const {
@@ -359,10 +359,10 @@ const App: React.FC = () => {
     }
   }, [showBurgerMenu, user, chatHistory.length, refreshChatHistory]);
 
-  // Check admin status when user changes
+  // Check admin status when user changes AND session is ready (has access token)
   useEffect(() => {
     const checkAdminStatus = async () => {
-      if (!user?.id) {
+      if (!user?.id || !isSessionReady) {
         setIsAdmin(false);
         return;
       }
@@ -375,7 +375,7 @@ const App: React.FC = () => {
       }
     };
     checkAdminStatus();
-  }, [user?.id]);
+  }, [user?.id, isSessionReady]);
 
   // loadMoreHistory is now provided by LibraryContext
 
