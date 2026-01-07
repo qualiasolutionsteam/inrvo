@@ -169,7 +169,9 @@ REQUIREMENTS:
 - Use FIRST PERSON "I" throughout (e.g., "I feel calm", "I breathe deeply", "I am safe")
 - This is a self-affirmation meditation the listener speaks to themselves
 - Rich sensory details (5 senses), present tense
-- Include: [pause], [long pause], [deep breath], [exhale slowly]
+- Include audio cues: [sigh], [deep breath], [exhale slowly], [pause], [long pause]
+- Use [whisper] for intimate, soft guidance moments
+- Use [calm] to indicate gentle, measured delivery
 - Natural ellipses for pacing...
 - Fresh language (avoid "journey", "sacred")
 - Match tone to need (drowsy for sleep, energizing for confidence)
@@ -392,10 +394,13 @@ LANGUAGE:
 - Repetition for deepening effect
 - Present tense, positive framing
 
-AUDIO CUES:
+AUDIO CUES (V3 Enhanced):
 - [pause] for brief pauses
 - [long pause] for integration moments
-- [deep breath] at transitions
+- [sigh], [deep breath] at transitions (produces natural breathing sounds)
+- [whisper] for intimate, soft guidance
+- [calm] for measured, peaceful delivery
+- [thoughtfully] for reflective moments
 - ... for trailing, dreamy phrasing...
 
 CRITICAL REQUIREMENTS:
@@ -542,10 +547,13 @@ LANGUAGE:
 - Poetic but precise - no vagueness
 - Technical terminology appropriate to the tradition
 
-PACING:
+PACING (V3 Enhanced):
 - [pause] for scene transitions
 - [long pause] for deep experiences
-- [deep breath] at significant moments
+- [sigh], [deep breath] at significant moments (natural breathing sounds)
+- [whisper] for intimate revelations
+- [calm] for peaceful, grounding moments
+- [thoughtfully] for profound realizations
 - ... for dreamlike, expansive moments...
 
 DEPTH REQUIREMENTS:
@@ -774,7 +782,8 @@ GUIDELINES:
 - Add deeper visualizations and sensory details
 - Add breathing exercises or pauses where appropriate
 - Expand with richer imagery matching the original style
-- Preserve existing audio tags [pause], [deep breath] and add more
+- Preserve and enhance audio tags: [pause], [sigh], [deep breath], [whisper], [calm], [thoughtfully]
+- V3 tags: [sigh] produces natural breathing sounds, [whisper] for soft delivery, [calm] for peaceful tone
 - Maintain the original tone and pacing style
 - Do NOT change the voice (first/second/third person)
 

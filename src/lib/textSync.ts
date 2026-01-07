@@ -1,40 +1,49 @@
 import { TextSegment, ScriptTimingMap } from '../../types';
 
 // Audio tag pause durations in seconds
-// NOTE: Set to 0 because TTS services (Chatterbox/Gemini) don't actually create pauses
-// They either speak the tag literally or skip it - no actual audio pause is added
-// If TTS is updated to support SSML breaks, these values should be restored
+// V3 Alpha: Some tags now produce actual audio ([sighs] creates breathing sounds)
 //
 // IMPORTANT: Any text in brackets [like this] is recognized as an audio tag
 // via the isAudioTag() function which uses regex /^\[.+\]$/
-// This dictionary provides specific durations for known tags (all 0 for now)
-// Unknown tags also get duration 0 via the getAudioTagDuration fallback
+// This dictionary provides specific durations for known tags
+// V3 native tags that produce audio have non-zero durations
 const AUDIO_TAG_DURATIONS: Record<string, number> = {
-  // Pauses
+  // Pauses (converted to ellipses, duration handled by TTS)
   '[pause]': 0,
   '[short pause]': 0,
   '[long pause]': 0,
   '[silence]': 0,
-  // Breathing
-  '[inhale]': 0,
-  '[exhale]': 0,
-  '[exhale slowly]': 0,
-  '[deep breath]': 0,
-  '[breathe in]': 0,
-  '[breathe out]': 0,
-  // Voice modifiers
+
+  // Breathing (V3: these become [sighs] which produces actual audio)
+  '[inhale]': 0.5,
+  '[exhale]': 0.5,
+  '[exhale slowly]': 0.8,
+  '[deep breath]': 1.0,
+  '[breathe in]': 0.5,
+  '[breathe out]': 0.5,
+  '[breath]': 0.3,
+
+  // V3 Native Audio Tags (produce actual sounds)
+  '[sighs]': 0.5,        // V3 produces natural sigh sound
+  '[whispers]': 0,       // Just changes delivery style, no extra duration
+  '[calm]': 0,           // Just changes delivery style
+  '[thoughtfully]': 0,   // Just changes delivery style
+
+  // Voice modifiers (converted to V3 tags)
   '[whisper]': 0,
   '[soft voice]': 0,
+  '[sigh]': 0.5,         // Converted to [sighs] in V3
+
   // Sounds
-  '[gentle giggle]': 0,
-  '[sigh]': 0,
-  '[hum]': 0,
-  '[soft hum]': 0,
+  '[gentle giggle]': 0.3,
+  '[hum]': 0.5,
+  '[soft hum]': 0.5,
 };
 
 /**
- * Get the pause duration for an audio tag
- * Currently returns 0 as TTS services don't create actual pauses
+ * Get the duration for an audio tag
+ * V3 Alpha: Some tags like [sighs] produce actual audio with duration
+ * Tags that just modify delivery style (e.g. [whispers], [calm]) have 0 duration
  */
 function getAudioTagDuration(tag: string): number {
   const normalizedTag = tag.toLowerCase().trim();

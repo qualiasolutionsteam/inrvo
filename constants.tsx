@@ -882,6 +882,8 @@ export const NATURE_SOUNDS_BY_CATEGORY: Record<string, NatureSound[]> = NATURE_S
   return acc;
 }, {} as Record<string, NatureSound[]>);
 
+// V3 Alpha Audio Tags - Enhanced with native ElevenLabs V3 support
+// V3 supports native audio tags: [sighs], [whispers], [calm], [thoughtfully]
 export const AUDIO_TAG_CATEGORIES: { id: string; name: string; color: string; bgColor: string; tags: { id: string; label: string; description: string }[] }[] = [
   {
     id: 'pauses',
@@ -889,43 +891,55 @@ export const AUDIO_TAG_CATEGORIES: { id: string; name: string; color: string; bg
     color: 'text-purple-400',
     bgColor: 'bg-purple-500/10',
     tags: [
-      { id: 'pause', label: '[pause]', description: 'A natural 2-3 second pause' },
-      { id: 'short_pause', label: '[short pause]', description: 'A brief 1-2 second pause' },
-      { id: 'long_pause', label: '[long pause]', description: 'A longer 3-5 second pause' },
-      { id: 'silence', label: '[silence]', description: 'A moment of complete silence' },
+      { id: 'pause', label: '[pause]', description: 'A natural 2-3 second pause (...)' },
+      { id: 'short_pause', label: '[short pause]', description: 'A brief 1-2 second pause (..)' },
+      { id: 'long_pause', label: '[long pause]', description: 'A longer 3-5 second pause (......)'  },
+      { id: 'silence', label: '[silence]', description: 'Extended silence (........)' },
     ]
   },
   {
     id: 'breathing',
     name: 'Breathing',
-    color: 'text-purple-400',
-    bgColor: 'bg-purple-500/10',
+    color: 'text-blue-400',
+    bgColor: 'bg-blue-500/10',
     tags: [
-      { id: 'deep_breath', label: '[deep breath]', description: 'A full deep breath cycle' },
-      { id: 'inhale', label: '[inhale]', description: 'Sound of breathing in deeply' },
-      { id: 'exhale', label: '[exhale]', description: 'Sound of breathing out slowly' },
-      { id: 'exhale_slowly', label: '[exhale slowly]', description: 'A slow, relaxing exhale' },
+      { id: 'deep_breath', label: '[deep breath]', description: 'Natural sigh with breathing cue' },
+      { id: 'inhale', label: '[inhale]', description: 'Breathing in with subtle sound' },
+      { id: 'exhale', label: '[exhale]', description: 'Breathing out with sigh' },
+      { id: 'exhale_slowly', label: '[exhale slowly]', description: 'Slow, relaxing exhale' },
+      { id: 'sigh', label: '[sigh]', description: 'A natural, relaxing sigh sound' },
     ]
   },
   {
     id: 'voice',
     name: 'Voice Style',
-    color: 'text-purple-400',
-    bgColor: 'bg-purple-500/10',
+    color: 'text-pink-400',
+    bgColor: 'bg-pink-500/10',
     tags: [
       { id: 'whisper', label: '[whisper]', description: 'Speak in a soft whisper' },
-      { id: 'soft_voice', label: '[soft voice]', description: 'Speak very gently' },
+      { id: 'soft_voice', label: '[soft voice]', description: 'Calm, gentle delivery' },
+      { id: 'calm', label: '[calm]', description: 'Calm, measured tone' },
+      { id: 'thoughtfully', label: '[thoughtfully]', description: 'Reflective, contemplative delivery' },
+    ]
+  },
+  {
+    id: 'sections',
+    name: 'Sections',
+    color: 'text-emerald-400',
+    bgColor: 'bg-emerald-500/10',
+    tags: [
+      { id: 'whisper_section', label: '[whisper: ...]', description: 'Whisper a specific section (replace ... with text)' },
     ]
   },
   {
     id: 'sounds',
     name: 'Sounds',
-    color: 'text-purple-400',
-    bgColor: 'bg-purple-500/10',
+    color: 'text-amber-400',
+    bgColor: 'bg-amber-500/10',
     tags: [
       { id: 'gentle_giggle', label: '[gentle giggle]', description: 'A soft, warm laugh' },
-      { id: 'sigh', label: '[sigh]', description: 'A relaxing sigh' },
       { id: 'hum', label: '[hum]', description: 'A gentle humming sound' },
+      { id: 'soft_hum', label: '[soft hum]', description: 'A very soft humming sound' },
     ]
   },
 ];
@@ -939,32 +953,40 @@ export const AUDIO_TAG_CATEGORIES: { id: string; name: string; color: string; bg
 /**
  * Keyword to audio tag mapping for smart tag suggestions
  * Used by getSuggestedTags() in App.tsx
+ * V3 Alpha: Added calm, thoughtfully tags for voice modulation
  */
 export const KEYWORD_TAG_MAP: Record<string, string[]> = {
   // Breathing related
-  'breath': ['deep_breath', 'exhale'],
-  'breathing': ['deep_breath', 'exhale'],
-  'inhale': ['deep_breath'],
-  'exhale': ['exhale'],
+  'breath': ['deep_breath', 'exhale', 'sigh'],
+  'breathing': ['deep_breath', 'exhale', 'inhale'],
+  'inhale': ['inhale', 'deep_breath'],
+  'exhale': ['exhale', 'exhale_slowly'],
   // Pause/calm related
-  'pause': ['short_pause', 'long_pause'],
-  'calm': ['long_pause', 'silence'],
-  'peace': ['long_pause', 'silence'],
-  'quiet': ['silence'],
+  'pause': ['short_pause', 'long_pause', 'pause'],
+  'calm': ['calm', 'long_pause', 'silence'],
+  'peace': ['calm', 'long_pause', 'silence'],
+  'peaceful': ['calm', 'long_pause'],
+  'quiet': ['silence', 'calm'],
   'silent': ['silence'],
-  'stillness': ['silence', 'long_pause'],
+  'stillness': ['silence', 'long_pause', 'calm'],
   // Sound related
-  'laugh': ['giggling'],
-  'happy': ['giggling'],
-  'joy': ['giggling'],
-  'gentle': ['soft_hum'],
-  'hum': ['soft_hum'],
+  'laugh': ['gentle_giggle'],
+  'happy': ['gentle_giggle'],
+  'joy': ['gentle_giggle'],
+  'gentle': ['soft_hum', 'calm'],
+  'hum': ['hum', 'soft_hum'],
   // Voice related
-  'whisper': ['whisper'],
-  'soft': ['whisper', 'soft_hum'],
+  'whisper': ['whisper', 'whisper_section'],
+  'soft': ['whisper', 'soft_hum', 'soft_voice'],
   'sigh': ['sigh'],
-  'relax': ['sigh', 'deep_breath'],
-  'release': ['sigh', 'exhale'],
+  'relax': ['sigh', 'deep_breath', 'calm'],
+  'release': ['sigh', 'exhale', 'exhale_slowly'],
+  // V3 voice style tags
+  'thoughtful': ['thoughtfully'],
+  'reflect': ['thoughtfully', 'calm'],
+  'contemplate': ['thoughtfully', 'long_pause'],
+  'meditate': ['calm', 'deep_breath', 'sigh'],
+  'serene': ['calm', 'silence'],
 };
 
 /**

@@ -4,16 +4,56 @@ import { webSpeechService, isWebSpeechAvailable } from './webSpeechService';
 // Debug logging - only enabled in development
 const DEBUG = import.meta.env?.DEV ?? false;
 
+// Feature flag for V3 model (must match backend elevenlabsConfig.ts)
+const USE_V3_MODEL = true;
+
 // Voice service supports ElevenLabs (primary) and Web Speech API (fallback):
 // - 'elevenlabs': ElevenLabs API (primary - best quality voice cloning)
 // - 'browser': Free Web Speech API (built-in browser TTS)
 
 /**
- * Prepare meditation text for ElevenLabs
- * Converts audio tags to natural pauses using ellipses
- * ElevenLabs handles pauses naturally through punctuation
+ * Prepare meditation text for V3 model
+ * Transforms INrVO tags to V3-native audio tags
  */
-function prepareMeditationText(text: string): string {
+function prepareMeditationTextV3(text: string): string {
+  return text
+    // Breathing tags -> V3 [sighs] with descriptive text
+    .replace(/\[deep breath\]/gi, '[sighs] Take a deep breath... [sighs]')
+    .replace(/\[exhale slowly\]/gi, 'and exhale slowly... [sighs]')
+    .replace(/\[inhale\]/gi, '[sighs]... breathe in...')
+    .replace(/\[exhale\]/gi, '...breathe out... [sighs]')
+    .replace(/\[breath\]/gi, '[sighs]')
+    .replace(/\[breathe in\]/gi, '[sighs]... breathe in...')
+    .replace(/\[breathe out\]/gi, '...breathe out... [sighs]')
+    // Pause tags -> ellipses (V3 respects punctuation)
+    .replace(/\[pause\]/gi, '...')
+    .replace(/\[short pause\]/gi, '..')
+    .replace(/\[long pause\]/gi, '......')
+    .replace(/\[silence\]/gi, '........')
+    // Voice modifiers -> V3 native tags
+    .replace(/\[whisper\]/gi, '[whispers]')
+    .replace(/\[soft voice\]/gi, '[calm]')
+    .replace(/\[sigh\]/gi, '[sighs]')
+    .replace(/\[calm\]/gi, '[calm]')
+    .replace(/\[thoughtfully\]/gi, '[thoughtfully]')
+    // Sound effects
+    .replace(/\[hum\]/gi, '[calm]... mmm...')
+    .replace(/\[soft hum\]/gi, '[calm]... mmm...')
+    .replace(/\[gentle giggle\]/gi, '... [calm]...')
+    // Handle [whisper: text] syntax
+    .replace(/\[whisper:\s*([^\]]+)\]/gi, '[whispers] $1 [calm]')
+    // Clean up any remaining unknown tags -> ellipses
+    .replace(/\[[^\]]*\]/g, '...')
+    // Normalize excessive periods
+    .replace(/\.{9,}/g, '........')
+    .trim();
+}
+
+/**
+ * Prepare meditation text for V2 model (fallback)
+ * Converts audio tags to natural pauses using ellipses
+ */
+function prepareMeditationTextV2(text: string): string {
   return text
     // Convert meditation tags to natural pauses
     .replace(/\[pause\]/gi, '...')
@@ -28,6 +68,13 @@ function prepareMeditationText(text: string): string {
     // Normalize multiple periods
     .replace(/\.{7,}/g, '......')
     .trim();
+}
+
+/**
+ * Prepare meditation text based on model version
+ */
+function prepareMeditationText(text: string): string {
+  return USE_V3_MODEL ? prepareMeditationTextV3(text) : prepareMeditationTextV2(text);
 }
 
 /**

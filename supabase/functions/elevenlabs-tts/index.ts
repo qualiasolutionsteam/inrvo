@@ -5,12 +5,20 @@ import { getRequestId, createLogger, getTracingHeaders } from "../_shared/tracin
 import { checkRateLimit, createRateLimitResponse, RATE_LIMITS } from "../_shared/rateLimit.ts";
 import { withCircuitBreaker, CIRCUIT_CONFIGS, CircuitBreakerError } from "../_shared/circuitBreaker.ts";
 import { addSecurityHeaders } from "../_shared/securityHeaders.ts";
+import { getModelId, getVoiceSettings, USE_V3_MODEL, ELEVENLABS_MODELS } from "../_shared/elevenlabsConfig.ts";
+import { prepareMeditationText } from "../_shared/textPreprocessing.ts";
 
 /**
- * ElevenLabs TTS Edge Function
+ * ElevenLabs TTS Edge Function (Legacy Endpoint)
  *
  * Uses ElevenLabs API for high-quality TTS with voice cloning.
  * Primary voice provider for INrVO meditation app.
+ *
+ * V3 Alpha Model Features:
+ * - Native audio tags: [sighs], [whispers], [calm], [thoughtfully]
+ * - Natural breathing sounds for meditation content
+ * - Improved emotional expression
+ * - Use USE_V3_MODEL flag to toggle between V3 and V2
  *
  * ElevenLabs advantages:
  * - Industry-leading voice quality
@@ -18,13 +26,17 @@ import { addSecurityHeaders } from "../_shared/securityHeaders.ts";
  * - Stable API with good uptime
  * - Character-level timing for sync (optional)
  *
- * Settings optimized for meditation voice clones:
- * - Model: eleven_multilingual_v2 (best quality, stable long-form)
- * - Stability: 0.65 (higher = calmer, more consistent delivery)
- * - Similarity: 0.80 (balanced - reduces artifacts while matching clone)
- * - Style: 0.0 (critical - per ElevenLabs docs, anything else adds latency)
- * - Speaker Boost: true (improves similarity to original)
- * - Speed: 0.95 (slightly slower for meditation pacing)
+ * V3 Settings (meditation optimized):
+ * - Model: eleven_v3 (V3 Alpha - best emotional expression)
+ * - Stability: 0.5 (Natural mode - balanced for meditation)
+ * - Similarity: 0.75 (good clone matching)
+ *
+ * V2 Fallback Settings:
+ * - Model: eleven_multilingual_v2 (stable long-form)
+ * - Stability: 0.65 (calmer, more consistent)
+ * - Similarity: 0.80 (balanced)
+ * - Style: 0.0 (per ElevenLabs docs)
+ * - Speed: 0.95 (slower for meditation)
  */
 
 const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1';
@@ -138,24 +150,7 @@ async function getCachedVoiceProfile(
   return data;
 }
 
-/**
- * Prepare meditation text for ElevenLabs
- * Converts audio tags to natural pauses using ellipses
- */
-function prepareMeditationText(text: string): string {
-  return text
-    // Convert meditation tags to natural pauses
-    .replace(/\[pause\]/gi, '...')
-    .replace(/\[long pause\]/gi, '......')
-    .replace(/\[deep breath\]/gi, '... take a deep breath ...')
-    .replace(/\[exhale slowly\]/gi, '... and exhale slowly ...')
-    .replace(/\[silence\]/gi, '........')
-    // Clean up any remaining brackets
-    .replace(/\[[^\]]*\]/g, '...')
-    // Normalize multiple periods
-    .replace(/\.{7,}/g, '......')
-    .trim();
-}
+// prepareMeditationText is now imported from ../\_shared/textPreprocessing.ts
 
 /**
  * Generate speech using ElevenLabs API
@@ -167,13 +162,36 @@ async function runElevenLabsTTS(
   apiKey: string,
   log: ReturnType<typeof createLogger>
 ): Promise<{ base64: string; format: string }> {
+  // Get model ID based on feature flag (ignore options.modelId if V3 is enabled)
+  const modelId = USE_V3_MODEL ? getModelId() : (options?.modelId ?? ELEVENLABS_MODELS.V2);
+
   log.info('Generating speech with ElevenLabs', {
     voiceId: elevenLabsVoiceId,
     textLength: text.length,
+    model: modelId,
+    useV3: USE_V3_MODEL,
   });
 
-  // Prepare text for meditation
-  const preparedText = prepareMeditationText(text);
+  // Prepare text for meditation (V3 uses native audio tags, V2 uses ellipses)
+  const { text: preparedText, warnings, originalLength, processedLength } = prepareMeditationText(text);
+
+  // Log any text processing warnings
+  if (warnings.length > 0) {
+    log.warn('Text preprocessing warnings', { warnings, originalLength, processedLength });
+  }
+
+  // Get voice settings based on model version
+  const voiceSettings = USE_V3_MODEL
+    ? getVoiceSettings(ELEVENLABS_MODELS.V3, {
+        stability: options?.stability,
+        similarity_boost: options?.similarityBoost,
+      })
+    : getVoiceSettings(ELEVENLABS_MODELS.V2, {
+        stability: options?.stability ?? 0.65,
+        similarity_boost: options?.similarityBoost ?? 0.80,
+        style: options?.style ?? 0.0,
+        use_speaker_boost: options?.useSpeakerBoost ?? true,
+      });
 
   const response = await fetch(
     `${ELEVENLABS_API_URL}/text-to-speech/${elevenLabsVoiceId}?output_format=mp3_44100_128`,
@@ -185,14 +203,8 @@ async function runElevenLabsTTS(
       },
       body: JSON.stringify({
         text: preparedText,
-        model_id: options?.modelId ?? 'eleven_multilingual_v2',
-        voice_settings: {
-          stability: options?.stability ?? 0.65,          // Higher (0.65) for calmer, more consistent meditation delivery
-          similarity_boost: options?.similarityBoost ?? 0.80, // Balanced for clones - reduces artifacts
-          style: options?.style ?? 0.0,                   // Critical: Keep at 0.0 per ElevenLabs docs
-          use_speaker_boost: options?.useSpeakerBoost ?? true, // Enable for cloned voices - boosts similarity
-          speed: options?.speed ?? 0.95,                  // Slightly slower (0.95) for meditation pacing
-        },
+        model_id: modelId,
+        voice_settings: voiceSettings,
       }),
     }
   );

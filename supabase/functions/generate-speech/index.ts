@@ -6,12 +6,20 @@ import { checkRateLimit, createRateLimitResponse, RATE_LIMITS } from "../_shared
 import { arrayBufferToBase64 } from "../_shared/encoding.ts";
 import { addSecurityHeaders } from "../_shared/securityHeaders.ts";
 import { withCircuitBreaker, CIRCUIT_CONFIGS, CircuitBreakerError } from "../_shared/circuitBreaker.ts";
+import { getModelId, getVoiceSettings, USE_V3_MODEL, ELEVENLABS_MODELS } from "../_shared/elevenlabsConfig.ts";
+import { prepareMeditationText } from "../_shared/textPreprocessing.ts";
 
 /**
  * Generate Speech - Unified TTS endpoint using ElevenLabs
  *
  * ElevenLabs is the primary (and only) TTS provider.
  * Web Speech API fallback is handled client-side.
+ *
+ * V3 Alpha Model Features:
+ * - Native audio tags: [sighs], [whispers], [calm], [thoughtfully]
+ * - Natural breathing sounds for meditation content
+ * - Improved emotional expression
+ * - Use USE_V3_MODEL flag to toggle between V3 and V2
  *
  * Performance optimizations:
  * - Native base64 encoding (60-70% faster)
@@ -90,25 +98,6 @@ function getSupabaseClient() {
 // TTS request timeout (120 seconds for long meditations)
 const TTS_TIMEOUT_MS = 120000;
 
-/**
- * Prepare meditation text for ElevenLabs
- * Converts audio tags to natural pauses using ellipses
- */
-function prepareMeditationText(text: string): string {
-  return text
-    // Convert meditation tags to natural pauses
-    .replace(/\[pause\]/gi, '...')
-    .replace(/\[long pause\]/gi, '......')
-    .replace(/\[deep breath\]/gi, '... take a deep breath ...')
-    .replace(/\[exhale slowly\]/gi, '... and exhale slowly ...')
-    .replace(/\[silence\]/gi, '........')
-    // Clean up any remaining brackets
-    .replace(/\[[^\]]*\]/g, '...')
-    // Normalize multiple periods
-    .replace(/\.{7,}/g, '......')
-    .trim();
-}
-
 async function runElevenLabsTTS(
   text: string,
   elevenLabsVoiceId: string,
@@ -116,13 +105,36 @@ async function runElevenLabsTTS(
   apiKey: string,
   log: ReturnType<typeof createLogger>
 ): Promise<{ base64: string; format: string }> {
+  // Get model ID based on feature flag
+  const modelId = getModelId();
+
   log.info('Generating speech with ElevenLabs', {
     voiceId: elevenLabsVoiceId,
     textLength: text.length,
+    model: modelId,
+    useV3: USE_V3_MODEL,
   });
 
-  // Prepare text for meditation
-  const preparedText = prepareMeditationText(text);
+  // Prepare text for meditation (V3 uses native audio tags, V2 uses ellipses)
+  const { text: preparedText, warnings, originalLength, processedLength } = prepareMeditationText(text);
+
+  // Log any text processing warnings
+  if (warnings.length > 0) {
+    log.warn('Text preprocessing warnings', { warnings, originalLength, processedLength });
+  }
+
+  // Get voice settings based on model version
+  const voiceSettings = USE_V3_MODEL
+    ? getVoiceSettings(ELEVENLABS_MODELS.V3, {
+        stability: options?.stability,
+        similarity_boost: options?.similarityBoost,
+      })
+    : getVoiceSettings(ELEVENLABS_MODELS.V2, {
+        stability: options?.stability,
+        similarity_boost: options?.similarityBoost,
+        style: options?.style,
+        use_speaker_boost: options?.useSpeakerBoost,
+      });
 
   // Add timeout protection to prevent hanging requests
   const controller = new AbortController();
@@ -139,13 +151,8 @@ async function runElevenLabsTTS(
         },
         body: JSON.stringify({
           text: preparedText,
-          model_id: 'eleven_multilingual_v2',
-          voice_settings: {
-            stability: options?.stability ?? 0.6,
-            similarity_boost: options?.similarityBoost ?? 0.75,
-            style: options?.style ?? 0.3,
-            use_speaker_boost: options?.useSpeakerBoost ?? true,
-          },
+          model_id: modelId,
+          voice_settings: voiceSettings,
         }),
         signal: controller.signal,
       }
