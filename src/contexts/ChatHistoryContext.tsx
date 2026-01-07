@@ -30,7 +30,7 @@ interface ChatHistoryProviderProps {
 }
 
 export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { user, isLoading: isAuthLoading, isSessionReady } = useAuth();
   const [chatHistory, setChatHistory] = useState<ConversationSummary[]>([]);
   const [isLoadingChatHistory, setIsLoadingChatHistory] = useState(false);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
@@ -118,21 +118,21 @@ export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {
     await refreshChatHistory();
   }, [refreshChatHistory]);
 
-  // Auto-refresh when user changes
-  // Note: We intentionally only depend on user.id to prevent re-renders when user object reference changes
+  // Auto-refresh when session is ready (not just when user changes)
+  // This ensures we have a valid access token before making DB requests
   const userId = user?.id;
   useEffect(() => {
-    if (userId) {
-      console.log('[ChatHistory] User changed, refreshing for:', userId);
+    if (userId && isSessionReady) {
+      console.log('[ChatHistory] Session ready, refreshing for:', userId);
       refreshChatHistory();
-    } else if (!isAuthLoading) {
+    } else if (!isAuthLoading && !userId) {
       // Only clear when auth is done loading and there's no user
       console.log('[ChatHistory] No user and auth done, clearing history');
       setChatHistory([]);
       setSelectedConversationId(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, isAuthLoading]); // Only re-run when user ID or auth loading state changes
+  }, [userId, isSessionReady, isAuthLoading]); // Wait for session to be ready before loading
 
   const value = useMemo<ChatHistoryContextValue>(() => ({
     chatHistory,

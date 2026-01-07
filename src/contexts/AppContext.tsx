@@ -123,8 +123,8 @@ interface AppProviderProps {
 }
 
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
-  // Get user from AuthContext (single source of truth)
-  const { user } = useAuth();
+  // Get user and session state from AuthContext (single source of truth)
+  const { user, isSessionReady } = useAuth();
 
   // Voice state
   const [availableVoices, setAvailableVoices] = useState<VoiceProfile[]>(VOICE_PROFILES);
@@ -328,12 +328,14 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     }
   }, [historyPage, hasMoreHistory, isLoadingMore]);
 
-  // Load voices and preferences when user changes (user comes from AuthContext)
+  // Load voices and preferences when session is ready (not just when user changes)
+  // This ensures we have a valid access token before making DB requests
   useEffect(() => {
-    if (user) {
+    if (user && isSessionReady) {
+      console.log('[AppContext] Session ready, loading voices and prefs for:', user.id);
       Promise.all([loadUserVoices(), loadAudioTagPrefs()]).catch(console.error);
     }
-  }, [user, loadUserVoices]);
+  }, [user, isSessionReady, loadUserVoices]);
 
   // Memoize context value to prevent unnecessary re-renders
   // Only re-creates object when dependencies actually change

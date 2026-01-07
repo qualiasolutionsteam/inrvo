@@ -47,19 +47,24 @@ const VoiceManager: React.FC<VoiceManagerProps> = ({
   const [editName, setEditName] = useState('');
 
   useEffect(() => {
+    console.log('[VoiceManager] useEffect triggered, isOpen:', isOpen);
     if (isOpen) {
       loadVoices();
     }
   }, [isOpen]);
 
   const loadVoices = async () => {
+    console.log('[VoiceManager] loadVoices called, setting loading=true');
     setLoading(true);
     try {
+      console.log('[VoiceManager] Calling getUserVoiceProfiles...');
       const data = await getUserVoiceProfiles();
+      console.log('[VoiceManager] Got voice profiles:', data?.length, 'items', data);
       setVoices(data);
     } catch (error) {
-      console.error('Failed to load voices:', error);
+      console.error('[VoiceManager] Failed to load voices:', error);
     } finally {
+      console.log('[VoiceManager] Setting loading=false');
       setLoading(false);
     }
   };

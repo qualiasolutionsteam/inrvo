@@ -24,7 +24,7 @@ import type {
   PartnershipStatus,
 } from '../types/marketing';
 
-const DEBUG = import.meta.env?.DEV ?? false;
+const DEBUG = true; // Force debug logging to trace loading issues
 
 // Check if error is due to missing table
 function isTableMissingError(error: any): boolean {
@@ -49,12 +49,15 @@ const EMPTY_STATS: MarketingDashboardStats = {
 // ============================================================================
 
 export async function getMarketingDashboardStats(): Promise<MarketingDashboardStats> {
+  console.log('[marketingSupabase] getMarketingDashboardStats called, supabase:', !!supabase);
+
   if (!supabase) {
-    if (DEBUG) console.warn('[marketingSupabase] Supabase not configured, returning empty stats');
+    console.warn('[marketingSupabase] Supabase not configured, returning empty stats');
     return EMPTY_STATS;
   }
 
   try {
+    console.log('[marketingSupabase] Starting dashboard stats queries...');
     const [
       deliverablesRes,
       calendarRes,
@@ -69,9 +72,14 @@ export async function getMarketingDashboardStats(): Promise<MarketingDashboardSt
       supabase.from('marketing_communications').select('id').eq('is_resolved', false),
     ]);
 
+    console.log('[marketingSupabase] All dashboard queries completed');
+    console.log('[marketingSupabase] deliverablesRes.error:', deliverablesRes.error);
+    console.log('[marketingSupabase] calendarRes.error:', calendarRes.error);
+    console.log('[marketingSupabase] influencersRes.error:', influencersRes.error);
+
     // Check for table-not-found errors and return empty data gracefully
     if (deliverablesRes.error && isTableMissingError(deliverablesRes.error)) {
-      if (DEBUG) console.warn('[marketingSupabase] Marketing tables not found, returning empty stats');
+      console.warn('[marketingSupabase] Marketing tables not found, returning empty stats');
       return EMPTY_STATS;
     }
 

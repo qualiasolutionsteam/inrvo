@@ -34,7 +34,7 @@ const LibraryContext = createContext<LibraryContextValue | undefined>(undefined)
 
 export const LibraryProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Get user from AuthContext - single source of truth for auth state
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { user, isLoading: isAuthLoading, isSessionReady } = useAuth();
 
   const [meditationHistory, setMeditationHistory] = useState<MeditationHistory[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
@@ -136,15 +136,15 @@ export const LibraryProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, [user?.id]);
 
-  // Clear history when user logs out, refresh when user changes
-  // Note: We intentionally only depend on user.id to prevent re-renders when user object reference changes
+  // Clear history when user logs out, refresh when session is ready
+  // Wait for isSessionReady to ensure access token is available for DB requests
   const userId = user?.id;
   useEffect(() => {
-    if (userId) {
-      // User is logged in - refresh history (will use cache if available)
-      console.log('[LibraryContext] User changed, refreshing history for:', userId);
+    if (userId && isSessionReady) {
+      // Session is ready with valid token - refresh history (will use cache if available)
+      console.log('[LibraryContext] Session ready, refreshing history for:', userId);
       refreshHistory();
-    } else if (!isAuthLoading) {
+    } else if (!isAuthLoading && !userId) {
       // User logged out and auth is not loading - clear history
       console.log('[LibraryContext] No user, clearing history');
       setMeditationHistory([]);
@@ -152,7 +152,7 @@ export const LibraryProvider: React.FC<{ children: ReactNode }> = ({ children })
       setHistoryPage(0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, isAuthLoading]); // Only re-run when user ID changes or auth loading state changes
+  }, [userId, isSessionReady, isAuthLoading]); // Wait for session to be ready before loading
 
   // Memoize to prevent unnecessary re-renders
   const value = useMemo<LibraryContextValue>(() => ({
