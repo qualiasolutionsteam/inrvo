@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect, useMemo, ReactNode } from 'react';
-import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { VoiceProfile, ScriptTimingMap, CloningStatus, CreditInfo } from '../../types';
 import { VOICE_PROFILES, BACKGROUND_TRACKS, BackgroundTrack } from '../../constants';
-import { supabase, getCurrentUser, getUserVoiceProfiles, VoiceProfile as DBVoiceProfile, getMeditationHistoryPaginated, MeditationHistory, getAudioTagPreferences } from '../../lib/supabase';
+import { getCurrentUser, getUserVoiceProfiles, VoiceProfile as DBVoiceProfile, getMeditationHistoryPaginated, MeditationHistory, getAudioTagPreferences } from '../../lib/supabase';
 import {
   getCachedVoiceProfiles,
   setCachedVoiceProfiles,
@@ -11,12 +10,11 @@ import {
   updateCachedVoiceProfile,
   removeFromCachedVoiceProfiles,
 } from '../lib/voiceProfileCache';
+import { useAuth } from './AuthContext';
 
 interface AppContextType {
-  // Auth
-  user: SupabaseUser | null;
-  setUser: (user: SupabaseUser | null) => void;
-  checkUser: () => Promise<void>;
+  // Auth (from AuthContext - kept for backward compatibility)
+  user: ReturnType<typeof useAuth>['user'];
 
   // Voices
   availableVoices: VoiceProfile[];
@@ -125,8 +123,8 @@ interface AppProviderProps {
 }
 
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
-  // Auth state
-  const [user, setUser] = useState<SupabaseUser | null>(null);
+  // Get user from AuthContext (single source of truth)
+  const { user } = useAuth();
 
   // Voice state
   const [availableVoices, setAvailableVoices] = useState<VoiceProfile[]>(VOICE_PROFILES);
@@ -295,15 +293,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     }
   }, [transformVoicesToUI]);
 
-  // Check user auth
-  const checkUser = useCallback(async () => {
-    const currentUser = await getCurrentUser();
-    setUser(currentUser);
-    if (currentUser) {
-      await loadUserVoices();
-    }
-  }, [loadUserVoices]);
-
   // Load meditation history
   const refreshHistory = useCallback(async () => {
     if (!user) return;
@@ -339,30 +328,17 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     }
   }, [historyPage, hasMoreHistory, isLoadingMore]);
 
-  // Auth listener
+  // Load voices and preferences when user changes (user comes from AuthContext)
   useEffect(() => {
-    checkUser();
-
-    if (!supabase) return;
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        Promise.all([loadUserVoices(), loadAudioTagPrefs()]).catch(console.error);
-      }
-    });
-
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
-  }, [checkUser, loadUserVoices]);
+    if (user) {
+      Promise.all([loadUserVoices(), loadAudioTagPrefs()]).catch(console.error);
+    }
+  }, [user, loadUserVoices]);
 
   // Memoize context value to prevent unnecessary re-renders
   // Only re-creates object when dependencies actually change
   const value = useMemo<AppContextType>(() => ({
     user,
-    setUser,
-    checkUser,
     availableVoices,
     setAvailableVoices,
     selectedVoice,
@@ -430,7 +406,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     updateVoiceInCache,
     removeVoiceFromCache,
   }), [
-    user, checkUser, availableVoices, selectedVoice, savedVoices,
+    user, availableVoices, selectedVoice, savedVoices,
     cloningStatus, creditInfo, selectedBackgroundTrack, backgroundVolume,
     voiceVolume, playbackRate, script, enhancedScript, editableScript,
     selectedAudioTags, audioTagsEnabled, favoriteAudioTags, meditationHistory,
