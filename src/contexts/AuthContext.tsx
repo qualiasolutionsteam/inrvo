@@ -107,24 +107,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       // Session is ready when we have a valid access token
       // On page refresh, SIGNED_IN may fire before token is ready - verify with getSession
-      if (session?.access_token) {
-        console.log('[AuthContext] Session ready with access token');
-        setIsSessionReady(true);
-      } else if (session?.user) {
-        // User exists but no token yet - wait for getSession to confirm
-        console.log('[AuthContext] User exists but no token, verifying session...');
-        const { data } = await supabase.auth.getSession();
-        if (data.session?.access_token) {
-          console.log('[AuthContext] Session verified with token');
+      const checkSessionReady = async () => {
+        if (session?.access_token) {
+          console.log('[AuthContext] Session ready with access token');
           setIsSessionReady(true);
+        } else if (session?.user) {
+          // User exists but no token yet - wait for getSession to confirm
+          console.log('[AuthContext] User exists but no token in event, verifying session...');
+          // Add a small delay to allow token propagation
+          await new Promise(resolve => setTimeout(resolve, 50));
+
+          if (!supabase) return;
+          const { data } = await supabase.auth.getSession();
+          if (data.session?.access_token) {
+            console.log('[AuthContext] Session verified with token from getSession');
+            // Update user if needed (sometimes event user is partial)
+            if (!user) setUser(data.session.user);
+            setIsSessionReady(true);
+          } else {
+            console.log('[AuthContext] No valid session found after verification');
+            setIsSessionReady(false);
+          }
         } else {
-          console.log('[AuthContext] No valid session found');
+          // No user - session not ready
           setIsSessionReady(false);
         }
-      } else {
-        // No user - session not ready
-        setIsSessionReady(false);
-      }
+      };
+
+      checkSessionReady();
 
       // Clear voice profiles on logout
       if (!session?.user) {
@@ -135,10 +145,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Fallback timeout in case onAuthStateChange doesn't fire
     // (shouldn't happen, but prevents infinite loading)
-    fallbackTimeoutRef.current = setTimeout(() => {
+    fallbackTimeoutRef.current = setTimeout(async () => {
       if (!authInitializedRef.current) {
         console.log('[AuthContext] Fallback timeout - checking user manually');
-        checkUser();
+        await checkUser();
+        // Also check session ready state manually
+        if (supabase) {
+          const { data } = await supabase.auth.getSession();
+          if (data.session?.access_token) {
+            setIsSessionReady(true);
+          }
+        }
       }
     }, 3000);
 

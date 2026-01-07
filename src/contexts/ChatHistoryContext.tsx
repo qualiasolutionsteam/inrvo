@@ -40,7 +40,15 @@ export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {
 
   // Load chat history from database
   const refreshChatHistory = useCallback(async () => {
-    console.log('[ChatHistory] refreshChatHistory called, user:', user?.id, 'isLoadingRef:', isLoadingRef.current);
+    // If not session ready, we can't load yet - wait for AuthContext to signal readiness
+    // BUT if we have a user but no session ready, we might want to wait or retry.
+    // For now, let the effect trigger it when isSessionReady becomes true.
+    if (!isSessionReady && user) {
+      console.log('[ChatHistory] User present but session not ready, delaying refresh');
+      return;
+    }
+
+    console.log('[ChatHistory] refreshChatHistory called, user:', user?.id, 'sessionReady:', isSessionReady);
 
     if (!user) {
       console.log('[ChatHistory] No user, clearing history');
@@ -48,29 +56,26 @@ export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {
       return;
     }
 
-    // Prevent duplicate concurrent calls
-    if (isLoadingRef.current) {
-      console.log('[ChatHistory] Already loading, skipping');
-      return;
-    }
-
+    // Force refresh if we are re-calling
     isLoadingRef.current = true;
     setIsLoadingChatHistory(true);
     console.log('[ChatHistory] Starting to load history...');
+
     try {
-      // Pass userId directly - query has its own timeout to prevent hanging
+      // Pass userId directly
       const history = await conversationStore.loadConversationHistory(20, user.id);
       console.log('[ChatHistory] Loaded history:', history.length, 'items');
       setChatHistory(history);
     } catch (error) {
       console.error('[ChatHistory] Error loading chat history:', error);
-      setChatHistory([]);
+      // Don't clear history on error, keep old state if any (unless it was empty)
+      if (chatHistory.length === 0) setChatHistory([]);
     } finally {
       console.log('[ChatHistory] Done loading, setting isLoadingChatHistory=false');
       setIsLoadingChatHistory(false);
       isLoadingRef.current = false;
     }
-  }, [user]);
+  }, [user, isSessionReady]);
 
   // Load a specific conversation for resumption
   const loadConversation = useCallback(async (id: string): Promise<StoredConversation | null> => {
@@ -123,16 +128,16 @@ export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {
   const userId = user?.id;
   useEffect(() => {
     if (userId && isSessionReady) {
-      console.log('[ChatHistory] Session ready, refreshing for:', userId);
+      console.log('[ChatHistory] Session ready signal, refreshing for:', userId);
       refreshChatHistory();
-    } else if (!isAuthLoading && !userId) {
-      // Only clear when auth is done loading and there's no user
-      console.log('[ChatHistory] No user and auth done, clearing history');
+    } else if (!userId) {
+      // Only clear if absolutely no user
+      console.log('[ChatHistory] No user, clearing history');
       setChatHistory([]);
       setSelectedConversationId(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, isSessionReady, isAuthLoading]); // Wait for session to be ready before loading
+  }, [userId, isSessionReady]); // removed isAuthLoading to prevent premature clearing
 
   const value = useMemo<ChatHistoryContextValue>(() => ({
     chatHistory,
