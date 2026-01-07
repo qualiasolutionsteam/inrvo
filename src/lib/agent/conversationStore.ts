@@ -8,7 +8,7 @@
  * - Quota protection for localStorage limits
  */
 
-import { supabase, getCurrentUser } from '../../../lib/supabase';
+import { supabase, getCurrentUser, withRetry } from '../../../lib/supabase';
 import type { ConversationMessage, UserPreferences, SessionState } from './MeditationAgent';
 
 // ============================================================================
@@ -310,23 +310,22 @@ export class ConversationStore {
       // Create a summary of the conversation
       const summary = this.generateConversationSummary(conversation);
 
-      const { error } = await supabase
-        .from('agent_conversations')
-        .upsert({
-          id: conversation.id,
-          user_id: user.id,
-          messages: conversation.messages,
-          preferences: conversation.preferences,
-          session_state: conversation.sessionState,
-          summary,
-          created_at: conversation.createdAt.toISOString(),
-          updated_at: new Date().toISOString(),
-        });
+      await withRetry(async () => {
+        const { error } = await supabase!
+          .from('agent_conversations')
+          .upsert({
+            id: conversation.id,
+            user_id: user.id,
+            messages: conversation.messages,
+            preferences: conversation.preferences,
+            session_state: conversation.sessionState,
+            summary,
+            created_at: conversation.createdAt.toISOString(),
+            updated_at: new Date().toISOString(),
+          });
 
-      if (error) {
-        console.error('Error saving conversation to database:', error);
-        return false;
-      }
+        if (error) throw error;
+      });
 
       return true;
     } catch (error) {
@@ -364,29 +363,20 @@ export class ConversationStore {
 
       console.log('[conversationStore] Making Supabase query for user:', resolvedUserId);
 
-      // Create a timeout promise
-      const timeoutPromise = new Promise<{ data: null; error: { message: string } }>((resolve) => {
-        setTimeout(() => {
-          resolve({ data: null, error: { message: 'Query timed out after 10s' } });
-        }, 10000);
+      // Use withRetry for robust loading with timeout and retries
+      const data = await withRetry(async () => {
+        const { data, error } = await supabase!
+          .from('agent_conversations')
+          .select('id, summary, messages, session_state, created_at')
+          .eq('user_id', resolvedUserId)
+          .order('created_at', { ascending: false })
+          .limit(limit);
+
+        if (error) throw error;
+        return data;
       });
 
-      // Race the query against the timeout
-      const queryPromise = supabase
-        .from('agent_conversations')
-        .select('id, summary, messages, session_state, created_at')
-        .eq('user_id', resolvedUserId)
-        .order('created_at', { ascending: false })
-        .limit(limit);
-
-      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
-
-      console.log('[conversationStore] Query complete, error:', error?.message, 'data length:', data?.length);
-
-      if (error) {
-        console.error('[conversationStore] Error loading conversation history:', error);
-        return [];
-      }
+      console.log('[conversationStore] Query complete, data length:', data?.length);
 
       const result = (data || []).map(item => ({
         id: item.id,
@@ -414,17 +404,19 @@ export class ConversationStore {
       const user = await getCurrentUser();
       if (!user) return null;
 
-      const { data, error } = await supabase
-        .from('agent_conversations')
-        .select('*')
-        .eq('id', conversationId)
-        .eq('user_id', user.id)
-        .single();
+      const data = await withRetry(async () => {
+        const { data, error } = await supabase!
+          .from('agent_conversations')
+          .select('*')
+          .eq('id', conversationId)
+          .eq('user_id', user.id)
+          .single();
 
-      if (error || !data) {
-        console.error('Error loading conversation:', error);
-        return null;
-      }
+        if (error) throw error;
+        return data;
+      });
+
+      if (!data) return null;
 
       const conversation: StoredConversation = {
         id: data.id,
@@ -461,16 +453,15 @@ export class ConversationStore {
       const user = await getCurrentUser();
       if (!user) return false;
 
-      const { error } = await supabase
-        .from('agent_conversations')
-        .delete()
-        .eq('id', conversationId)
-        .eq('user_id', user.id);
+      await withRetry(async () => {
+        const { error } = await supabase!
+          .from('agent_conversations')
+          .delete()
+          .eq('id', conversationId)
+          .eq('user_id', user.id);
 
-      if (error) {
-        console.error('Error deleting conversation:', error);
-        return false;
-      }
+        if (error) throw error;
+      });
 
       // Clear from local storage if it's the current conversation
       if (this.currentConversation?.id === conversationId) {

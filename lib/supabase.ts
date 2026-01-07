@@ -38,6 +38,7 @@ const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
     'fetch failed',
     'Failed to fetch',
     'NetworkError',
+    'Operation timed out', // Our internal timeout
     // Auth errors (token expired, needs refresh)
     'JWT expired',
     'PGRST_JWT_EXPIRED',
@@ -77,8 +78,8 @@ export async function withRetry<T>(
 
   for (let attempt = 0; attempt <= opts.maxRetries; attempt++) {
     try {
-      // Create a timeout promise if not provided in options (default 15s)
-      const timeoutMs = 15000;
+      // Create a timeout promise (default 30s for slow connections)
+      const timeoutMs = 30000;
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error('Operation timed out')), timeoutMs);
       });

@@ -475,8 +475,8 @@ serve(async (req) => {
 
     // Call OpenRouter API with circuit breaker and timeout
     const script = await withCircuitBreaker(
-      'gemini',
-      CIRCUIT_CONFIGS.gemini,
+      'openrouter',
+      CIRCUIT_CONFIGS.openrouter,
       async () => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);

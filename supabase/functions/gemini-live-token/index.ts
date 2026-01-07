@@ -147,54 +147,15 @@ serve(async (req) => {
       return createRateLimitResponse(rateLimitResult, allHeaders);
     }
 
-    // Get Gemini API key from environment
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
-    if (!geminiApiKey) {
-      log.error('Gemini API key not configured');
-      return new Response(
-        JSON.stringify({ error: 'Gemini API key not configured', requestId }),
-        { status: 500, headers: { ...allHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Parse optional request body for voice preference
-    let preferredVoice: string | undefined;
-    try {
-      if (req.body) {
-        const body = await req.json();
-        preferredVoice = body.voiceName;
-      }
-    } catch {
-      // No body or invalid JSON is fine
-    }
-
-    // Select voice (use preference or default to Aoede for calm meditation)
-    const voiceName = preferredVoice && MEDITATION_VOICES.includes(preferredVoice)
-      ? preferredVoice
-      : 'Aoede';
-
-    log.info('Generating Gemini Live token', {
-      isAnonymous,
-      voiceName,
-      userId: userId || rateLimitKey,
-    });
-
-    // Return configuration for frontend WebSocket connection
-    const response: GeminiLiveTokenResponse = {
-      // WebSocket URL for Gemini Multimodal Live API (v1alpha is required)
-      wsUrl: 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent',
-      apiKey: geminiApiKey,
-      model: 'models/gemini-2.0-flash-exp', // Gemini 2.0 Flash Exp - official model for Live API
-      voiceName,
-      systemPrompt: VOICE_SYSTEM_PROMPT,
-      requestId,
-    };
-
-    log.info('Token generated successfully', { voiceName });
-
+    // Gemini Live feature is disabled - it requires direct Gemini API key
+    // which we've replaced with OpenRouter for all AI services
+    log.info('Gemini Live feature disabled - using OpenRouter instead');
     return new Response(
-      JSON.stringify(response),
-      { status: 200, headers: { ...allHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({
+        error: 'Voice chat feature is temporarily disabled. Please use text chat instead.',
+        requestId,
+      }),
+      { status: 503, headers: { ...allHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {

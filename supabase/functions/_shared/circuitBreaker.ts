@@ -10,7 +10,7 @@ export interface CircuitConfig {
 }
 
 export const CIRCUIT_CONFIGS: Record<string, CircuitConfig> = {
-  gemini: {
+  openrouter: {
     failureThreshold: 5,
     resetTimeoutMs: 30000,     // 30 seconds
     halfOpenRequests: 2,

@@ -18,7 +18,13 @@ npm test             # Run tests with vitest (watch mode)
 npm run test:run     # Single test run (no watch)
 npm run test:coverage # Coverage report
 npm run test:ui      # Vitest UI
-ANALYZE=true npm run build  # Bundle analyzer
+ANALYZE=true npm run build  # Bundle analyzer (opens stats.html)
+
+# Run single test file
+npm test -- tests/lib/credits.test.ts
+
+# Run tests matching pattern
+npm test -- --grep "voice"
 ```
 
 ## Architecture
@@ -27,7 +33,7 @@ ANALYZE=true npm run build  # Bundle analyzer
 - **Frontend**: React 19 + TypeScript + Vite
 - **Routing**: react-router-dom v7 (lazy-loaded pages in `src/router.tsx`)
 - **Styling**: Tailwind CSS v4 + Framer Motion
-- **State**: React Context pattern (see Context Architecture below)
+- **State**: React Context pattern (8 contexts in `src/contexts/`)
 - **Backend**: Supabase (Auth, PostgreSQL, Edge Functions, Storage)
 - **AI/TTS**: Google Gemini (scripts), ElevenLabs (primary TTS), Web Speech API (fallback)
 - **Monitoring**: Sentry + Vercel Analytics
@@ -46,42 +52,48 @@ ANALYZE=true npm run build  # Bundle analyzer
 │   ├── router.tsx    # Route definitions with lazy loading + prefetching
 │   ├── pages/        # Page components
 │   │   └── marketing/  # Marketing portal (admin dashboard)
-│   ├── contexts/     # React contexts (see below)
+│   ├── contexts/     # React contexts (8 contexts re-exported from index.ts)
 │   ├── lib/          # Services and utilities
 │   │   ├── voiceService.ts    # TTS provider routing
-│   │   ├── edgeFunctions.ts   # Edge function API calls
-│   │   └── agent/             # Gemini Live agent logic
+│   │   ├── edgeFunctions.ts   # Edge function API calls with retry/tracing
+│   │   └── agent/             # Gemini-powered MeditationAgent (5 content types)
 │   └── hooks/        # Custom React hooks
 ├── lib/
 │   └── supabase.ts   # Supabase client + all database operations
 ├── components/       # Shared React components
 ├── supabase/
-│   ├── functions/    # Deno Edge Functions (see below)
+│   ├── functions/    # Deno Edge Functions
 │   └── migrations/   # SQL migrations
 ├── types.ts          # TypeScript type definitions
 └── constants.tsx     # App constants, templates, voice profiles
 ```
 
-### Context Architecture
+### Meditation Agent (`src/lib/agent/`)
 
-Contexts live in `src/contexts/` and are re-exported from `src/contexts/index.ts`:
+Conversational AI assistant supporting 5 content categories:
+- **Meditations**: guided visualizations, breathwork, body scans
+- **Affirmations**: power, guided, sleep, mirror work styles
+- **Self-Hypnosis**: light, standard, therapeutic depths
+- **Guided Journeys**: past life, spirit guide, shamanic, astral
+- **Children's Stories**: toddler (2-4), young child (5-8)
 
-| Context | Purpose |
-|---------|---------|
-| `AuthContext` | User auth state, voice profile management |
-| `ScriptContext` | Script generation state, chat history |
-| `LibraryContext` | Meditation history/favorites |
-| `AudioContext` | Playback state, volume, background music |
-| `AudioTagsContext` | Audio tag preferences (pauses, breathing) |
-| `ChatHistoryContext` | Conversation history with Gemini |
-| `ModalContext` | Global modal state |
-| `AppContext` | App-wide state (loading, errors) |
+Key files:
+- `MeditationAgent.ts` - Main agent logic, conversation state
+- `contentDetection.ts` - Detects content type from user input
+- `knowledgeBase.ts` - Wisdom teachers, meditation types, emotional states
+- `conversationStore.ts` - LocalStorage + Supabase conversation persistence
 
-Modal-specific contexts are in `src/contexts/modals/`.
+### Voice Provider System
 
-### Edge Functions
+Voice profiles support multiple providers (defined in `types.ts`):
+- `elevenlabs`: Primary provider (best quality, used for cloning)
+- `browser`: Web Speech API fallback (free, works offline)
 
-Located in `supabase/functions/`:
+Legacy providers (`fish-audio`, `chatterbox`) are marked for re-cloning to ElevenLabs. The `voiceService.ts` routes TTS requests based on voice profile config.
+
+**ElevenLabs V3 Model**: Text preprocessing in `voiceService.ts` transforms INrVO audio tags (`[pause]`, `[deep breath]`) to V3-native tags (`[sighs]`, `[whispers]`).
+
+### Edge Functions (`supabase/functions/`)
 
 | Function | Purpose |
 |----------|---------|
@@ -90,37 +102,56 @@ Located in `supabase/functions/`:
 | `gemini-live-token` | Token for Gemini Live API |
 | `generate-speech` | ElevenLabs TTS synthesis |
 | `elevenlabs-clone` | Voice cloning via ElevenLabs |
-| `elevenlabs-tts` | Legacy TTS endpoint |
 | `health` | Health check endpoint |
 | `delete-user-data` | GDPR data deletion |
 | `export-user-data` | GDPR data export |
 
-Shared utilities are in `supabase/functions/_shared/` (rate limiting, sanitization, security headers, etc.).
+Shared utilities in `supabase/functions/_shared/`:
+- `circuitBreaker.ts` - Prevents cascading failures (configurable per provider)
+- `rateLimit.ts` - Request rate limiting
+- `sanitization.ts` - Input sanitization
+- `securityHeaders.ts` - CORS and security headers
+- `elevenlabsConfig.ts` - ElevenLabs API configuration
 
-### Voice Provider System
+### Resilience Patterns
 
-Voice profiles support multiple providers (defined in `types.ts`):
-- `elevenlabs`: Primary provider (best quality, used for cloning)
-- `browser`: Web Speech API fallback (free, works offline)
+**Database Operations** (`lib/supabase.ts`):
+- `withRetry()` - Exponential backoff with jitter for transient errors
+- `deduplicatedQuery()` - Prevents duplicate concurrent requests
+- Optimized field selection (e.g., `VOICE_PROFILE_FIELDS`, `MEDITATION_HISTORY_FIELDS`)
 
-Legacy providers (`fish-audio`, `chatterbox`) are marked for re-cloning to ElevenLabs.
+**Edge Function Calls** (`src/lib/edgeFunctions.ts`):
+- Auth token caching (avoids session fetch per request)
+- Request ID generation for distributed tracing
+- Retry with exponential backoff for 5xx/429 errors
 
-The `voiceService.ts` routes TTS requests to the appropriate provider based on voice profile configuration.
+**LocalStorage** (`src/lib/agent/conversationStore.ts`):
+- Quota protection with automatic pruning
+- Graceful degradation on storage limits
+
+### Route Prefetching
+
+`src/router.tsx` implements route prefetching:
+- Pages are lazy-loaded with `React.lazy()`
+- Adjacent routes prefetched via `requestIdleCallback`
+- `prefetchMap` defines route adjacency (e.g., `/` prefetches `/library`, `/templates`)
 
 ## Database
 
 Core tables (RLS-protected by user_id):
-- `users` - Extended user data and preferences
-- `voice_profiles` - Voice profiles with ElevenLabs IDs
-- `voice_clones` - Raw voice clone data
-- `meditation_history` - Session history with generated audio
+- `users` - Extended user data, preferences, `onboarding_completed` flag
+- `voice_profiles` - Voice profiles with `elevenlabs_voice_id`
+- `voice_clones` - Raw voice clone data (base64 audio)
+- `meditation_history` - Session history with `audio_url` (Storage path)
 - `agent_conversations` - Gemini chat history
 
 Key RPC functions:
 - `toggle_meditation_favorite` - Atomic favorite toggle
 - `check_user_credits` - Credit balance check
 
-Database operations are in `lib/supabase.ts` with retry logic and query deduplication.
+Storage buckets:
+- `voice-samples` - Voice clone audio samples
+- `meditation-audio` - Generated meditation audio
 
 ## Environment Variables
 
@@ -141,18 +172,20 @@ GEMINI_API_KEY=...
 
 Tests use Vitest + React Testing Library + happy-dom. Test files mirror `src/` structure in `tests/`.
 
-```bash
-# Run single test file
-npm test -- tests/lib/credits.test.ts
-
-# Run tests matching pattern
-npm test -- --grep "voice"
-```
-
-Coverage thresholds exist for critical paths (e.g., `src/lib/credits.ts`: 90%).
+Coverage thresholds in `vitest.config.ts`:
+- `src/lib/credits.ts`: 90% statements/functions/lines, 85% branches
 
 ## Build Optimization
 
-- Vite manual chunks split vendors (React, Supabase, Framer Motion, Sentry)
-- Route prefetching for adjacent pages (`src/router.tsx` has prefetch map)
-- Lazy loading for heavy components (VoiceManager, MeditationEditor)
+Configured in `vite.config.ts`:
+- Manual chunks: `react-vendor`, `router-vendor`, `supabase-vendor`, `framer-motion-vendor`, `sentry-vendor`, `icons-vendor`
+- Target: `es2020` for modern browsers
+- CSS code splitting enabled
+- Source maps only in development
+
+## Auth Flow
+
+`AuthContext` manages auth state:
+- `onAuthStateChange` is single source of truth (fires `INITIAL_SESSION` on mount)
+- `isSessionReady` flag indicates when access token is available (safe for DB requests)
+- Token cached in `edgeFunctions.ts` to avoid session fetch per API call

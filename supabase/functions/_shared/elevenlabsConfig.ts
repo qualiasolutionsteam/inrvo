@@ -39,12 +39,14 @@ export const V3_CONFIG = {
 
 /**
  * Voice settings optimized for V3 meditation content
+ *
+ * IMPORTANT: V3 Alpha ONLY supports stability parameter.
+ * All other parameters (similarity_boost, style, use_speaker_boost) are IGNORED.
+ * See: https://elevenlabs.io/docs/overview/models#eleven-v3-alpha
  */
 export const V3_VOICE_SETTINGS = {
   stability: V3_CONFIG.STABILITY_MODES.NATURAL,
-  similarity_boost: 0.75,
-  // Note: V3 may not support all V2 parameters
-  // style, use_speaker_boost, speed are not confirmed for V3
+  // V3 ONLY uses stability - do NOT send other parameters
 } as const;
 
 /**
@@ -59,16 +61,23 @@ export const V2_VOICE_SETTINGS = {
 
 /**
  * Get voice settings based on model version
+ *
+ * V3: Only stability is supported - all other parameters are stripped
+ * V2: Full settings (stability, similarity_boost, style, use_speaker_boost)
  */
 export function getVoiceSettings(
   modelId: ElevenLabsModel,
-  overrides?: Partial<typeof V3_VOICE_SETTINGS>
+  overrides?: Partial<typeof V2_VOICE_SETTINGS>
 ) {
-  const baseSettings = modelId === ELEVENLABS_MODELS.V3
-    ? { ...V3_VOICE_SETTINGS }
-    : { ...V2_VOICE_SETTINGS };
+  if (modelId === ELEVENLABS_MODELS.V3) {
+    // V3 ONLY supports stability - strip all other parameters
+    return {
+      stability: overrides?.stability ?? V3_VOICE_SETTINGS.stability,
+    };
+  }
 
-  return { ...baseSettings, ...overrides };
+  // V2 supports full settings
+  return { ...V2_VOICE_SETTINGS, ...overrides };
 }
 
 /**

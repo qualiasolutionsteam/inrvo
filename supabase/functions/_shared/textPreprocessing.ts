@@ -31,34 +31,41 @@ function escapeRegex(string: string): string {
 /**
  * V3 tag mappings
  * Transforms INrVO meditation tags to V3-native audio tags
+ *
+ * V3 supported tags (from ElevenLabs docs):
+ * - Emotions: [sad], [laughing], [whispering], [giggling], [groaning]
+ * - Audio events: [sigh], [leaves rustling], [gentle footsteps]
+ * - Punctuation: ellipses for pauses, hyphens for interruptions
+ *
+ * See: https://elevenlabs.io/docs/overview/capabilities/text-to-dialogue
  */
 const V3_TAG_MAPPINGS: Record<string, string> = {
-  // Breathing tags -> V3 [sighs] with descriptive text
-  '[deep breath]': '[sighs] Take a deep breath... [sighs]',
-  '[exhale slowly]': 'and exhale slowly... [sighs]',
-  '[inhale]': '[sighs]... breathe in...',
-  '[exhale]': '...breathe out... [sighs]',
-  '[breath]': '[sighs]',
-  '[breathe in]': '[sighs]... breathe in...',
-  '[breathe out]': '...breathe out... [sighs]',
+  // Breathing tags -> V3 [sigh] (singular, not [sighs])
+  '[deep breath]': '[sigh] Take a deep breath... [sigh]',
+  '[exhale slowly]': 'and exhale slowly... [sigh]',
+  '[inhale]': '[sigh]... breathe in...',
+  '[exhale]': '...breathe out... [sigh]',
+  '[breath]': '[sigh]',
+  '[breathe in]': '[sigh]... breathe in...',
+  '[breathe out]': '...breathe out... [sigh]',
 
-  // Pause tags -> ellipses (V3 respects punctuation)
+  // Pause tags -> ellipses (V3 uses punctuation for pacing)
   '[pause]': '...',
   '[short pause]': '..',
   '[long pause]': '......',
   '[silence]': '........',
 
   // Voice modifiers -> V3 native tags
-  '[whisper]': '[whispers]',
-  '[soft voice]': '[calm]',
-  '[sigh]': '[sighs]',
-  '[calm]': '[calm]',
-  '[thoughtfully]': '[thoughtfully]',
+  '[whisper]': '[whispering]',
+  '[soft voice]': '[sigh]',
+  '[sigh]': '[sigh]',
+  '[calm]': '[sigh]',
+  '[thoughtfully]': '[sigh]',
 
   // Sound effects
-  '[hum]': '[calm]... mmm...',
-  '[soft hum]': '[calm]... mmm...',
-  '[gentle giggle]': '... [calm]...',
+  '[hum]': '... mmm...',
+  '[soft hum]': '... mmm...',
+  '[gentle giggle]': '[giggling]',
 };
 
 /**
@@ -102,10 +109,10 @@ export function prepareMeditationTextV3(text: string): TextProcessingResult {
     processed = processed.replace(regex, replacement);
   }
 
-  // Handle [whisper: text] syntax -> [whispers] text [calm]
+  // Handle [whisper: text] syntax -> [whispering] text
   processed = processed.replace(
     /\[whisper:\s*([^\]]+)\]/gi,
-    '[whispers] $1 [calm]'
+    '[whispering] $1'
   );
 
   // Clean up any remaining unknown tags -> ellipses

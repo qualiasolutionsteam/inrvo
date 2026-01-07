@@ -105,29 +105,47 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Mark loading complete after INITIAL_SESSION or any auth event
       setIsLoading(false);
 
+      // Handle TOKEN_REFRESHED event - token is guaranteed available
+      if (event === 'TOKEN_REFRESHED' && session?.access_token) {
+        console.log('[AuthContext] Token refreshed, session ready');
+        setIsSessionReady(true);
+        return;
+      }
+
       // Session is ready when we have a valid access token
-      // On page refresh, SIGNED_IN may fire before token is ready - verify with getSession
+      // On page refresh, SIGNED_IN may fire before token is ready - use retry loop
       const checkSessionReady = async () => {
+        // If token is already available, we're good
         if (session?.access_token) {
           console.log('[AuthContext] Session ready with access token');
           setIsSessionReady(true);
-        } else if (session?.user) {
-          // User exists but no token yet - wait for getSession to confirm
-          console.log('[AuthContext] User exists but no token in event, verifying session...');
-          // Add a small delay to allow token propagation
-          await new Promise(resolve => setTimeout(resolve, 50));
+          return;
+        }
 
-          if (!supabase) return;
-          const { data } = await supabase.auth.getSession();
-          if (data.session?.access_token) {
-            console.log('[AuthContext] Session verified with token from getSession');
-            // Update user if needed (sometimes event user is partial)
-            if (!user) setUser(data.session.user);
-            setIsSessionReady(true);
-          } else {
-            console.log('[AuthContext] No valid session found after verification');
-            setIsSessionReady(false);
+        if (session?.user) {
+          // User exists but no token yet - retry with increasing delays
+          console.log('[AuthContext] User exists but no token in event, verifying session with retries...');
+
+          for (let attempt = 0; attempt < 5; attempt++) {
+            // Wait with increasing delays: 100, 200, 300, 400, 500ms
+            await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1)));
+
+            if (!supabase) return;
+            const { data } = await supabase.auth.getSession();
+
+            if (data.session?.access_token) {
+              console.log(`[AuthContext] Session verified with token (attempt ${attempt + 1})`);
+              // Update user if needed (sometimes event user is partial)
+              setUser(data.session.user);
+              setIsSessionReady(true);
+              return;
+            }
+            console.log(`[AuthContext] Retry ${attempt + 1}/5 - no token yet`);
           }
+
+          // All retries exhausted - still try to work with what we have
+          console.warn('[AuthContext] Token not available after 5 retries, setting session ready anyway');
+          setIsSessionReady(true); // Let requests proceed - they'll get 401 and trigger re-auth
         } else {
           // No user - session not ready
           setIsSessionReady(false);
