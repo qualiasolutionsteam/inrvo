@@ -28,20 +28,25 @@ const getSupabaseConfig = () => ({
 
 // Get the user's access token from the Supabase session
 // Has a 5s timeout to prevent hanging
+// Get the user's access token from the Supabase session
+// Retries a few times to handle init race conditions
 async function getAccessToken(): Promise<string | null> {
   if (!supabase) return null;
 
+  const getSessionWithRetry = async (retries = 3, delay = 100): Promise<string | null> => {
+    if (!supabase) return null;
+    for (let i = 0; i < retries; i++) {
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.access_token) {
+        return data.session.access_token;
+      }
+      if (i < retries - 1) await new Promise(r => setTimeout(r, delay));
+    }
+    return null;
+  };
+
   try {
-    // Add timeout to prevent hanging
-    const timeoutPromise = new Promise<null>((resolve) => {
-      setTimeout(() => resolve(null), 5000);
-    });
-
-    const sessionPromise = supabase.auth.getSession().then(({ data: { session } }) => {
-      return session?.access_token || null;
-    });
-
-    return await Promise.race([sessionPromise, timeoutPromise]);
+    return await getSessionWithRetry();
   } catch (error) {
     console.error('[getAccessToken] Error:', error);
     return null;
@@ -546,9 +551,7 @@ export async function getAdminAnalytics(userId?: string, useCache: boolean = tru
 
   try {
     // Pass user_id to the function for consistent auth (like check_is_admin)
-    const data = await supabaseRpc<AdminAnalyticsRow>('get_admin_analytics',
-      userId ? { p_user_id: userId } : {}
-    );
+    const data = await supabaseRpc<AdminAnalyticsRow>('get_admin_analytics');
     if (DEBUG) console.log('[adminSupabase] Fetched analytics:', data);
 
     const result = {

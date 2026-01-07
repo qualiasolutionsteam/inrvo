@@ -25,10 +25,10 @@ function safeLocalStorageSet(key: string, value: string): boolean {
     return true;
   } catch (error) {
     if (error instanceof DOMException &&
-        (error.code === 22 || // QuotaExceededError
-         error.code === 1014 || // Firefox NS_ERROR_DOM_QUOTA_REACHED
-         error.name === 'QuotaExceededError' ||
-         error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+      (error.code === 22 || // QuotaExceededError
+        error.code === 1014 || // Firefox NS_ERROR_DOM_QUOTA_REACHED
+        error.name === 'QuotaExceededError' ||
+        error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
       console.warn('localStorage quota exceeded, attempting cleanup...');
       return false;
     }
@@ -364,49 +364,40 @@ export class ConversationStore {
 
       console.log('[conversationStore] Making Supabase query for user:', resolvedUserId);
 
-      // Use AbortController with timeout to properly cancel hanging requests
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        console.log('[conversationStore] Query timeout - aborting');
-        controller.abort();
-      }, 8000);
+      // Create a timeout promise
+      const timeoutPromise = new Promise<{ data: null; error: { message: string } }>((resolve) => {
+        setTimeout(() => {
+          resolve({ data: null, error: { message: 'Query timed out after 10s' } });
+        }, 10000);
+      });
 
-      try {
-        const { data, error } = await supabase
-          .from('agent_conversations')
-          .select('id, summary, messages, session_state, created_at')
-          .eq('user_id', resolvedUserId)
-          .order('created_at', { ascending: false })
-          .limit(limit)
-          .abortSignal(controller.signal);
+      // Race the query against the timeout
+      const queryPromise = supabase
+        .from('agent_conversations')
+        .select('id, summary, messages, session_state, created_at')
+        .eq('user_id', resolvedUserId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
 
-        clearTimeout(timeoutId);
-        console.log('[conversationStore] Query complete, error:', error?.message, 'data length:', data?.length);
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
 
-        if (error) {
-          console.error('[conversationStore] Error loading conversation history:', error);
-          return [];
-        }
+      console.log('[conversationStore] Query complete, error:', error?.message, 'data length:', data?.length);
 
-        const result = (data || []).map(item => ({
-          id: item.id,
-          preview: item.summary || this.extractPreview(item.messages),
-          messageCount: item.messages?.length || 0,
-          createdAt: new Date(item.created_at),
-          mood: item.session_state?.currentMood,
-          hasScript: !!item.session_state?.lastMeditationScript,
-        }));
-        console.log('[conversationStore] Returning', result.length, 'conversations');
-        return result;
-      } catch (queryError) {
-        clearTimeout(timeoutId);
-        if (queryError instanceof Error && queryError.name === 'AbortError') {
-          console.error('[conversationStore] Query was aborted (timeout)');
-        } else {
-          console.error('[conversationStore] Query error:', queryError);
-        }
+      if (error) {
+        console.error('[conversationStore] Error loading conversation history:', error);
         return [];
       }
+
+      const result = (data || []).map(item => ({
+        id: item.id,
+        preview: item.summary || this.extractPreview(item.messages),
+        messageCount: item.messages?.length || 0,
+        createdAt: new Date(item.created_at),
+        mood: item.session_state?.currentMood,
+        hasScript: !!item.session_state?.lastMeditationScript,
+      }));
+      console.log('[conversationStore] Returning', result.length, 'conversations');
+      return result;
     } catch (error) {
       console.error('[conversationStore] Error loading conversation history:', error);
       return [];

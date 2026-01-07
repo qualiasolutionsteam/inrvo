@@ -77,7 +77,13 @@ export async function withRetry<T>(
 
   for (let attempt = 0; attempt <= opts.maxRetries; attempt++) {
     try {
-      return await operation();
+      // Create a timeout promise if not provided in options (default 15s)
+      const timeoutMs = 15000;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Operation timed out')), timeoutMs);
+      });
+
+      return await Promise.race([operation(), timeoutPromise]);
     } catch (error: any) {
       lastError = error;
 
