@@ -96,8 +96,9 @@ function getSupabaseClient() {
 // ElevenLabs TTS (Primary Provider)
 // ============================================================================
 
-// TTS request timeout (120 seconds for long meditations)
-const TTS_TIMEOUT_MS = 120000;
+// TTS request timeout (5 minutes for very long meditations like 7+ minute sessions)
+// ElevenLabs can take 2-3 minutes to generate long-form audio
+const TTS_TIMEOUT_MS = 300000;
 
 async function runElevenLabsTTS(
   text: string,
