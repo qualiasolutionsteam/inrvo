@@ -169,6 +169,7 @@ const App: React.FC = () => {
     isLoadingChatHistory,
     refreshChatHistory,
     loadConversation,
+    deleteConversation,
     startNewConversation,
   } = useChatHistory();
 
@@ -2627,6 +2628,7 @@ const App: React.FC = () => {
           onLoadConversation={loadConversation}
           onStartNewConversation={startNewConversation}
           onConversationSelected={setResumeConversationId}
+          onDeleteConversation={deleteConversation}
           onMeditationRestore={(script) => setRestoredScript(script)}
           onSignOut={handleSignOut}
           onSignIn={() => setShowAuthModal(true)}

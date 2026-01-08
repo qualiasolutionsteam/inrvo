@@ -25,6 +25,7 @@ interface SidebarProps {
   onLoadConversation: (id: string) => Promise<LoadedConversation | null>;
   onStartNewConversation: () => Promise<void>;
   onConversationSelected: (id: string | null) => void;
+  onDeleteConversation?: (id: string) => Promise<void>;
   onMeditationRestore?: (script: string) => void; // Called when conversation has a script
   onSignOut: () => void;
   onSignIn: () => void;
@@ -149,6 +150,11 @@ const Icons = {
       <circle cx="12" cy="12" r="10" />
       <path d="M12 6v6l4 2" />
     </svg>
+  ),
+  Delete: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" />
+    </svg>
   )
 };
 
@@ -188,10 +194,12 @@ MenuItem.displayName = 'MenuItem';
 const ChatItem = memo(({
   item,
   onClick,
+  onDelete,
   index
 }: {
   item: ChatHistoryItem;
   onClick: () => void;
+  onDelete?: (e: React.MouseEvent) => void;
   index: number;
 }) => (
   <m.button
@@ -202,7 +210,7 @@ const ChatItem = memo(({
     whileHover={{ x: 2 }}
     whileTap={{ scale: 0.98 }}
     onClick={onClick}
-    className="group w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-200 hover:bg-white/[0.04] hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]"
+    className="group w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-200 hover:bg-white/[0.04] hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)] pr-1"
   >
     <span className="flex-shrink-0 text-slate-500 group-hover:text-cyan-400 transition-colors duration-200">
       <Icons.Chat />
@@ -220,6 +228,16 @@ const ChatItem = memo(({
         {item.mood}
       </span>
     )}
+
+    {onDelete && (
+      <span
+        onClick={onDelete}
+        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all duration-200"
+        title="Delete chat"
+      >
+        <Icons.Delete />
+      </span>
+    )}
   </m.button>
 ));
 
@@ -234,7 +252,9 @@ export const Sidebar = memo(({
   isLoadingChatHistory,
   onLoadConversation,
   onStartNewConversation,
+  onStartNewConversation,
   onConversationSelected,
+  onDeleteConversation,
   onMeditationRestore,
   onSignOut,
   onSignIn,
@@ -380,6 +400,12 @@ export const Sidebar = memo(({
                         item={item}
                         index={index}
                         onClick={() => handleLoadChat(item.id)}
+                        onDelete={onDeleteConversation ? ((e) => {
+                          e.stopPropagation();
+                          if (window.confirm('Are you sure you want to delete this conversation?')) {
+                            onDeleteConversation(item.id);
+                          }
+                        }) : undefined}
                       />
                     ))
                   ) : (
