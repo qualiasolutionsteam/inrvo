@@ -102,8 +102,8 @@ export class ConversationStore {
       updatedAt: now,
     };
 
-    // Initial save to establish row in DB
-    await this.saveConversationToDatabase(this.currentConversation);
+    // Initial save removed to prevent empty conversations in DB
+    // await this.saveConversationToDatabase(this.currentConversation);
     return this.currentConversation;
   }
 
@@ -203,6 +203,11 @@ export class ConversationStore {
     try {
       // If anonymous, don't save to DB (or save with null user if schema allows, but usually we require user)
       if (conversation.userId === 'anonymous') return false;
+
+      // Don't save empty conversations (no messages)
+      if (!conversation.messages || conversation.messages.length === 0) {
+        return false;
+      }
 
       // Create a summary of the conversation
       const summary = this.generateConversationSummary(conversation);
