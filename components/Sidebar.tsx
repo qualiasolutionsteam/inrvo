@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom';
 interface ChatHistoryItem {
   id: string;
   preview: string;
-  mood?: string;
   hasScript?: boolean; // True if conversation generated a meditation script
 }
 
@@ -221,11 +220,6 @@ const ChatItem = memo(({
     {item.hasScript && (
       <span className="flex-shrink-0 p-1 rounded-md bg-cyan-500/10 text-cyan-400/80 border border-cyan-500/20" title="Has meditation">
         <Icons.Meditation />
-      </span>
-    )}
-    {item.mood && (
-      <span className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded-md bg-purple-500/10 text-purple-400/80 font-medium uppercase tracking-wide border border-purple-500/10">
-        {item.mood}
       </span>
     )}
 

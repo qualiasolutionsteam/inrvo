@@ -33,7 +33,6 @@ export interface ConversationSummary {
   preview: string;
   messageCount: number;
   createdAt: Date;
-  mood?: string;
   hasScript?: boolean; // True if conversation generated a meditation script
 }
 
@@ -377,7 +376,6 @@ export class ConversationStore {
         preview: item.summary || this.extractPreview(item.messages),
         messageCount: item.messages?.length || 0,
         createdAt: new Date(item.created_at),
-        mood: item.session_state?.currentMood,
         hasScript: !!item.session_state?.lastMeditationScript,
       }));
     } catch (error) {
