@@ -3,10 +3,13 @@ import { signIn, signUp, resetPasswordForEmail } from '../lib/supabase';
 import { ICONS } from '../constants';
 import { CheckCircle, Mail } from 'lucide-react';
 
+type AuthMode = 'signin' | 'signup' | 'forgot';
+
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  initialMode?: AuthMode;
 }
 
 // Email validation regex
@@ -27,8 +30,15 @@ function getPasswordStrength(password: string): { score: number; label: string; 
   return { score, label: 'Strong', color: 'bg-emerald-500' };
 }
 
-const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
+const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }) => {
+  const [mode, setMode] = useState<AuthMode>(initialMode);
+
+  // Reset mode when modal opens with a specific initialMode
+  React.useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode);
+    }
+  }, [isOpen, initialMode]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');

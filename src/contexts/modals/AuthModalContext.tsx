@@ -1,10 +1,14 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
 
+export type AuthModalMode = 'signin' | 'signup' | 'forgot';
+
 interface AuthModalContextValue {
   showAuthModal: boolean;
-  openAuthModal: () => void;
+  authModalMode: AuthModalMode;
+  openAuthModal: (mode?: AuthModalMode) => void;
   closeAuthModal: () => void;
   setShowAuthModal: (show: boolean) => void;
+  setAuthModalMode: (mode: AuthModalMode) => void;
 }
 
 const AuthModalContext = createContext<AuthModalContextValue | null>(null);
@@ -15,16 +19,22 @@ interface AuthModalProviderProps {
 
 export function AuthModalProvider({ children }: AuthModalProviderProps) {
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<AuthModalMode>('signin');
 
-  const openAuthModal = useCallback(() => setShowAuthModal(true), []);
+  const openAuthModal = useCallback((mode: AuthModalMode = 'signin') => {
+    setAuthModalMode(mode);
+    setShowAuthModal(true);
+  }, []);
   const closeAuthModal = useCallback(() => setShowAuthModal(false), []);
 
   const value = useMemo<AuthModalContextValue>(() => ({
     showAuthModal,
+    authModalMode,
     openAuthModal,
     closeAuthModal,
     setShowAuthModal,
-  }), [showAuthModal, openAuthModal, closeAuthModal]);
+    setAuthModalMode,
+  }), [showAuthModal, authModalMode, openAuthModal, closeAuthModal]);
 
   return (
     <AuthModalContext.Provider value={value}>

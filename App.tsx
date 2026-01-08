@@ -1,11 +1,12 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { LazyMotion, domAnimation } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { View, VoiceProfile, ScriptTimingMap, CloningStatus, CreditInfo, VoiceMetadata } from './types';
 import { TEMPLATE_CATEGORIES, VOICE_PROFILES, ICONS, BACKGROUND_TRACKS, BackgroundTrack, AUDIO_TAG_CATEGORIES, KEYWORD_TAG_MAP, MUSIC_CATEGORY_CONFIG, TRACKS_BY_CATEGORY, getSuggestedTags, NATURE_SOUNDS, NatureSound } from './constants';
 import { useModals } from './src/contexts/ModalContext';
+import { useAuthModal, type AuthModalMode } from './src/contexts/modals/AuthModalContext';
 import { useAuth } from './src/contexts/AuthContext';
 import { useScript } from './src/contexts/ScriptContext';
 import { useLibrary } from './src/contexts/LibraryContext';
@@ -132,6 +133,12 @@ const App: React.FC = () => {
     showVoiceManager, setShowVoiceManager,
     closeAllModals,
   } = useModals();
+
+  // Auth modal mode context for controlling signin/signup/forgot mode
+  const { authModalMode, openAuthModal: openAuthModalWithMode } = useAuthModal();
+
+  // URL search params for auth redirects
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Use domain-specific contexts for shared state
   const {
@@ -344,6 +351,28 @@ const App: React.FC = () => {
       }
     };
   }, []);
+
+  // Handle auth redirects from email verification or password reset
+  useEffect(() => {
+    const authAction = searchParams.get('auth');
+    const message = searchParams.get('message');
+
+    if (authAction === 'signin') {
+      // Open auth modal in signin mode
+      setShowAuthModal(true);
+      openAuthModalWithMode('signin');
+
+      // Show success toast if there's a message
+      if (message) {
+        toast.success(decodeURIComponent(message));
+      }
+
+      // Clean up URL params
+      searchParams.delete('auth');
+      searchParams.delete('message');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams, setShowAuthModal, openAuthModalWithMode]);
 
   // Fetch meditation history when library opens
   useEffect(() => {
@@ -2554,6 +2583,7 @@ const App: React.FC = () => {
             <AuthModal
               isOpen={showAuthModal}
               onClose={() => setShowAuthModal(false)}
+              initialMode={authModalMode}
               onSuccess={() => {
                 setShowAuthModal(false);
                 checkUser();

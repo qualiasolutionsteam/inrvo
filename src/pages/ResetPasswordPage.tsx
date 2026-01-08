@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase, updatePassword } from '@/lib/supabase';
-import { CheckCircle, AlertCircle, KeyRound, Home } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase, updatePassword, signOut } from '@/lib/supabase';
+import { CheckCircle, AlertCircle, KeyRound, LogIn } from 'lucide-react';
 
 // Password strength calculation (same as AuthModal)
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
@@ -90,11 +91,17 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     if (pageState === 'success') {
       const timer = setTimeout(() => {
-        navigate('/');
+        const message = encodeURIComponent('Password updated successfully! Please sign in with your new password.');
+        navigate(`/?auth=signin&message=${message}`);
       }, 3000);
       return () => clearTimeout(timer);
     }
   }, [pageState, navigate]);
+
+  const handleSignIn = () => {
+    const message = encodeURIComponent('Password updated successfully! Please sign in with your new password.');
+    navigate(`/?auth=signin&message=${message}`);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,7 +121,10 @@ export default function ResetPasswordPage() {
 
     try {
       await updatePassword(password);
+      toast.success('Password updated successfully!');
       setPageState('success');
+      // Sign out so user needs to sign in with new password
+      await signOut();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to update password');
     } finally {
@@ -169,17 +179,18 @@ export default function ResetPasswordPage() {
               </div>
               <h2 className="text-xl font-semibold text-white mb-2">Password Updated!</h2>
               <p className="text-sm text-white/50 mb-6">
-                Your password has been successfully changed.
-                <br />
-                Redirecting you home...
+                Your password has been successfully changed. Please sign in with your new password to continue.
               </p>
               <button
-                onClick={() => navigate('/')}
+                onClick={handleSignIn}
                 className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium text-sm hover:from-cyan-400 hover:to-purple-500 active:scale-[0.98] transition-all shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2"
               >
-                <Home className="w-4 h-4" />
-                Continue to App
+                <LogIn className="w-4 h-4" />
+                Sign In
               </button>
+              <p className="mt-4 text-xs text-white/30">
+                Redirecting to sign in in 3 seconds...
+              </p>
             </div>
           )}
 

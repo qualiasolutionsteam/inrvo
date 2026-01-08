@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
-import { CheckCircle, AlertCircle, Home, Sparkles } from 'lucide-react';
+import { supabase, signOut } from '../../lib/supabase';
+import { CheckCircle, AlertCircle, LogIn } from 'lucide-react';
 
 type PageState = 'loading' | 'success' | 'error';
 
@@ -42,6 +42,10 @@ export default function EmailVerifiedPage() {
                           session.user.user_metadata?.full_name?.split(' ')[0] || '';
         setUserName(firstName);
         setPageState('success');
+
+        // Sign out the user so they can sign in fresh
+        // This ensures a clean auth state
+        await signOut();
       } catch (err) {
         setPageState('error');
         setError('Something went wrong. Please try signing up again.');
@@ -83,11 +87,17 @@ export default function EmailVerifiedPage() {
   useEffect(() => {
     if (pageState === 'success') {
       const timer = setTimeout(() => {
-        navigate('/');
-      }, 5000);
+        const message = encodeURIComponent('Account verified! Please sign in to continue.');
+        navigate(`/?auth=signin&message=${message}`);
+      }, 4000);
       return () => clearTimeout(timer);
     }
   }, [pageState, navigate]);
+
+  const handleSignIn = () => {
+    const message = encodeURIComponent('Account verified! Please sign in to continue.');
+    navigate(`/?auth=signin&message=${message}`);
+  };
 
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center text-center px-4 relative overflow-hidden">
@@ -135,44 +145,32 @@ export default function EmailVerifiedPage() {
                 <CheckCircle className="h-8 w-8 text-white" />
               </div>
               <h2 className="text-2xl font-semibold text-white mb-2">
-                {userName ? `Welcome, ${userName}!` : 'Email Verified!'}
+                Thank You{userName ? `, ${userName}` : ''}!
               </h2>
               <p className="text-sm text-white/50 mb-6">
-                Your account is now active. You're all set to start creating personalized meditations.
+                Your account has been created successfully. You're all set to start your meditation journey.
               </p>
 
-              {/* Feature highlights */}
+              {/* What's next */}
               <div className="mb-6 p-4 rounded-xl bg-white/5 border border-white/10 text-left">
                 <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="w-4 h-4 text-cyan-400" />
-                  <span className="text-sm font-medium text-white">What you can do now:</span>
+                  <span className="text-sm font-medium text-white">What's next?</span>
                 </div>
-                <ul className="space-y-2 text-sm text-white/60">
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                    Create AI-powered meditations
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
-                    Clone your voice for personalized audio
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    Save unlimited meditations to your library
-                  </li>
-                </ul>
+                <p className="text-sm text-white/60">
+                  Sign in to start creating personalized AI-powered meditations tailored just for you.
+                </p>
               </div>
 
               <button
-                onClick={() => navigate('/')}
+                onClick={handleSignIn}
                 className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium text-sm hover:from-cyan-400 hover:to-purple-500 active:scale-[0.98] transition-all shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2"
               >
-                <Home className="w-4 h-4" />
-                Start Creating
+                <LogIn className="w-4 h-4" />
+                Sign In to Continue
               </button>
 
               <p className="mt-4 text-xs text-white/30">
-                Redirecting automatically in 5 seconds...
+                Redirecting to sign in in 4 seconds...
               </p>
             </div>
           )}
