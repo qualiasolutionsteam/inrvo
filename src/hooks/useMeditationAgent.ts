@@ -166,8 +166,19 @@ export function useMeditationAgent(options: UseMeditationAgentOptions = {}): Use
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingMeditation, setIsGeneratingMeditation] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentMeditation, setCurrentMeditation] = useState<MeditationResult | null>(null);
+  const [currentMeditation, setCurrentMeditationState] = useState<MeditationResult | null>(null);
   const [greeting] = useState(() => getRandomGreeting());
+
+  // Wrapper to ensure meditation state updates trigger re-renders on all devices (mobile Safari fix)
+  const setCurrentMeditation = useCallback((meditation: MeditationResult | null) => {
+    if (meditation) {
+      // Add timestamp to ensure React detects this as a new object
+      setCurrentMeditationState({ ...meditation, _updatedAt: Date.now() } as MeditationResult);
+      if (DEBUG) console.log('[useMeditationAgent] setCurrentMeditation called with script length:', meditation.script?.length);
+    } else {
+      setCurrentMeditationState(null);
+    }
+  }, []);
 
   // Refs
   const agentRef = useRef<MeditationAgent | null>(null);

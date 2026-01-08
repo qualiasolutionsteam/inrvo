@@ -242,11 +242,19 @@ export const AgentChat: React.FC<AgentChatProps> = ({
   }, [resumeConversationId, hasMessages, onConversationResumed]);
 
   // Show meditation panel when meditation is ready
+  // Mobile Safari fix: Use explicit checks and logging to ensure panel opens
   useEffect(() => {
-    if (currentMeditation?.readyForReview && currentMeditation?.script) {
-      setShowMeditationPanel(true);
+    const hasScript = currentMeditation?.script && currentMeditation.script.length > 0;
+    const isReady = currentMeditation?.readyForReview === true;
+
+    if (hasScript && isReady) {
+      console.log('[AgentChat] Meditation ready, opening panel. Script length:', currentMeditation.script.length);
+      // Use setTimeout to ensure state update isn't batched away on mobile
+      setTimeout(() => {
+        setShowMeditationPanel(true);
+      }, 0);
     }
-  }, [currentMeditation]);
+  }, [currentMeditation?.readyForReview, currentMeditation?.script]);
 
   // Notify parent when meditation panel opens (for sidebar auto-close)
   useEffect(() => {
