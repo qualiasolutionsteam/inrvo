@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { m, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronUp, Star, Trash2, RotateCcw } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
+import { useLibrary } from '../contexts/LibraryContext';
 import { useModals } from '../contexts/ModalContext';
 import AppLayout from '../layouts/AppLayout';
 import GlassCard from '../../components/GlassCard';
@@ -281,14 +282,20 @@ MeditationAudioCard.displayName = 'MeditationAudioCard';
 
 const LibraryPage: React.FC = () => {
   const navigate = useNavigate();
+
+  // Get library data from LibraryContext (not AppContext)
   const {
-    user,
     meditationHistory,
     setMeditationHistory,
     isLoadingHistory,
     hasMoreHistory,
     loadMoreHistory,
     refreshHistory,
+  } = useLibrary();
+
+  // Get other app state from AppContext
+  const {
+    user,
     setScript,
     setEnhancedScript,
     setRestoredScript,
