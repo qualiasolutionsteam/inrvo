@@ -130,27 +130,67 @@ function calculateBackoffDelay(
  * Get the current session token for authenticated requests
  * Uses cached token to avoid database round-trip on every API call
  * Returns null for anonymous users (edge functions can handle anonymous requests)
+ *
+ * Mobile Safari fix: Uses multiple fallback methods to ensure token is retrieved
+ * even when ITP (Intelligent Tracking Prevention) affects localStorage
  */
 async function getAuthToken(): Promise<string | null> {
   if (!supabase) {
+    if (DEBUG) console.log('[edgeFunctions] No supabase client, returning null token');
     return null; // Allow anonymous access
   }
 
   // Use cached token if valid and not expired
   if (cachedAuthToken && Date.now() < tokenExpiresAt) {
+    if (DEBUG) console.log('[edgeFunctions] Using cached token');
     return cachedAuthToken;
   }
 
+  if (DEBUG) console.log('[edgeFunctions] Cache miss, fetching session...');
+
   // Try to get session (returns null if not authenticated)
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session }, error } = await supabase.auth.getSession();
+
+  if (error) {
+    if (DEBUG) console.log('[edgeFunctions] getSession error:', error.message);
+  }
 
   if (session?.access_token) {
     // Update cache
     cachedAuthToken = session.access_token;
     tokenExpiresAt = Date.now() + (55 * 60 * 1000);
+    if (DEBUG) console.log('[edgeFunctions] Got token from getSession');
     return session.access_token;
   }
 
+  // Mobile Safari fallback: Try getUser() which forces a server-side session check
+  // This helps when localStorage is cleared by ITP but the session cookie still exists
+  if (DEBUG) console.log('[edgeFunctions] No session, trying getUser fallback...');
+
+  try {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError) {
+      if (DEBUG) console.log('[edgeFunctions] getUser error:', userError.message);
+    }
+
+    if (user) {
+      // User exists - try refreshing the session
+      if (DEBUG) console.log('[edgeFunctions] User found, refreshing session...');
+      const { data: refreshData } = await supabase.auth.refreshSession();
+
+      if (refreshData?.session?.access_token) {
+        cachedAuthToken = refreshData.session.access_token;
+        tokenExpiresAt = Date.now() + (55 * 60 * 1000);
+        if (DEBUG) console.log('[edgeFunctions] Got token from refreshSession');
+        return refreshData.session.access_token;
+      }
+    }
+  } catch (e) {
+    if (DEBUG) console.log('[edgeFunctions] Fallback failed:', e);
+  }
+
+  if (DEBUG) console.log('[edgeFunctions] No token available, returning null (anonymous)');
   return null; // Anonymous user
 }
 
