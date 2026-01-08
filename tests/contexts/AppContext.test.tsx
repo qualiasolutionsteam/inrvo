@@ -33,6 +33,28 @@ vi.mock('../../lib/supabase', () => ({
   getAudioTagPreferences: () => mockGetAudioTagPreferences(),
 }));
 
+// Mock AuthContext - AppContext depends on useAuth
+// Create configurable mock that can be changed per-test
+let mockAuthUser: any = null;
+let mockIsAuthenticated = false;
+
+vi.mock('../../src/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: mockAuthUser,
+    isSessionReady: true,
+    savedVoices: [],
+    setSavedVoices: vi.fn(),
+    currentClonedVoice: null,
+    setCurrentClonedVoice: vi.fn(),
+    loadUserVoices: vi.fn(),
+    isLoadingVoices: false,
+    isLoading: false,
+    isAuthenticated: mockIsAuthenticated,
+    checkUser: vi.fn(),
+  }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 // Mock constants
 vi.mock('../../constants', () => ({
   VOICE_PROFILES: [
@@ -82,6 +104,10 @@ function createWrapper() {
 describe('AppContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Reset auth mock state
+    mockAuthUser = null;
+    mockIsAuthenticated = false;
 
     // Default mock implementations
     mockGetCurrentUser.mockResolvedValue(null);
@@ -142,11 +168,12 @@ describe('AppContext', () => {
       });
 
       expect(result.current.cloningStatus).toEqual({ state: 'idle' });
+      // Credits are disabled, so unlimited access is the default
       expect(result.current.creditInfo).toEqual({
-        canClone: false,
-        creditsRemaining: 0,
-        clonesRemaining: 0,
-        cloneCost: 5000,
+        canClone: true,
+        creditsRemaining: 999999999,
+        clonesRemaining: 999999,
+        cloneCost: 0,
       });
     });
 
@@ -244,19 +271,8 @@ describe('AppContext', () => {
   });
 
   describe('state setters', () => {
-    it('should update user state', () => {
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      const mockUser = { id: 'user-123', email: 'test@test.com' } as any;
-
-      act(() => {
-        result.current.setUser(mockUser);
-      });
-
-      expect(result.current.user).toEqual(mockUser);
-    });
+    // Note: setUser is now in AuthContext, not AppContext
+    // user state comes from useAuth hook
 
     it('should update selectedVoice state', () => {
       const { result } = renderHook(() => useApp(), {
@@ -415,67 +431,9 @@ describe('AppContext', () => {
     });
   });
 
-  describe('checkUser', () => {
-    it('should set user when authenticated', async () => {
-      const mockUser = { id: 'user-123', email: 'test@test.com' };
-      mockGetCurrentUser.mockResolvedValue(mockUser);
-      mockGetUserVoiceProfiles.mockResolvedValue([]);
-
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      await act(async () => {
-        await result.current.checkUser();
-      });
-
-      expect(result.current.user).toEqual(mockUser);
-    });
-
-    it('should set user to null when not authenticated', async () => {
-      mockGetCurrentUser.mockResolvedValue(null);
-
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      await act(async () => {
-        await result.current.checkUser();
-      });
-
-      expect(result.current.user).toBeNull();
-    });
-
-    it('should load user voices when authenticated', async () => {
-      const mockUser = { id: 'user-123', email: 'test@test.com' };
-      mockGetCurrentUser.mockResolvedValue(mockUser);
-      mockGetUserVoiceProfiles.mockResolvedValue([
-        {
-          id: 'cloned-1',
-          name: 'My Voice',
-          fish_audio_model_id: 'fish-123',
-          description: 'Custom voice',
-        },
-      ]);
-
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      await act(async () => {
-        await result.current.checkUser();
-      });
-
-      await waitFor(() => {
-        // Should have at least the cloned voice loaded
-        expect(result.current.availableVoices.length).toBeGreaterThanOrEqual(1);
-      });
-
-      const clonedVoice = result.current.availableVoices.find(v => v.id === 'cloned-1');
-      expect(clonedVoice).toBeDefined();
-      expect(clonedVoice?.isCloned).toBe(true);
-    });
-  });
+  // Note: checkUser is now in AuthContext, not AppContext
+  // User authentication state is managed by useAuth hook
+  // AppContext gets user from useAuth mock
 
   describe('loadUserVoices', () => {
     it('should merge cloned voices with preset voices', async () => {
@@ -565,6 +523,10 @@ describe('AppContext', () => {
     });
 
     it('should load history when user is authenticated', async () => {
+      // Set user via mock before rendering
+      mockAuthUser = { id: 'user-123', email: 'test@test.com' };
+      mockIsAuthenticated = true;
+
       mockGetMeditationHistoryPaginated.mockResolvedValue({
         data: [
           { id: 'med-1', title: 'Meditation 1', created_at: new Date().toISOString() },
@@ -577,11 +539,6 @@ describe('AppContext', () => {
         wrapper: createWrapper(),
       });
 
-      // Set user first
-      act(() => {
-        result.current.setUser({ id: 'user-123' } as any);
-      });
-
       await act(async () => {
         await result.current.refreshHistory();
       });
@@ -592,15 +549,15 @@ describe('AppContext', () => {
     });
 
     it('should handle error when loading history', async () => {
+      // Set user via mock before rendering
+      mockAuthUser = { id: 'user-123', email: 'test@test.com' };
+      mockIsAuthenticated = true;
+
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockGetMeditationHistoryPaginated.mockRejectedValue(new Error('Failed to load'));
 
       const { result } = renderHook(() => useApp(), {
         wrapper: createWrapper(),
-      });
-
-      act(() => {
-        result.current.setUser({ id: 'user-123' } as any);
       });
 
       await act(async () => {
@@ -636,6 +593,10 @@ describe('AppContext', () => {
     });
 
     it('should append history when loading more', async () => {
+      // Set user via mock before rendering
+      mockAuthUser = { id: 'user-123', email: 'test@test.com' };
+      mockIsAuthenticated = true;
+
       // First page
       mockGetMeditationHistoryPaginated.mockResolvedValueOnce({
         data: [{ id: 'med-1', title: 'Meditation 1' }],
@@ -649,11 +610,6 @@ describe('AppContext', () => {
 
       const { result } = renderHook(() => useApp(), {
         wrapper: createWrapper(),
-      });
-
-      // Set user and load initial history
-      act(() => {
-        result.current.setUser({ id: 'user-123' } as any);
       });
 
       await act(async () => {
@@ -673,25 +629,8 @@ describe('AppContext', () => {
     });
   });
 
-  describe('auth listener', () => {
-    it('should set up auth listener on mount', () => {
-      renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(mockOnAuthStateChange).toHaveBeenCalled();
-    });
-
-    it('should clean up auth listener on unmount', () => {
-      const { unmount } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      unmount();
-
-      expect(mockUnsubscribe).toHaveBeenCalled();
-    });
-  });
+  // Note: Auth listener tests removed - auth state is now managed by AuthContext
+  // AppContext consumes user state from useAuth hook, not its own listener
 
   describe('background track selection', () => {
     it('should update selected background track', () => {

@@ -1,74 +1,17 @@
 /**
  * Conversation Store for INrVO Meditation Agent
  *
- * Manages conversation history with:
- * - Local session storage for current conversation
- * - Supabase persistence for conversation history
- * - Context window management for token limits
- * - Quota protection for localStorage limits
+ * Manages conversation history using Supabase for persistence.
+ * Replaces LocalStorage with database-first approach for cross-device sync.
+ *
+ * Architecture:
+ * - In-memory state for immediate UI updates (Optimistic UI)
+ * - Async debounced saves to Supabase for persistence
+ * - Syncs across sessions via DB loading
  */
 
 import { supabase, getCurrentUser, withRetry } from '../../../lib/supabase';
 import type { ConversationMessage, UserPreferences, SessionState } from './MeditationAgent';
-
-// ============================================================================
-// LOCALSTORAGE QUOTA HELPERS
-// ============================================================================
-
-/**
- * Safely set localStorage item with quota protection
- * Returns true if successful, false if quota exceeded
- */
-function safeLocalStorageSet(key: string, value: string): boolean {
-  try {
-    localStorage.setItem(key, value);
-    return true;
-  } catch (error) {
-    if (error instanceof DOMException &&
-      (error.code === 22 || // QuotaExceededError
-        error.code === 1014 || // Firefox NS_ERROR_DOM_QUOTA_REACHED
-        error.name === 'QuotaExceededError' ||
-        error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
-      console.warn('localStorage quota exceeded, attempting cleanup...');
-      return false;
-    }
-    console.error('Error setting localStorage:', error);
-    return false;
-  }
-}
-
-/**
- * Get approximate localStorage usage in bytes
- */
-function getLocalStorageUsage(): number {
-  let total = 0;
-  for (const key in localStorage) {
-    if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
-      total += (localStorage[key].length + key.length) * 2; // UTF-16
-    }
-  }
-  return total;
-}
-
-/**
- * Prune old conversation history to free up space
- */
-function pruneConversationHistory(maxItems: number = 5): void {
-  try {
-    const historyKey = 'inrvo_conversation_history';
-    const stored = localStorage.getItem(historyKey);
-    if (stored) {
-      const history = JSON.parse(stored);
-      if (Array.isArray(history) && history.length > maxItems) {
-        const pruned = history.slice(-maxItems);
-        localStorage.setItem(historyKey, JSON.stringify(pruned));
-        console.info(`Pruned conversation history from ${history.length} to ${pruned.length} items`);
-      }
-    }
-  } catch (error) {
-    console.error('Error pruning conversation history:', error);
-  }
-}
 
 // ============================================================================
 // TYPES
@@ -95,98 +38,52 @@ export interface ConversationSummary {
 }
 
 // ============================================================================
-// LOCAL STORAGE KEYS
-// ============================================================================
-
-const STORAGE_KEYS = {
-  CURRENT_CONVERSATION: 'inrvo_current_conversation',
-  USER_PREFERENCES: 'inrvo_user_preferences',
-  CONVERSATION_HISTORY: 'inrvo_conversation_history',
-};
-
-// ============================================================================
 // CONVERSATION STORE CLASS
 // ============================================================================
 
 export class ConversationStore {
   private currentConversation: StoredConversation | null = null;
   private maxMessagesInContext = 20; // Keep last 20 messages for context
+  private saveDebounceTimer: any = null;
+  private readonly DEBOUNCE_MS = 2000; // Save to DB after 2s of inactivity
 
   constructor() {
-    this.loadFromLocalStorage();
+    // No synchronous loading from LS anymore.
+    // Consumers must call loadCurrentConversation() or startNewConversation()
   }
 
   /**
-   * Load current conversation from local storage
+   * Save current conversation to Supabase with debouncing
+   * This prevents DB spam on every keystroke/token
    */
-  private loadFromLocalStorage(): void {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEYS.CURRENT_CONVERSATION);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        this.currentConversation = {
-          ...parsed,
-          createdAt: new Date(parsed.createdAt),
-          updatedAt: new Date(parsed.updatedAt),
-          messages: parsed.messages.map((m: any) => ({
-            ...m,
-            timestamp: new Date(m.timestamp),
-          })),
-        };
-      }
-    } catch (error) {
-      console.error('Error loading conversation from local storage:', error);
-    }
-  }
-
-  /**
-   * Save current conversation to local storage with quota protection
-   */
-  private saveToLocalStorage(): void {
+  private scheduleSave(): void {
     if (!this.currentConversation) return;
 
-    const data = JSON.stringify(this.currentConversation);
-
-    // First attempt
-    if (safeLocalStorageSet(STORAGE_KEYS.CURRENT_CONVERSATION, data)) {
-      return;
+    if (this.saveDebounceTimer) {
+      clearTimeout(this.saveDebounceTimer);
     }
 
-    // Quota exceeded - try pruning history and retry
-    pruneConversationHistory(3);
+    // Clone data to avoid race conditions with updates during wait
+    const conversationToSave = { ...this.currentConversation };
 
-    if (safeLocalStorageSet(STORAGE_KEYS.CURRENT_CONVERSATION, data)) {
-      return;
-    }
-
-    // Still failing - trim messages in current conversation
-    if (this.currentConversation.messages.length > 10) {
-      const trimmedConversation = {
-        ...this.currentConversation,
-        messages: this.currentConversation.messages.slice(-10),
-      };
-      const trimmedData = JSON.stringify(trimmedConversation);
-
-      if (safeLocalStorageSet(STORAGE_KEYS.CURRENT_CONVERSATION, trimmedData)) {
-        console.warn('Saved trimmed conversation (last 10 messages) due to quota limits');
-        return;
-      }
-    }
-
-    // Last resort - log usage for debugging
-    console.error(
-      'Failed to save conversation to localStorage. Usage:',
-      Math.round(getLocalStorageUsage() / 1024) + 'KB'
-    );
+    this.saveDebounceTimer = setTimeout(() => {
+      this.saveConversationToDatabase(conversationToSave).catch(err => {
+        console.warn('Background save failed:', err);
+      });
+    }, this.DEBOUNCE_MS);
   }
 
   /**
    * Start a new conversation
+   * Creates a new conversation in memory and immediately syncs to DB (without debounce)
    */
   async startNewConversation(): Promise<StoredConversation> {
-    // Save previous conversation if exists
-    if (this.currentConversation && this.currentConversation.messages.length > 0) {
-      await this.saveConversationToDatabase(this.currentConversation);
+    // Save previous conversation immediately if exists (flush)
+    if (this.saveDebounceTimer) {
+      clearTimeout(this.saveDebounceTimer);
+      if (this.currentConversation) {
+        await this.saveConversationToDatabase(this.currentConversation);
+      }
     }
 
     const user = await getCurrentUser();
@@ -196,7 +93,7 @@ export class ConversationStore {
       id: `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       userId: user?.id || 'anonymous',
       messages: [],
-      preferences: this.loadPreferences(),
+      preferences: await this.loadPreferences(), // Load prefs from DB/memory
       sessionState: {
         conversationStarted: now,
         messageCount: 0,
@@ -205,12 +102,13 @@ export class ConversationStore {
       updatedAt: now,
     };
 
-    this.saveToLocalStorage();
+    // Initial save to establish row in DB
+    await this.saveConversationToDatabase(this.currentConversation);
     return this.currentConversation;
   }
 
   /**
-   * Get current conversation
+   * Get current conversation (Sync access to memory)
    */
   getCurrentConversation(): StoredConversation | null {
     return this.currentConversation;
@@ -218,19 +116,18 @@ export class ConversationStore {
 
   /**
    * Add a message to the current conversation
+   * Updates memory immediately, schedules DB save
    */
   addMessage(message: ConversationMessage): void {
     if (!this.currentConversation) {
-      // Start a new conversation if none exists
+      // Must start conversation first. But for safety, init one temporarily.
+      console.warn('[ConversationStore] addMessage called without active conversation. Starting new one (sync fallback).');
       this.currentConversation = {
         id: `conv_${Date.now()}`,
         userId: 'anonymous',
         messages: [],
         preferences: {},
-        sessionState: {
-          conversationStarted: new Date(),
-          messageCount: 0,
-        },
+        sessionState: { conversationStarted: new Date(), messageCount: 0 },
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -248,7 +145,7 @@ export class ConversationStore {
       this.currentConversation.sessionState.selectedMeditation = message.metadata.suggestedMeditation;
     }
 
-    this.saveToLocalStorage();
+    this.scheduleSave();
   }
 
   /**
@@ -266,34 +163,34 @@ export class ConversationStore {
   }
 
   /**
-   * Update user preferences with quota protection
+   * Update user preferences
    */
-  updatePreferences(preferences: Partial<UserPreferences>): void {
-    const currentPrefs = this.loadPreferences();
+  async updatePreferences(preferences: Partial<UserPreferences>): Promise<void> {
+    const currentPrefs = await this.loadPreferences();
     const updatedPrefs = { ...currentPrefs, ...preferences };
 
-    if (!safeLocalStorageSet(STORAGE_KEYS.USER_PREFERENCES, JSON.stringify(updatedPrefs))) {
-      console.warn('Failed to save preferences to localStorage due to quota limits');
-    }
+    // We still save prefs to DB? Or just keep in conversation?
+    // The original code saved to LocalStorage 'inrvo_user_preferences'.
+    // We should probably save these to 'user_profiles' table or just keep in conversation scope.
+    // For now, attaching to conversation is the pattern here.
 
     if (this.currentConversation) {
       this.currentConversation.preferences = updatedPrefs;
-      this.saveToLocalStorage();
+      this.scheduleSave();
     }
   }
 
   /**
-   * Load user preferences from local storage
+   * Load user preferences
+   * Now fetches from latest conversation or defaults
    */
-  loadPreferences(): UserPreferences {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEYS.USER_PREFERENCES);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (error) {
-      console.error('Error loading preferences:', error);
+  async loadPreferences(): Promise<UserPreferences> {
+    if (this.currentConversation?.preferences) {
+      return this.currentConversation.preferences;
     }
+
+    // If starting fresh, maybe try to fetch last conversation's prefs?
+    // For now return empty to keep it simple and stateless
     return {};
   }
 
@@ -304,8 +201,8 @@ export class ConversationStore {
     if (!supabase) return false;
 
     try {
-      const user = await getCurrentUser();
-      if (!user) return false;
+      // If anonymous, don't save to DB (or save with null user if schema allows, but usually we require user)
+      if (conversation.userId === 'anonymous') return false;
 
       // Create a summary of the conversation
       const summary = this.generateConversationSummary(conversation);
@@ -315,7 +212,7 @@ export class ConversationStore {
           .from('agent_conversations')
           .upsert({
             id: conversation.id,
-            user_id: user.id,
+            user_id: conversation.userId,
             messages: conversation.messages,
             preferences: conversation.preferences,
             session_state: conversation.sessionState,
@@ -336,49 +233,42 @@ export class ConversationStore {
 
   /**
    * Load conversation history from Supabase
-   * @param limit - Number of conversations to load
-   * @param userId - Optional user ID to use directly (avoids re-fetching auth)
    */
   async loadConversationHistory(limit: number = 10, userId?: string): Promise<ConversationSummary[]> {
-    console.log('[conversationStore] loadConversationHistory called, limit:', limit, 'userId:', userId, 'supabase:', !!supabase);
-    if (!supabase) {
-      console.log('[conversationStore] No supabase, returning empty');
-      return [];
-    }
+    if (!supabase) return [];
 
     try {
-      // Use provided userId or fallback to getCurrentUser
       let resolvedUserId = userId;
       if (!resolvedUserId) {
-        console.log('[conversationStore] No userId provided, getting current user...');
         const user = await getCurrentUser();
-        console.log('[conversationStore] Got user:', user?.id);
         resolvedUserId = user?.id;
       }
 
-      if (!resolvedUserId) {
-        console.log('[conversationStore] No user, returning empty');
-        return [];
-      }
+      if (!resolvedUserId) return [];
 
-      console.log('[conversationStore] Making Supabase query for user:', resolvedUserId);
-
-      // Use withRetry for robust loading with timeout and retries
+      console.log('[conversationStore] Executing query for user:', resolvedUserId);
+      const startTime = Date.now();
       const data = await withRetry(async () => {
-        const { data, error } = await supabase!
+        console.log('[conversationStore] withRetry attempt started...');
+        const query = supabase!
           .from('agent_conversations')
           .select('id, summary, messages, session_state, created_at')
           .eq('user_id', resolvedUserId)
-          .order('created_at', { ascending: false })
+          .order('updated_at', { ascending: false }) // Use updated_at for history sorting
           .limit(limit);
 
-        if (error) throw error;
+        const { data, error } = await query;
+        console.log('[conversationStore] Query returned in', Date.now() - startTime, 'ms');
+
+        if (error) {
+          console.error('[conversationStore] Query error:', error);
+          throw error;
+        }
         return data;
       });
+      console.log('[conversationStore] withRetry finished, data length:', data?.length);
 
-      console.log('[conversationStore] Query complete, data length:', data?.length);
-
-      const result = (data || []).map(item => ({
+      return (data || []).map(item => ({
         id: item.id,
         preview: item.summary || this.extractPreview(item.messages),
         messageCount: item.messages?.length || 0,
@@ -386,8 +276,6 @@ export class ConversationStore {
         mood: item.session_state?.currentMood,
         hasScript: !!item.session_state?.lastMeditationScript,
       }));
-      console.log('[conversationStore] Returning', result.length, 'conversations');
-      return result;
     } catch (error) {
       console.error('[conversationStore] Error loading conversation history:', error);
       return [];
@@ -434,8 +322,6 @@ export class ConversationStore {
 
       // Set as current conversation
       this.currentConversation = conversation;
-      this.saveToLocalStorage();
-
       return conversation;
     } catch (error) {
       console.error('Error loading conversation:', error);
@@ -463,10 +349,9 @@ export class ConversationStore {
         if (error) throw error;
       });
 
-      // Clear from local storage if it's the current conversation
+      // Clear from memory if it's the current conversation
       if (this.currentConversation?.id === conversationId) {
         this.currentConversation = null;
-        localStorage.removeItem(STORAGE_KEYS.CURRENT_CONVERSATION);
       }
 
       return true;
@@ -504,7 +389,7 @@ export class ConversationStore {
   private extractPreview(messages: any[]): string {
     if (!messages || messages.length === 0) return 'Empty conversation';
 
-    const firstUserMessage = messages.find(m => m.role === 'user');
+    const firstUserMessage = messages.find((m: any) => m.role === 'user');
     if (firstUserMessage) {
       return firstUserMessage.content.slice(0, 80) + '...';
     }
@@ -516,8 +401,10 @@ export class ConversationStore {
    * Clear current conversation
    */
   clearCurrentConversation(): void {
+    if (this.saveDebounceTimer) {
+      clearTimeout(this.saveDebounceTimer);
+    }
     this.currentConversation = null;
-    localStorage.removeItem(STORAGE_KEYS.CURRENT_CONVERSATION);
   }
 
   /**

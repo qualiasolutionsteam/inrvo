@@ -316,8 +316,8 @@ serve(async (req) => {
 
     // For anonymous users, use IP address for rate limiting (with lower limits)
     const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-                     req.headers.get('x-real-ip') ||
-                     'unknown';
+      req.headers.get('x-real-ip') ||
+      'unknown';
 
     // Rate limit key: use userId if authenticated, otherwise IP address
     const rateLimitKey = userId || `anon:${clientIP}`;
@@ -493,7 +493,7 @@ serve(async (req) => {
                 'X-Title': 'INrVO Meditation App',
               },
               body: JSON.stringify({
-                model: 'google/gemini-3-flash-preview',
+                model: Deno.env.get('GEMINI_MODEL') || 'google/gemini-2.0-flash-001',
                 messages: [{ role: 'user', content: prompt }],
                 temperature,
                 max_tokens: maxOutputTokens,

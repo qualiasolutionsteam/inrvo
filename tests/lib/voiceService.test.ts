@@ -273,7 +273,8 @@ describe('Text Processing (via generateSpeech)', () => {
     await voiceService.generateSpeech('[deep breath] Relax.', voice);
 
     const callArg = vi.mocked(generateSpeech).mock.calls[0][1];
-    expect(callArg).toContain('take a deep breath');
+    // V3 format: '[sighs] Take a deep breath... [sighs]' (with capital T)
+    expect(callArg.toLowerCase()).toContain('take a deep breath');
     expect(callArg).not.toContain('[deep breath]');
   });
 

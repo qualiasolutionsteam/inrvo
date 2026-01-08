@@ -79,9 +79,13 @@ export async function withRetry<T>(
   for (let attempt = 0; attempt <= opts.maxRetries; attempt++) {
     try {
       // Create a timeout promise (default 30s for slow connections)
-      const timeoutMs = 30000;
+      const timeoutMs = options?.maxDelayMs || 30000;
+      const startTime = Date.now();
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Operation timed out')), timeoutMs);
+        setTimeout(() => {
+          const elapsed = Date.now() - startTime;
+          reject(new Error(`Operation timed out after ${elapsed}ms`));
+        }, timeoutMs);
       });
 
       return await Promise.race([operation(), timeoutPromise]);
@@ -360,7 +364,7 @@ export const getCurrentUser = async () => {
   if (!supabase) return null;
 
   try {
-    // Try getSession first (fast, cached from localStorage)
+    // Try getSession first (fast, cached by Supabase client)
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
       return session.user;
@@ -442,6 +446,80 @@ export const markOnboardingCompleted = async (userId?: string): Promise<void> =>
 
   if (error) {
     console.error('Error marking onboarding completed:', error);
+  } else {
+    // Clear local storage if it was used as a bridge
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('inrvo_onboarding');
+      const user = await getCurrentUser();
+      if (user) localStorage.removeItem(`inrvo_onboarding_${user.id}`);
+    }
+  }
+};
+
+/**
+ * Update the user's current onboarding step
+ */
+export const updateOnboardingStep = async (step: number, userId?: string): Promise<void> => {
+  if (!supabase) return;
+
+  const targetUserId = userId || (await getCurrentUser())?.id;
+  if (!targetUserId) return;
+
+  const { error } = await supabase
+    .from('users')
+    .update({
+      current_onboarding_step: step,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', targetUserId);
+
+  if (error) {
+    console.error('Error updating onboarding step:', error);
+  }
+};
+
+/**
+ * Get user preferences from database
+ */
+export const getUserPreferences = async (userId?: string): Promise<any> => {
+  if (!supabase) return {};
+
+  const targetUserId = userId || (await getCurrentUser())?.id;
+  if (!targetUserId) return {};
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('preferences')
+    .eq('id', targetUserId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching user preferences:', error);
+    return {};
+  }
+
+  return data?.preferences || {};
+};
+
+/**
+ * Update user preferences in database
+ */
+export const updateUserPreferences = async (preferences: any, userId?: string): Promise<void> => {
+  if (!supabase) return;
+
+  const targetUserId = userId || (await getCurrentUser())?.id;
+  if (!targetUserId) return;
+
+  const { error } = await supabase
+    .from('users')
+    .update({
+      preferences,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', targetUserId);
+
+  if (error) {
+    console.error('Error updating user preferences:', error);
   }
 };
 

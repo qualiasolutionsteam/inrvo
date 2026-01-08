@@ -188,31 +188,43 @@ export function useMeditationAgent(options: UseMeditationAgentOptions = {}): Use
 
   // Initialize agent on mount
   useEffect(() => {
-    // Create the Gemini content generator function for conversational chat
-    // This uses geminiService.chat() with the SYSTEM_PROMPT passed separately
-    // to Gemini's systemInstruction parameter (NOT embedded in content)
-    // This ensures Gemini FOLLOWS the instructions rather than summarizing them
-    const generateContent = async (prompt: string): Promise<string> => {
+    let mounted = true;
+
+    const initAgent = async () => {
+      // Create the Gemini content generator function for conversational chat
+      const generateContent = async (prompt: string): Promise<string> => {
+        try {
+          // Pass SYSTEM_PROMPT separately so Gemini treats it as instructions
+          const response = await geminiService.chat(prompt, { systemPrompt: SYSTEM_PROMPT });
+          return response;
+        } catch (error) {
+          console.error('Error generating content:', error);
+          throw error;
+        }
+      };
+
       try {
-        // Pass SYSTEM_PROMPT separately so Gemini treats it as instructions
-        const response = await geminiService.chat(prompt, { systemPrompt: SYSTEM_PROMPT });
-        return response;
+        // Initialize agent with stored preferences (now async)
+        const preferences = await conversationStore.loadPreferences();
+
+        if (mounted) {
+          agentRef.current = new MeditationAgent(generateContent, preferences);
+
+          // Start fresh conversation on initial mount (now async)
+          // Ensure DB row is created before we accept messages
+          await conversationStore.startNewConversation();
+          setMessages([]);
+        }
       } catch (error) {
-        console.error('Error generating content:', error);
-        throw error;
+        console.error('Error initializing agent:', error);
       }
     };
 
-    // Initialize agent with stored preferences
-    const preferences = conversationStore.loadPreferences();
-    agentRef.current = new MeditationAgent(generateContent, preferences);
-
-    // Start fresh conversation on initial mount
-    conversationStore.startNewConversation();
-    setMessages([]);
+    initAgent();
 
     // Cleanup
     return () => {
+      mounted = false;
       if (audioContextRef.current) {
         audioContextRef.current.close();
       }
@@ -300,10 +312,10 @@ export function useMeditationAgent(options: UseMeditationAgentOptions = {}): Use
           setMessages(prev => prev.map(msg =>
             msg.id === loadingId
               ? {
-                  ...msg,
-                  content: response.message,
-                  isLoading: false,
-                }
+                ...msg,
+                content: response.message,
+                isLoading: false,
+              }
               : msg
           ));
 
@@ -326,10 +338,10 @@ export function useMeditationAgent(options: UseMeditationAgentOptions = {}): Use
           setMessages(prev => prev.map(msg =>
             msg.id === loadingId
               ? {
-                  ...msg,
-                  content: creationMessage,
-                  isLoading: false,
-                }
+                ...msg,
+                content: creationMessage,
+                isLoading: false,
+              }
               : msg
           ));
 
@@ -346,12 +358,12 @@ export function useMeditationAgent(options: UseMeditationAgentOptions = {}): Use
         setMessages(prev => prev.map(msg =>
           msg.id === loadingId
             ? {
-                ...msg,
-                content: response.message,
-                isLoading: false,
-                actions: response.suggestedActions,
-                quote: response.quote,
-              }
+              ...msg,
+              content: response.message,
+              isLoading: false,
+              actions: response.suggestedActions,
+              quote: response.quote,
+            }
             : msg
         ));
       }
@@ -365,11 +377,11 @@ export function useMeditationAgent(options: UseMeditationAgentOptions = {}): Use
       setMessages(prev => prev.map(msg =>
         msg.id === loadingId
           ? {
-              ...msg,
-              content: "I apologize, but I'm having trouble responding right now. Please try again.",
-              isLoading: false,
-              error: errorMessage,
-            }
+            ...msg,
+            content: "I apologize, but I'm having trouble responding right now. Please try again.",
+            isLoading: false,
+            error: errorMessage,
+          }
           : msg
       ));
     } finally {

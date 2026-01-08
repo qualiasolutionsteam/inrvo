@@ -17,6 +17,7 @@ const AdminPage = lazy(() => import('./pages/AdminPage'));
 const MarketingPage = lazy(() => import('./pages/marketing/MarketingPage'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
 const EmailVerifiedPage = lazy(() => import('./pages/EmailVerifiedPage'));
+const ErrorPage = lazy(() => import('./pages/ErrorPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // ============================================================================
@@ -165,6 +166,10 @@ export const router = createBrowserRouter([
       {
         path: 'auth/verified',
         element: <EmailVerifiedPage />,
+      },
+      {
+        path: 'error',
+        element: <ErrorPage />,
       },
       {
         path: '*',

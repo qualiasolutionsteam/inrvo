@@ -50,11 +50,7 @@ export function ChatHistoryProvider({ children }: ChatHistoryProviderProps) {
 
     console.log('[ChatHistory] refreshChatHistory called, user:', user?.id, 'sessionReady:', isSessionReady);
 
-    if (!user) {
-      console.log('[ChatHistory] No user, clearing history');
-      setChatHistory([]);
-      return;
-    }
+    if (!user || !isSessionReady || isLoadingRef.current) return;
 
     // Force refresh if we are re-calling
     isLoadingRef.current = true;

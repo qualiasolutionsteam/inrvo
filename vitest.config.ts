@@ -21,6 +21,13 @@ export default defineConfig({
         '**/constants.tsx',
       ],
       thresholds: {
+        // Global coverage thresholds - baseline for overall quality
+        global: {
+          statements: 50,
+          branches: 40,
+          functions: 50,
+          lines: 50,
+        },
         // Critical paths must have high coverage
         'src/lib/credits.ts': {
           statements: 90,

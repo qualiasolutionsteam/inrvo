@@ -15,6 +15,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { checkIsAdmin } from '../../lib/adminSupabase';
 import type { MarketingTab } from '../../types/marketing';
 
 // View imports
@@ -32,12 +33,55 @@ const MarketingPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isCheckingAdmin, setIsCheckingAdmin] = useState(true);
 
-  // Check auth on mount
+  // Check admin access on mount
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/', { replace: true });
-    }
+    if (authLoading) return;
+
+    let isMounted = true;
+
+    const verifyAdmin = async () => {
+      if (!user) {
+        navigate('/', { replace: true });
+        return;
+      }
+
+      try {
+        const adminStatus = await Promise.race([
+          checkIsAdmin(user.id),
+          new Promise<boolean>((_, reject) =>
+            setTimeout(() => reject(new Error('Admin check timed out')), 10000)
+          ),
+        ]);
+
+        if (!isMounted) return;
+
+        if (!adminStatus) {
+          console.warn('[MarketingPage] Access denied: User is not an admin');
+          navigate('/', { replace: true });
+          return;
+        }
+
+        setIsAdmin(true);
+      } catch (err) {
+        console.error('[MarketingPage] Admin check failed:', err);
+        if (isMounted) {
+          setError('Failed to verify admin access. Please refresh the page.');
+        }
+      } finally {
+        if (isMounted) {
+          setIsCheckingAdmin(false);
+        }
+      }
+    };
+
+    verifyAdmin();
+
+    return () => {
+      isMounted = false;
+    };
   }, [user, authLoading, navigate]);
 
   // Refresh current tab data by forcing remount
@@ -48,7 +92,7 @@ const MarketingPage: React.FC = () => {
     setTimeout(() => setIsRefreshing(false), 500);
   }, []);
 
-  if (authLoading) {
+  if (authLoading || isCheckingAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-cyan-50 flex items-center justify-center">
         <motion.div
@@ -60,12 +104,13 @@ const MarketingPage: React.FC = () => {
             <Sparkles className="w-8 h-8 text-white animate-pulse" />
           </div>
           <div className="animate-spin rounded-full h-6 w-6 border-2 border-violet-500 border-t-transparent" />
+          <p className="text-sm text-slate-500">Verifying access...</p>
         </motion.div>
       </div>
     );
   }
 
-  if (!user) {
+  if (!user || !isAdmin) {
     return null;
   }
 

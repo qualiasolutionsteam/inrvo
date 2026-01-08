@@ -8,7 +8,7 @@ This document describes how to set up production monitoring for INrVO.
 
 1. **Create account** at https://betterstack.com/uptime
 2. **Add monitor** for the health endpoint:
-   - URL: `https://jcvfnkuppbvkbzltkioa.supabase.co/functions/v1/health`
+   - URL: `https://ygweconeysctxpjjnehy.supabase.co/functions/v1/health`
    - Method: GET
    - Check interval: 1 minute
    - Alert after: 2 consecutive failures
@@ -28,7 +28,7 @@ This document describes how to set up production monitoring for INrVO.
 
 1. **Create check** at https://www.pingdom.com
 2. **Add HTTP check**:
-   - URL: `https://jcvfnkuppbvkbzltkioa.supabase.co/functions/v1/health`
+   - URL: `https://ygweconeysctxpjjnehy.supabase.co/functions/v1/health`
    - Check interval: 1 minute
    - Alerting: Immediate
 
@@ -177,3 +177,78 @@ Access via Supabase Dashboard:
 - [ ] Set up email/Slack notifications
 - [ ] Test alerts by triggering intentional error
 - [ ] Create status page (optional - BetterStack provides this)
+
+---
+
+## 6. Supabase pg_cron Setup (Data Retention)
+
+Enable automated data retention cleanup by configuring pg_cron in Supabase:
+
+1. Go to **Supabase Dashboard** → **Database** → **Extensions**
+2. Enable the `pg_cron` extension
+3. Run the following SQL in the SQL Editor:
+
+```sql
+-- Clean up soft-deleted records (daily at 3 AM UTC)
+SELECT cron.schedule(
+  'cleanup-soft-deleted',
+  '0 3 * * *',
+  $$SELECT cleanup_soft_deleted_records()$$
+);
+
+-- Clean up old conversations (weekly on Sunday at 4 AM UTC)
+SELECT cron.schedule(
+  'cleanup-old-conversations',
+  '0 4 * * 0',
+  $$SELECT cleanup_old_conversations(365)$$
+);
+
+-- Clean up old audit logs (weekly on Sunday at 3 AM UTC)
+SELECT cron.schedule(
+  'cleanup-old-audit-logs',
+  '0 3 * * 0',
+  $$DELETE FROM audit_log WHERE created_at < NOW() - INTERVAL '2 years'$$
+);
+
+-- Clean up expired TTS cache (daily at 2 AM UTC)
+SELECT cron.schedule(
+  'cleanup-tts-cache',
+  '0 2 * * *',
+  $$DELETE FROM tts_response_cache WHERE expires_at < NOW()$$
+);
+```
+
+4. Verify jobs are scheduled:
+```sql
+SELECT * FROM cron.job;
+```
+
+---
+
+## Production Deployment Checklist
+
+### Pre-Deploy
+
+- [ ] All environment variables set in Vercel
+- [ ] Supabase project ID is `ygweconeysctxpjjnehy`
+- [ ] Database migrations reviewed and applied
+- [ ] TypeScript compiles without errors
+- [ ] Tests pass
+
+### Post-Deploy
+
+- [ ] Verify app loads at https://inrvo.com
+- [ ] Test sign up / sign in flow
+- [ ] Test meditation generation
+- [ ] Test voice playback
+- [ ] Check Sentry dashboard for errors
+- [ ] Check Vercel Analytics for Web Vitals
+- [ ] Verify health endpoint returns healthy
+
+### External Services to Configure
+
+| Service | Purpose | Setup Required |
+|---------|---------|----------------|
+| Sentry | Error tracking | Configure alert rules |
+| BetterStack/Pingdom | Uptime monitoring | Add health endpoint monitor |
+| Supabase pg_cron | Data retention | Enable extension, schedule jobs |

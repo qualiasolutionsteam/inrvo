@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 INrVO is a meditation and wellness app that generates personalized guided meditations using AI. Users describe their mood/needs, and the app generates custom meditation scripts with TTS voice synthesis.
 
 **Live URL**: https://inrvo.com (Vercel)
-**Supabase Project ID**: `jcvfnkuppbvkbzltkioa`
+**Supabase Project ID**: `ygweconeysctxpjjnehy`
 
 ## Commands
 
@@ -33,7 +33,7 @@ npm test -- --grep "voice"
 - **Frontend**: React 19 + TypeScript + Vite
 - **Routing**: react-router-dom v7 (lazy-loaded pages in `src/router.tsx`)
 - **Styling**: Tailwind CSS v4 + Framer Motion
-- **State**: React Context pattern (8 contexts in `src/contexts/`)
+- **State**: React Context pattern (9 contexts in `src/contexts/`)
 - **Backend**: Supabase (Auth, PostgreSQL, Edge Functions, Storage)
 - **AI/TTS**: Google Gemini (scripts), ElevenLabs (primary TTS), Web Speech API (fallback)
 - **Monitoring**: Sentry + Vercel Analytics
@@ -52,7 +52,7 @@ npm test -- --grep "voice"
 │   ├── router.tsx    # Route definitions with lazy loading + prefetching
 │   ├── pages/        # Page components
 │   │   └── marketing/  # Marketing portal (admin dashboard)
-│   ├── contexts/     # React contexts (8 contexts re-exported from index.ts)
+│   ├── contexts/     # React contexts (9 contexts re-exported from index.ts)
 │   ├── lib/          # Services and utilities
 │   │   ├── voiceService.ts    # TTS provider routing
 │   │   ├── edgeFunctions.ts   # Edge function API calls with retry/tracing
@@ -100,7 +100,8 @@ Legacy providers (`fish-audio`, `chatterbox`) are marked for re-cloning to Eleve
 | `gemini-chat` | Conversational AI for script generation |
 | `gemini-script` | Direct script generation |
 | `gemini-live-token` | Token for Gemini Live API |
-| `generate-speech` | ElevenLabs TTS synthesis |
+| `generate-speech` | ElevenLabs TTS synthesis (main) |
+| `elevenlabs-tts` | ElevenLabs TTS (alternative endpoint) |
 | `elevenlabs-clone` | Voice cloning via ElevenLabs |
 | `health` | Health check endpoint |
 | `delete-user-data` | GDPR data deletion |
@@ -138,12 +139,23 @@ Shared utilities in `supabase/functions/_shared/`:
 
 ## Database
 
-Core tables (RLS-protected by user_id):
+Core tables (all RLS-protected):
 - `users` - Extended user data, preferences, `onboarding_completed` flag
-- `voice_profiles` - Voice profiles with `elevenlabs_voice_id`
+- `voice_profiles` - Voice profiles with `elevenlabs_voice_id`, cloning metadata
 - `voice_clones` - Raw voice clone data (base64 audio)
-- `meditation_history` - Session history with `audio_url` (Storage path)
-- `agent_conversations` - Gemini chat history
+- `meditation_history` - Session history with `audio_url`, content categories, timing maps
+- `agent_conversations` - Gemini chat history with session state
+- `user_credits` - Credit balance tracking (`total_credits`, `credits_used`, `credits_remaining`)
+- `voice_usage_limits` - Monthly usage limits per user
+- `voice_cloning_usage` - Voice cloning operation tracking
+- `audio_generations` - TTS generation records
+- `templates` / `template_categories` - Meditation templates
+- `audio_tag_presets` - Available audio tags (pauses, breaths, etc.)
+
+Marketing Portal tables (admin-only):
+- `marketing_deliverables`, `marketing_content_calendar`, `marketing_influencers`
+- `marketing_partnerships`, `marketing_reports`, `marketing_documents`
+- `marketing_communications`, `marketing_client_inputs`
 
 Key RPC functions:
 - `toggle_meditation_favorite` - Atomic favorite toggle
@@ -157,7 +169,7 @@ Storage buckets:
 
 Frontend (`.env.local`):
 ```
-VITE_SUPABASE_URL=https://jcvfnkuppbvkbzltkioa.supabase.co
+VITE_SUPABASE_URL=https://ygweconeysctxpjjnehy.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJ...
 VITE_SENTRY_DSN=...  # Optional
 ```

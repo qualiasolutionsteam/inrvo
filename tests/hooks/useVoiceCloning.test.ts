@@ -78,11 +78,12 @@ describe('useVoiceCloning', () => {
       const { result } = renderHook(() => useVoiceCloning());
 
       expect(result.current.cloningStatus).toEqual({ state: 'idle' });
+      // Credits are disabled - default to unlimited access
       expect(result.current.creditInfo).toEqual({
-        canClone: false,
-        creditsRemaining: 0,
-        clonesRemaining: 0,
-        cloneCost: 5000,
+        canClone: true,
+        creditsRemaining: 999999999,
+        clonesRemaining: 999999,
+        cloneCost: 0,
       });
       expect(result.current.savedVoices).toEqual([]);
       expect(result.current.selectedVoice).toBeNull();
@@ -200,7 +201,8 @@ describe('useVoiceCloning', () => {
       });
     });
 
-    it('should handle fetch error', async () => {
+    it('should handle fetch error by defaulting to unlimited access', async () => {
+      // Credits are disabled - error handling defaults to allowing cloning
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockCanClone.mockRejectedValue(new Error('Network error'));
 
@@ -212,7 +214,9 @@ describe('useVoiceCloning', () => {
         await result.current.fetchCreditInfo();
       });
 
-      expect(result.current.creditInfo.reason).toBe('Failed to check credits');
+      // When credit check fails, default to unlimited access
+      expect(result.current.creditInfo.canClone).toBe(true);
+      expect(result.current.creditInfo.reason).toBeUndefined();
       consoleSpy.mockRestore();
     });
 

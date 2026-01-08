@@ -96,7 +96,10 @@ function isRetryableError(error: unknown, status?: number): boolean {
   // Rate limit errors (429) are retryable
   if (status === 429) return true;
 
-  // Auth errors (401, 403) and client errors (4xx) are NOT retryable
+  // Auth errors (401) are retryable ONCE to handle expired tokens
+  if (status === 401) return true;
+
+  // Other auth errors (403) and client errors (4xx) are NOT retryable
   return false;
 }
 
@@ -215,7 +218,24 @@ async function callEdgeFunction<T>(
         error.status = response.status;
         error.needsReclone = data.needsReclone;
 
-        // Check if we should retry
+        // Special handling for 401 - Force token refresh before retry
+        if (response.status === 401 && attempt < retryOpts.maxRetries) {
+          if (DEBUG) console.log(`[edgeFunctions] 401 Unauthorized for ${functionName}, refreshing token and retrying...`);
+
+          // Clear cache and force refresh
+          cachedAuthToken = null;
+          tokenExpiresAt = 0;
+          const refreshedToken = await getAuthToken();
+
+          if (refreshedToken) {
+            headers['Authorization'] = `Bearer ${refreshedToken}`;
+            const delay = calculateBackoffDelay(attempt, retryOpts.baseDelayMs, retryOpts.maxDelayMs);
+            await sleep(delay);
+            continue;
+          }
+        }
+
+        // Check if we should retry regular errors
         if (attempt < retryOpts.maxRetries && isRetryableError(error, response.status)) {
           lastError = error;
           const delay = calculateBackoffDelay(attempt, retryOpts.baseDelayMs, retryOpts.maxDelayMs);

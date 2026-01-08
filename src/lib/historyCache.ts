@@ -14,11 +14,13 @@
  * - Supports pagination with cursor-based keys
  */
 
+import type { MeditationHistory } from '../../lib/supabase';
+
 const CACHE_KEY_PREFIX = 'inrvo_history';
 const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
 
 export interface CachedHistory {
-  data: any[];
+  data: MeditationHistory[];
   timestamp: number;
   hasMore: boolean;
   nextCursor?: string;
@@ -70,7 +72,7 @@ export function getCachedHistory(
  */
 export function setCachedHistory(
   userId: string,
-  data: any[],
+  data: MeditationHistory[],
   hasMore: boolean,
   cursor?: string,
   limit?: number,
@@ -152,7 +154,7 @@ export function isHistoryCacheValid(
  * Prepend a new meditation to existing cache
  * Used after creating a new meditation to update cache without refetch
  */
-export function prependToHistoryCache(userId: string, meditation: any): void {
+export function prependToHistoryCache(userId: string, meditation: MeditationHistory): void {
   try {
     // Only update the first page cache (no cursor, default limit)
     const key = getCacheKey(userId);
@@ -182,7 +184,7 @@ export function prependToHistoryCache(userId: string, meditation: any): void {
  * Update a meditation in the cache
  * Used after updating a meditation (e.g., toggling favorite)
  */
-export function updateInHistoryCache(userId: string, meditationId: string, updates: any): void {
+export function updateInHistoryCache(userId: string, meditationId: string, updates: Partial<MeditationHistory>): void {
   try {
     // Update all cached pages
     for (let i = 0; i < sessionStorage.length; i++) {
@@ -192,7 +194,7 @@ export function updateInHistoryCache(userId: string, meditationId: string, updat
         if (!cached) continue;
 
         const parsed: CachedHistory = JSON.parse(cached);
-        const index = parsed.data.findIndex((m: any) => m.id === meditationId);
+        const index = parsed.data.findIndex(m => m.id === meditationId);
         if (index !== -1) {
           parsed.data[index] = { ...parsed.data[index], ...updates };
           sessionStorage.setItem(key, JSON.stringify(parsed));
@@ -218,7 +220,7 @@ export function removeFromHistoryCache(userId: string, meditationId: string): vo
         if (!cached) continue;
 
         const parsed: CachedHistory = JSON.parse(cached);
-        parsed.data = parsed.data.filter((m: any) => m.id !== meditationId);
+        parsed.data = parsed.data.filter(m => m.id !== meditationId);
         sessionStorage.setItem(key, JSON.stringify(parsed));
       }
     }

@@ -1,6 +1,6 @@
 /**
  * Hook for fetching meditation templates from database
- * Uses localStorage cache with 1-hour TTL
+ * Uses in-memory session cache with 1-hour TTL
  * Falls back to hardcoded constants.tsx if database is empty
  */
 

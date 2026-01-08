@@ -35,6 +35,28 @@ if (SENTRY_DSN) {
   Sentry.init({
     dsn: SENTRY_DSN,
     environment: import.meta.env.MODE,
+    release: `inrvo@${__APP_VERSION__}`,
+
+    // Send default PII (IP address on events)
+    sendDefaultPii: true,
+
+    // Enable Sentry Logs
+    _experiments: {
+      enableLogs: true,
+    },
+
+    // Integrations
+    integrations: [
+      // Capture console.error and console.warn as Sentry logs
+      Sentry.consoleLoggingIntegration({ levels: ['error', 'warn'] }),
+      // Browser tracing for performance
+      Sentry.browserTracingIntegration(),
+      // Session replay
+      Sentry.replayIntegration({
+        maskAllText: false,
+        blockAllMedia: false,
+      }),
+    ],
 
     // Performance monitoring
     tracesSampleRate: import.meta.env.PROD ? 0.1 : 1.0,

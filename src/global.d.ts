@@ -1,3 +1,6 @@
+// Global constants defined by Vite
+declare const __APP_VERSION__: string;
+
 // Web Speech API type declarations
 
 interface SpeechRecognition extends EventTarget {

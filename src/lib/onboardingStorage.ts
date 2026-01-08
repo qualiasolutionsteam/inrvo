@@ -1,106 +1,78 @@
 /**
- * Onboarding state persistence using localStorage
- * User-specific storage - triggers after signup, not on first page visit
+ * Onboarding state persistence using Supabase
+ * Replaces localStorage for cross-device synchronization
  */
 
-const STORAGE_KEY_PREFIX = 'inrvo_onboarding';
-
-interface OnboardingStorage {
-  completed: boolean;
-  skippedAt?: string;
-  completedAt?: string;
-  lastStepSeen?: number;
-}
-
-const DEFAULT_STATE: OnboardingStorage = {
-  completed: false,
-};
-
-function getStorageKey(userId?: string): string {
-  return userId ? `${STORAGE_KEY_PREFIX}_${userId}` : STORAGE_KEY_PREFIX;
-}
-
-function getStorageState(userId?: string): OnboardingStorage {
-  try {
-    const stored = localStorage.getItem(getStorageKey(userId));
-    if (!stored) return DEFAULT_STATE;
-    return JSON.parse(stored) as OnboardingStorage;
-  } catch {
-    return DEFAULT_STATE;
-  }
-}
-
-function setStorageState(state: Partial<OnboardingStorage>, userId?: string): void {
-  try {
-    const current = getStorageState(userId);
-    const updated = { ...current, ...state };
-    localStorage.setItem(getStorageKey(userId), JSON.stringify(updated));
-  } catch {
-    // localStorage unavailable, silently fail
-  }
-}
+import {
+  hasCompletedOnboarding,
+  markOnboardingCompleted,
+  updateOnboardingStep,
+  resetOnboardingStatus,
+  supabase
+} from '../../lib/supabase';
 
 /**
  * Check if onboarding should be shown to the user
  */
-export function shouldShowOnboarding(userId?: string): boolean {
-  const state = getStorageState(userId);
-  return !state.completed;
+export async function shouldShowOnboarding(userId?: string): Promise<boolean> {
+  const completed = await hasCompletedOnboarding(userId);
+  return !completed;
 }
 
 /**
  * Check if user has ever seen onboarding (for new user detection)
+ * This is effectively redundant with shouldShowOnboarding in DB mode
  */
-export function hasSeenOnboarding(userId?: string): boolean {
-  try {
-    const stored = localStorage.getItem(getStorageKey(userId));
-    return stored !== null;
-  } catch {
-    return false;
-  }
+export async function hasSeenOnboarding(userId?: string): Promise<boolean> {
+  const completed = await hasCompletedOnboarding(userId);
+  return completed;
 }
 
 /**
  * Mark onboarding as completed
  */
-export function markOnboardingComplete(userId?: string): void {
-  setStorageState({
-    completed: true,
-    completedAt: new Date().toISOString(),
-  }, userId);
+export async function markOnboardingComplete(userId?: string): Promise<void> {
+  await markOnboardingCompleted(userId);
 }
 
 /**
  * Mark onboarding as skipped
  */
-export function markOnboardingSkipped(userId?: string): void {
-  setStorageState({
-    completed: true,
-    skippedAt: new Date().toISOString(),
-  }, userId);
+export async function markOnboardingSkipped(userId?: string): Promise<void> {
+  // Skipping counts as completion in the current flow
+  await markOnboardingCompleted(userId);
 }
 
 /**
- * Reset onboarding state (for restart tour)
+ * Reset onboarding state
  */
-export function resetOnboarding(userId?: string): void {
-  try {
-    localStorage.removeItem(getStorageKey(userId));
-  } catch {
-    // localStorage unavailable
+export async function resetOnboarding(userId?: string): Promise<void> {
+  await resetOnboardingStatus(userId);
+}
+
+/**
+ * Save the last step seen
+ */
+export async function saveLastStep(stepIndex: number, userId?: string): Promise<void> {
+  await updateOnboardingStep(stepIndex, userId);
+}
+
+/**
+ * Get the last step seen from Supabase
+ */
+export async function getLastStep(userId?: string): Promise<number> {
+  if (!supabase) return 0;
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('current_onboarding_step')
+    .eq('id', userId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching last onboarding step:', error);
+    return 0;
   }
-}
 
-/**
- * Save the last step seen (for potential resume)
- */
-export function saveLastStep(stepIndex: number, userId?: string): void {
-  setStorageState({ lastStepSeen: stepIndex }, userId);
-}
-
-/**
- * Get the last step seen
- */
-export function getLastStep(userId?: string): number {
-  return getStorageState(userId).lastStepSeen ?? 0;
+  return data?.current_onboarding_step ?? 0;
 }

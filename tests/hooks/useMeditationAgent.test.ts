@@ -1,10 +1,25 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 
-// Store mock references that can be configured per-test
-let mockAgentChat = vi.fn();
-let mockAgentResetConversation = vi.fn();
-let mockAgentGenerateMeditationPrompt = vi.fn();
+// Use vi.hoisted to ensure mock functions are available when vi.mock factory runs
+const {
+  mockAgentChat,
+  mockAgentResetConversation,
+  mockAgentGenerateMeditationPrompt,
+  mockConversationStore,
+} = vi.hoisted(() => ({
+  mockAgentChat: vi.fn(),
+  mockAgentResetConversation: vi.fn(),
+  mockAgentGenerateMeditationPrompt: vi.fn(),
+  mockConversationStore: {
+    loadPreferences: vi.fn(),
+    loadMessages: vi.fn(),
+    startNewConversation: vi.fn(),
+    addMessage: vi.fn(),
+    savePreferences: vi.fn(),
+    loadConversation: vi.fn(),
+  },
+}));
 
 // Mock all external dependencies before imports
 vi.mock('../../geminiService', () => ({
@@ -21,13 +36,7 @@ vi.mock('../../src/lib/voiceService', () => ({
 }));
 
 vi.mock('../../src/lib/agent/conversationStore', () => ({
-  conversationStore: {
-    loadPreferences: vi.fn().mockReturnValue({}),
-    loadMessages: vi.fn().mockReturnValue([]),
-    startNewConversation: vi.fn(),
-    addMessage: vi.fn(),
-    savePreferences: vi.fn(),
-  },
+  conversationStore: mockConversationStore,
 }));
 
 vi.mock('../../src/lib/agent/agentTools', () => ({
@@ -73,22 +82,39 @@ vi.mock('../../src/lib/agent/MeditationAgent', () => {
 
 // Import after mocking
 import { useMeditationAgent } from '../../src/hooks/useMeditationAgent';
-import { conversationStore } from '../../src/lib/agent/conversationStore';
 import * as agentTools from '../../src/lib/agent/agentTools';
 
 describe('useMeditationAgent', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Reset mock functions with default behavior
-    mockAgentChat = vi.fn().mockResolvedValue({
+    // Reset mock agent functions with default behavior
+    mockAgentChat.mockResolvedValue({
       message: 'Hello! How can I help you today?',
       emotionalState: { primary: 'calm' },
       shouldGenerateMeditation: false,
       suggestedActions: [],
     });
-    mockAgentResetConversation = vi.fn();
-    mockAgentGenerateMeditationPrompt = vi.fn().mockReturnValue('Generate a meditation');
+    mockAgentResetConversation.mockReset();
+    mockAgentGenerateMeditationPrompt.mockReturnValue('Generate a meditation');
+
+    // Reset conversation store mocks
+    mockConversationStore.loadPreferences.mockResolvedValue({});
+    mockConversationStore.loadMessages.mockReturnValue([]);
+    mockConversationStore.startNewConversation.mockResolvedValue({ id: 'test-conv-id', messages: [] });
+    mockConversationStore.addMessage.mockReset();
+    mockConversationStore.savePreferences.mockResolvedValue(undefined);
+    mockConversationStore.loadConversation.mockResolvedValue(null);
+
+    // Reset agentTools mocks to default success state
+    vi.mocked(agentTools.generateMeditationScript).mockResolvedValue({
+      success: true,
+      data: {
+        script: 'Default meditation script',
+        meditationType: 'guided_visualization',
+        duration: 300,
+      },
+    });
 
     // Mock AudioContext
     (global as any).AudioContext = function() {
@@ -130,16 +156,28 @@ describe('useMeditationAgent', () => {
       });
     });
 
-    it('should start new conversation on mount', () => {
+    it('should start new conversation on mount', async () => {
       renderHook(() => useMeditationAgent());
 
-      expect(conversationStore.startNewConversation).toHaveBeenCalled();
+      await waitFor(() => {
+        expect(mockConversationStore.startNewConversation).toHaveBeenCalled();
+      });
     });
   });
 
   describe('sendMessage', () => {
+    // Helper to wait for agent initialization (startNewConversation is called)
+    const waitForInit = async () => {
+      await waitFor(() => {
+        expect(mockConversationStore.startNewConversation).toHaveBeenCalled();
+      });
+    };
+
     it('should add user message and get agent response', async () => {
       const { result } = renderHook(() => useMeditationAgent());
+
+      // Wait for agent initialization
+      await waitForInit();
 
       await act(async () => {
         await result.current.sendMessage('Hello');
@@ -159,6 +197,9 @@ describe('useMeditationAgent', () => {
     it('should not send empty messages', async () => {
       const { result } = renderHook(() => useMeditationAgent());
 
+      // Wait for agent initialization
+      await waitForInit();
+
       await act(async () => {
         await result.current.sendMessage('');
       });
@@ -171,6 +212,9 @@ describe('useMeditationAgent', () => {
       mockAgentChat.mockRejectedValue(new Error('Network error'));
 
       const { result } = renderHook(() => useMeditationAgent());
+
+      // Wait for agent initialization
+      await waitForInit();
 
       await act(async () => {
         await result.current.sendMessage('Test');
@@ -188,16 +232,20 @@ describe('useMeditationAgent', () => {
     it('should store messages in conversation store', async () => {
       const { result } = renderHook(() => useMeditationAgent());
 
+      // Wait for agent initialization
+      await waitForInit();
+      mockConversationStore.addMessage.mockClear(); // Clear init calls
+
       await act(async () => {
         await result.current.sendMessage('Hello');
       });
 
       await waitFor(() => {
-        expect(conversationStore.addMessage).toHaveBeenCalledTimes(2);
+        expect(mockConversationStore.addMessage).toHaveBeenCalledTimes(2);
       });
 
       // Check user message was stored
-      expect(conversationStore.addMessage).toHaveBeenCalledWith(
+      expect(mockConversationStore.addMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           role: 'user',
           content: 'Hello',
@@ -208,13 +256,16 @@ describe('useMeditationAgent', () => {
     it('should trigger meditation generation when agent indicates', async () => {
       mockAgentChat.mockResolvedValue({
         message: 'Creating your meditation...',
-        emotionalState: { primary: 'calm' },
+        emotionalState: 'calm', // Must be a string, not an object
         shouldGenerateMeditation: true,
         meditationType: 'stress_relief',
         suggestedActions: [],
       });
 
       const { result } = renderHook(() => useMeditationAgent());
+
+      // Wait for agent initialization
+      await waitForInit();
 
       await act(async () => {
         await result.current.sendMessage('I need stress relief');
@@ -238,6 +289,9 @@ describe('useMeditationAgent', () => {
       });
 
       const { result } = renderHook(() => useMeditationAgent());
+
+      // Wait for agent initialization
+      await waitForInit();
 
       await act(async () => {
         await result.current.sendMessage('Here is my script...');
@@ -409,6 +463,11 @@ describe('useMeditationAgent', () => {
     it('should execute show_quote action', async () => {
       const { result } = renderHook(() => useMeditationAgent());
 
+      // Wait for agent initialization
+      await waitFor(() => {
+        expect(mockConversationStore.startNewConversation).toHaveBeenCalled();
+      });
+
       await act(async () => {
         await result.current.executeAction({
           type: 'show_quote',
@@ -432,6 +491,11 @@ describe('useMeditationAgent', () => {
   describe('clearConversation', () => {
     it('should clear all messages and meditation', async () => {
       const { result } = renderHook(() => useMeditationAgent());
+
+      // Wait for agent initialization
+      await waitFor(() => {
+        expect(mockConversationStore.startNewConversation).toHaveBeenCalled();
+      });
 
       // Add some messages
       await act(async () => {

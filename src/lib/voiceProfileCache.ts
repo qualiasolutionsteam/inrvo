@@ -1,171 +1,75 @@
 /**
- * Client-side cache for voice profiles
- * Reduces database queries by saving 50-150ms per TTS request
- *
- * Performance Impact:
- * - Without cache: 50-150ms (database query + network)
- * - With cache: 1-5ms (localStorage read)
- * - Cache TTL: 15 minutes (voice profiles rarely change)
- *
- * Usage:
- * - Cache is automatically populated on getUserVoiceProfiles() call
- * - Cache is invalidated on create/update/delete operations
- * - Uses localStorage for persistence across sessions
+ * In-memory cache for voice profiles
+ * Replaces localStorage for strictly database-only persistence
  */
 
-const CACHE_KEY = 'inrvo_voice_profiles';
+import type { VoiceProfile } from '../../lib/supabase';
+
+interface CacheEntry {
+  data: VoiceProfile[];
+  timestamp: number;
+}
+
+const sessionCache = new Map<string, CacheEntry>();
 const CACHE_TTL = 1000 * 60 * 15; // 15 minutes
 
-export interface CachedVoiceProfiles {
-  data: any[];
-  timestamp: number;
-  userId: string;
-}
+export function getCachedVoiceProfiles(userId: string): VoiceProfile[] | null {
+  const cached = sessionCache.get(userId);
+  if (!cached) return null;
 
-/**
- * Get cached voice profiles from localStorage
- * @returns Cached profiles or null if cache miss/expired/wrong user
- */
-export function getCachedVoiceProfiles(userId: string): any[] | null {
-  try {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (!cached) return null;
-
-    const parsed: CachedVoiceProfiles = JSON.parse(cached);
-
-    // Check if cache is for the same user
-    if (parsed.userId !== userId) {
-      localStorage.removeItem(CACHE_KEY);
-      return null;
-    }
-
-    const age = Date.now() - parsed.timestamp;
-
-    // Check if cache is expired
-    if (age > CACHE_TTL) {
-      localStorage.removeItem(CACHE_KEY);
-      return null;
-    }
-
-    return parsed.data;
-  } catch (err) {
-    console.warn('[voiceProfileCache] Failed to read cache:', err);
-    localStorage.removeItem(CACHE_KEY);
+  const age = Date.now() - cached.timestamp;
+  if (age > CACHE_TTL) {
+    sessionCache.delete(userId);
     return null;
   }
+
+  return cached.data;
 }
 
-/**
- * Store voice profiles in localStorage cache
- */
-export function setCachedVoiceProfiles(userId: string, data: any[]): void {
-  try {
-    const cached: CachedVoiceProfiles = {
-      data,
-      timestamp: Date.now(),
-      userId,
-    };
-    localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
-  } catch (err) {
-    // localStorage quota exceeded or disabled - fail silently
-    console.warn('[voiceProfileCache] Failed to write cache:', err);
-  }
+export function setCachedVoiceProfiles(userId: string, data: VoiceProfile[]): void {
+  sessionCache.set(userId, { data, timestamp: Date.now() });
 }
 
-/**
- * Clear voice profile cache
- * Called on create/update/delete operations
- */
 export function clearVoiceProfileCache(): void {
-  try {
-    localStorage.removeItem(CACHE_KEY);
-  } catch (err) {
-    console.warn('[voiceProfileCache] Failed to clear cache:', err);
-  }
+  sessionCache.clear();
 }
 
-/**
- * Get a single voice profile from cache by ID
- */
-export function getCachedVoiceProfileById(userId: string, profileId: string): any | null {
+export function getCachedVoiceProfileById(userId: string, profileId: string): VoiceProfile | null {
   const profiles = getCachedVoiceProfiles(userId);
   if (!profiles) return null;
   return profiles.find(p => p.id === profileId) || null;
 }
 
-/**
- * Update a voice profile in the cache
- */
-export function updateCachedVoiceProfile(userId: string, profileId: string, updates: any): void {
-  try {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (!cached) return;
+export function updateCachedVoiceProfile(userId: string, profileId: string, updates: Partial<VoiceProfile>): void {
+  const cached = sessionCache.get(userId);
+  if (!cached) return;
 
-    const parsed: CachedVoiceProfiles = JSON.parse(cached);
-    if (parsed.userId !== userId) return;
-
-    const index = parsed.data.findIndex((p: any) => p.id === profileId);
-    if (index !== -1) {
-      parsed.data[index] = { ...parsed.data[index], ...updates };
-      localStorage.setItem(CACHE_KEY, JSON.stringify(parsed));
-    }
-  } catch (err) {
-    console.warn('[voiceProfileCache] Failed to update cache:', err);
+  const index = cached.data.findIndex(p => p.id === profileId);
+  if (index !== -1) {
+    cached.data[index] = { ...cached.data[index], ...updates };
   }
 }
 
-/**
- * Add a new voice profile to the cache
- */
-export function addToCachedVoiceProfiles(userId: string, profile: any): void {
-  try {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (!cached) return;
-
-    const parsed: CachedVoiceProfiles = JSON.parse(cached);
-    if (parsed.userId !== userId) return;
-
-    // Add new profile at the beginning (most recent first)
-    parsed.data = [profile, ...parsed.data];
-    parsed.timestamp = Date.now();
-    localStorage.setItem(CACHE_KEY, JSON.stringify(parsed));
-  } catch (err) {
-    console.warn('[voiceProfileCache] Failed to add to cache:', err);
+export function addToCachedVoiceProfiles(userId: string, profile: VoiceProfile): void {
+  const cached = sessionCache.get(userId);
+  if (!cached) {
+    sessionCache.set(userId, { data: [profile], timestamp: Date.now() });
+    return;
   }
+
+  cached.data = [profile, ...cached.data];
+  cached.timestamp = Date.now();
 }
 
-/**
- * Remove a voice profile from the cache
- */
 export function removeFromCachedVoiceProfiles(userId: string, profileId: string): void {
-  try {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (!cached) return;
+  const cached = sessionCache.get(userId);
+  if (!cached) return;
 
-    const parsed: CachedVoiceProfiles = JSON.parse(cached);
-    if (parsed.userId !== userId) return;
-
-    parsed.data = parsed.data.filter((p: any) => p.id !== profileId);
-    localStorage.setItem(CACHE_KEY, JSON.stringify(parsed));
-  } catch (err) {
-    console.warn('[voiceProfileCache] Failed to remove from cache:', err);
-  }
+  cached.data = cached.data.filter(p => p.id !== profileId);
 }
 
-/**
- * Check if cache is valid
- */
 export function isVoiceProfileCacheValid(userId: string): boolean {
-  try {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (!cached) return false;
-
-    const parsed: CachedVoiceProfiles = JSON.parse(cached);
-    if (parsed.userId !== userId) return false;
-
-    const age = Date.now() - parsed.timestamp;
-    return age < CACHE_TTL;
-  } catch {
-    return false;
-  }
+  const cached = sessionCache.get(userId);
+  if (!cached) return false;
+  return (Date.now() - cached.timestamp) < CACHE_TTL;
 }

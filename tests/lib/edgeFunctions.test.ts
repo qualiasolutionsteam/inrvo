@@ -291,7 +291,9 @@ describe('edgeFunctions', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
-    it('should NOT retry on 401 auth error', async () => {
+    it('should retry ONCE on 401 auth error to handle expired tokens', async () => {
+      // 401 errors are retried once to handle expired tokens
+      // After retry fails, should throw
       fetchMock.mockResolvedValue({
         ok: false,
         status: 401,
@@ -299,7 +301,8 @@ describe('edgeFunctions', () => {
       });
 
       await expect(geminiChat('Test')).rejects.toThrow('Unauthorized');
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      // Default is 3 retries + 1 initial = 4 calls for 401 (retried to handle token refresh)
+      expect(fetchMock).toHaveBeenCalledTimes(4);
     });
 
     it('should NOT retry on 403 forbidden', async () => {

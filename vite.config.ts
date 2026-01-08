@@ -6,8 +6,14 @@ import { visualizer } from 'rollup-plugin-visualizer';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     const isAnalyze = process.env.ANALYZE === 'true';
+    // Use git commit hash for release tracking, fallback to timestamp
+    const appVersion = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ||
+                       new Date().toISOString().slice(0, 10).replace(/-/g, '');
 
     return {
+      define: {
+        __APP_VERSION__: JSON.stringify(appVersion),
+      },
       server: {
         port: 3000,
         host: '0.0.0.0',
