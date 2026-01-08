@@ -1,4 +1,5 @@
 import { VoiceProfile, VoiceProvider } from '../../types';
+import { VoiceProfile as DBVoiceProfile } from '../../lib/supabase';
 import { webSpeechService, isWebSpeechAvailable } from './webSpeechService';
 
 // Debug logging - only enabled in development
@@ -94,6 +95,40 @@ export function needsReclone(voice: VoiceProfile): boolean {
     return true;
   }
   return false;
+}
+
+/**
+ * Maps a database voice profile (snake_case) to the frontend VoiceProfile type (camelCase).
+ * Handles the mapping of elevenlabs_voice_id to elevenLabsVoiceId.
+ */
+export function mapDbVoiceToProfile(dbProfile: DBVoiceProfile): VoiceProfile {
+  // Determine provider based on available IDs and DB provider field
+  // Priority: DB provider > elevenlabs (if ID exists) > fish-audio > chatterbox
+  let provider: VoiceProvider | 'fish-audio' | 'chatterbox';
+
+  if (dbProfile.provider === 'elevenlabs' || dbProfile.elevenlabs_voice_id) {
+    provider = 'elevenlabs';
+  } else if (dbProfile.provider === 'fish-audio' || dbProfile.fish_audio_model_id) {
+    provider = 'fish-audio';
+  } else if (dbProfile.provider === 'browser') {
+    provider = 'browser';
+  } else {
+    provider = 'chatterbox';
+  }
+
+  return {
+    id: dbProfile.id,
+    name: dbProfile.name,
+    provider: provider,
+    voiceName: dbProfile.name,
+    description: dbProfile.description || 'Your personalized voice clone',
+    isCloned: true,
+    elevenLabsVoiceId: dbProfile.elevenlabs_voice_id,
+    providerVoiceId: dbProfile.provider_voice_id,
+    fishAudioModelId: dbProfile.fish_audio_model_id,
+    voiceSampleUrl: dbProfile.voice_sample_url,
+    cloningStatus: dbProfile.cloning_status,
+  };
 }
 
 /**
@@ -317,6 +352,3 @@ export const voiceService = {
     return cost;
   },
 };
-
-// Export the existing services for backward compatibility
-// These are already imported at the top of the file

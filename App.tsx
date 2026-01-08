@@ -40,7 +40,7 @@ import OfflineIndicator from './components/OfflineIndicator';
 import { Sidebar } from './components/Sidebar';
 import { buildTimingMap, getCurrentWordIndex } from './src/lib/textSync';
 import { geminiService, blobToBase64 } from './geminiService';
-import { voiceService } from './src/lib/voiceService';
+import { voiceService, mapDbVoiceToProfile } from './src/lib/voiceService';
 // Voice cloning functions are dynamically imported where used to avoid bundle bloat
 // See: voiceService.ts also imports edgeFunctions dynamically
 import { convertToWAV } from './src/lib/audioConverter';
@@ -653,7 +653,7 @@ const App: React.FC = () => {
         }
         setRecordingProgressClone(0);
         setIsRecordingClone(false);
-        
+
         // Auto-save the voice recording
         await autoSaveVoiceRecording(base64);
       };
@@ -661,7 +661,7 @@ const App: React.FC = () => {
       recorder.start();
       setIsRecordingClone(true);
       setRecordingProgressClone(0);
-      
+
       // Auto-stop after 30 seconds
       setTimeout(() => {
         if (cloneMediaRecorderRef.current && isRecordingClone) {
@@ -755,7 +755,7 @@ const App: React.FC = () => {
       // Clone voice with Chatterbox via Replicate
       // Dynamically import for code splitting
       const { chatterboxCloneVoice } = await import('./src/lib/edgeFunctions');
-      let cloneResult: { voiceProfileId: string; voiceSampleUrl: string | null };
+      let cloneResult: { voiceProfileId: string; voiceSampleUrl: string | null; elevenLabsVoiceId: string };
       try {
         cloneResult = await chatterboxCloneVoice(
           wavBlob,
@@ -795,10 +795,11 @@ const App: React.FC = () => {
       const newVoice: VoiceProfile = {
         id: cloneResult.voiceProfileId,
         name: finalName,
-        provider: 'chatterbox',
+        provider: 'elevenlabs',
         voiceName: finalName,
         description: 'Your personalized cloned voice',
         isCloned: true,
+        elevenLabsVoiceId: cloneResult.elevenLabsVoiceId,
         providerVoiceId: cloneResult.voiceSampleUrl || undefined,
       };
       setSelectedVoice(newVoice);
@@ -1327,7 +1328,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!natureSoundAudioRef.current) return;
     if (isPlaying) {
-      natureSoundAudioRef.current.play().catch(() => {});
+      natureSoundAudioRef.current.play().catch(() => { });
     } else {
       natureSoundAudioRef.current.pause();
     }
@@ -1619,8 +1620,8 @@ const App: React.FC = () => {
       // Get audio tag labels
       const audioTagLabels = audioTagsEnabled && selectedAudioTags.length > 0
         ? AUDIO_TAG_CATEGORIES.flatMap(cat => cat.tags)
-            .filter(tag => selectedAudioTags.includes(tag.id))
-            .map(tag => tag.label)
+          .filter(tag => selectedAudioTags.includes(tag.id))
+          .map(tag => tag.label)
         : undefined;
 
       // Generate enhanced meditation
@@ -1688,8 +1689,8 @@ const App: React.FC = () => {
       // Get audio tag labels from selected tag IDs (only if audio tags are enabled)
       const audioTagLabels = audioTagsEnabled && selectedAudioTags.length > 0
         ? AUDIO_TAG_CATEGORIES.flatMap(cat => cat.tags)
-            .filter(tag => selectedAudioTags.includes(tag.id))
-            .map(tag => tag.label)
+          .filter(tag => selectedAudioTags.includes(tag.id))
+          .map(tag => tag.label)
         : undefined;
 
       // Generate enhanced meditation from short prompt
@@ -1795,7 +1796,7 @@ const App: React.FC = () => {
       if (audioSourceRef.current) {
         try {
           audioSourceRef.current.stop();
-        } catch (e) {}
+        } catch (e) { }
       }
 
       if (animationFrameRef.current) {
@@ -2120,165 +2121,165 @@ const App: React.FC = () => {
                     <div className="animate-pulse text-slate-400">Loading chat...</div>
                   </div>
                 }>
-                <AgentChat
-                      onMeditationReady={(generatedScript, meditationType, userPrompt) => {
-                        // Set the user's original prompt for display
-                        setScript(userPrompt);
-                        // Set the generated script as enhanced script
-                        setEnhancedScript(generatedScript);
-                        // If a voice is selected, automatically start synthesis
-                        if (selectedVoice) {
-                          handleGenerateAndPlay();
-                        } else {
-                          // Prompt user to select a voice
-                          setShowVoiceManager(true);
+                  <AgentChat
+                    onMeditationReady={(generatedScript, meditationType, userPrompt) => {
+                      // Set the user's original prompt for display
+                      setScript(userPrompt);
+                      // Set the generated script as enhanced script
+                      setEnhancedScript(generatedScript);
+                      // If a voice is selected, automatically start synthesis
+                      if (selectedVoice) {
+                        handleGenerateAndPlay();
+                      } else {
+                        // Prompt user to select a voice
+                        setShowVoiceManager(true);
+                      }
+                    }}
+                    onGenerateAudio={async (meditationScript, tags) => {
+                      if (!selectedVoice) {
+                        setShowVoiceManager(true);
+                        return;
+                      }
+                      const voice = selectedVoice;
+                      // Set script and tags, then synthesize
+                      setEditableScript(meditationScript);
+                      setSelectedAudioTags(tags);
+                      setScript(meditationScript);
+                      setEnhancedScript(meditationScript);
+                      // Use the play edited script flow
+                      setShowScriptPreview(false);
+                      setIsGenerating(true);
+                      setGenerationStage('voice');
+                      setMicError(null);
+
+                      // Preload background music in parallel with TTS generation (saves ~1-3s)
+                      preloadBackgroundMusic(selectedBackgroundTrack);
+
+                      try {
+                        // Initialize audio context (check state to handle closed contexts)
+                        if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+                          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
                         }
-                      }}
-                      onGenerateAudio={async (meditationScript, tags) => {
-                        if (!selectedVoice) {
-                          setShowVoiceManager(true);
-                          return;
+
+                        // Generate speech
+                        const { audioBuffer, base64, needsReclone } = await voiceService.generateSpeech(
+                          meditationScript,
+                          voice,
+                          audioContextRef.current
+                        );
+
+                        // Check if voice needs to be re-cloned (legacy Fish Audio/Chatterbox voice)
+                        if (needsReclone) {
+                          throw new Error('This voice needs to be re-cloned. Please go to Voice Settings and re-clone your voice with ElevenLabs.');
                         }
-                        const voice = selectedVoice;
-                        // Set script and tags, then synthesize
-                        setEditableScript(meditationScript);
-                        setSelectedAudioTags(tags);
-                        setScript(meditationScript);
-                        setEnhancedScript(meditationScript);
-                        // Use the play edited script flow
-                        setShowScriptPreview(false);
-                        setIsGenerating(true);
-                        setGenerationStage('voice');
-                        setMicError(null);
 
-                        // Preload background music in parallel with TTS generation (saves ~1-3s)
-                        preloadBackgroundMusic(selectedBackgroundTrack);
+                        if (!audioBuffer) {
+                          throw new Error('Failed to generate audio buffer. Please try again.');
+                        }
 
-                        try {
-                          // Initialize audio context (check state to handle closed contexts)
-                          if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
-                            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-                          }
+                        if (!base64 || base64.trim() === '') {
+                          throw new Error('Failed to generate audio. Please try again.');
+                        }
 
-                          // Generate speech
-                          const { audioBuffer, base64, needsReclone } = await voiceService.generateSpeech(
-                            meditationScript,
-                            voice,
-                            audioContextRef.current
-                          );
+                        setGenerationStage('ready');
 
-                          // Check if voice needs to be re-cloned (legacy Fish Audio/Chatterbox voice)
-                          if (needsReclone) {
-                            throw new Error('This voice needs to be re-cloned. Please go to Voice Settings and re-clone your voice with ElevenLabs.');
-                          }
+                        // Stop any existing playback
+                        if (audioSourceRef.current) {
+                          try { audioSourceRef.current.stop(); } catch (e) { }
+                        }
+                        if (animationFrameRef.current) {
+                          cancelAnimationFrame(animationFrameRef.current);
+                        }
 
-                          if (!audioBuffer) {
-                            throw new Error('Failed to generate audio buffer. Please try again.');
-                          }
+                        // Store the audio buffer
+                        audioBufferRef.current = audioBuffer;
+                        setDuration(audioBuffer.duration);
+                        setCurrentTime(0);
+                        lastWordIndexRef.current = 0;
+                        setCurrentWordIndex(0);
+                        pauseOffsetRef.current = 0;
 
-                          if (!base64 || base64.trim() === '') {
-                            throw new Error('Failed to generate audio. Please try again.');
-                          }
+                        // Create gain node for voice volume control
+                        if (!gainNodeRef.current) {
+                          gainNodeRef.current = audioContextRef.current.createGain();
+                          gainNodeRef.current.connect(audioContextRef.current.destination);
+                        }
+                        gainNodeRef.current.gain.value = voiceVolume;
 
-                          setGenerationStage('ready');
+                        // Start playback with playback rate
+                        const source = audioContextRef.current.createBufferSource();
+                        source.buffer = audioBuffer;
+                        source.playbackRate.value = playbackRate;
+                        playbackRateRef.current = playbackRate;
+                        source.connect(gainNodeRef.current);
+                        source.start();
+                        audioSourceRef.current = source;
+                        playbackStartTimeRef.current = audioContextRef.current.currentTime;
 
-                          // Stop any existing playback
-                          if (audioSourceRef.current) {
-                            try { audioSourceRef.current.stop(); } catch (e) {}
-                          }
+                        // Update state
+                        setIsPlaying(true);
+                        setCurrentView(View.PLAYER);  // Go directly to V0MeditationPlayer
+                        setIsGenerating(false);
+                        setGenerationStage('idle');
+
+                        // Build timing map
+                        const map = buildTimingMap(meditationScript, audioBuffer.duration);
+                        setTimingMap(map);
+
+                        // Start background music
+                        startBackgroundMusic(selectedBackgroundTrack);
+
+                        // Deduct credits if cloned voice
+                        if (voice.isCloned) {
+                          creditService.deductCredits(
+                            creditService.calculateTTSCost(meditationScript),
+                            'TTS_GENERATE',
+                            voice.id,
+                            user?.id
+                          ).catch(err => console.warn('Failed to deduct credits:', err));
+                        }
+
+                        // Save to history (include audio for cloned voices)
+                        saveMeditationHistory(
+                          meditationScript.substring(0, 100),
+                          meditationScript,
+                          voice.id,
+                          voice.name,
+                          selectedBackgroundTrack?.id,
+                          selectedBackgroundTrack?.name,
+                          Math.round(audioBuffer.duration),
+                          tags.length > 0 ? tags : undefined,
+                          voice.isCloned ? base64 : undefined // Save audio only for cloned voices
+                        ).catch(err => console.warn('Failed to save history:', err));
+
+                        source.onended = () => {
+                          setIsPlaying(false);
                           if (animationFrameRef.current) {
                             cancelAnimationFrame(animationFrameRef.current);
                           }
-
-                          // Store the audio buffer
-                          audioBufferRef.current = audioBuffer;
-                          setDuration(audioBuffer.duration);
-                          setCurrentTime(0);
-                          lastWordIndexRef.current = 0;
-                          setCurrentWordIndex(0);
-                          pauseOffsetRef.current = 0;
-
-                          // Create gain node for voice volume control
-                          if (!gainNodeRef.current) {
-                            gainNodeRef.current = audioContextRef.current.createGain();
-                            gainNodeRef.current.connect(audioContextRef.current.destination);
-                          }
-                          gainNodeRef.current.gain.value = voiceVolume;
-
-                          // Start playback with playback rate
-                          const source = audioContextRef.current.createBufferSource();
-                          source.buffer = audioBuffer;
-                          source.playbackRate.value = playbackRate;
-                          playbackRateRef.current = playbackRate;
-                          source.connect(gainNodeRef.current);
-                          source.start();
-                          audioSourceRef.current = source;
-                          playbackStartTimeRef.current = audioContextRef.current.currentTime;
-
-                          // Update state
-                          setIsPlaying(true);
-                          setCurrentView(View.PLAYER);  // Go directly to V0MeditationPlayer
-                          setIsGenerating(false);
-                          setGenerationStage('idle');
-
-                          // Build timing map
-                          const map = buildTimingMap(meditationScript, audioBuffer.duration);
-                          setTimingMap(map);
-
-                          // Start background music
-                          startBackgroundMusic(selectedBackgroundTrack);
-
-                          // Deduct credits if cloned voice
-                          if (voice.isCloned) {
-                            creditService.deductCredits(
-                              creditService.calculateTTSCost(meditationScript),
-                              'TTS_GENERATE',
-                              voice.id,
-                              user?.id
-                            ).catch(err => console.warn('Failed to deduct credits:', err));
-                          }
-
-                          // Save to history (include audio for cloned voices)
-                          saveMeditationHistory(
-                            meditationScript.substring(0, 100),
-                            meditationScript,
-                            voice.id,
-                            voice.name,
-                            selectedBackgroundTrack?.id,
-                            selectedBackgroundTrack?.name,
-                            Math.round(audioBuffer.duration),
-                            tags.length > 0 ? tags : undefined,
-                            voice.isCloned ? base64 : undefined // Save audio only for cloned voices
-                          ).catch(err => console.warn('Failed to save history:', err));
-
-                          source.onended = () => {
-                            setIsPlaying(false);
-                            if (animationFrameRef.current) {
-                              cancelAnimationFrame(animationFrameRef.current);
-                            }
-                          };
-                        } catch (error: unknown) {
-                          console.error('Failed to generate audio:', error);
-                          setMicError(error instanceof Error ? error.message : 'Failed to generate audio. Please try again.');
-                          setIsGenerating(false);
-                          setGenerationStage('idle');
-                        }
-                      }}
-                      onChatStarted={() => setChatStarted(true)}
-                      onMeditationPanelOpen={handleMeditationPanelOpen}
-                      onRequestVoiceSelection={() => setShowVoiceManager(true)}
-                      selectedVoice={selectedVoice}
-                      selectedMusic={selectedBackgroundTrack}
-                      availableMusic={BACKGROUND_TRACKS}
-                      availableTags={AUDIO_TAG_CATEGORIES}
-                      onMusicChange={(track) => setSelectedBackgroundTrack(track)}
-                      isGenerating={isGenerating}
-                      isGeneratingAudio={isGenerating && generationStage === 'voice'}
-                      restoredScript={restoredScript}
-                      onRestoredScriptClear={() => setRestoredScript(null)}
-                      resumeConversationId={resumeConversationId}
-                      onConversationResumed={() => setResumeConversationId(null)}
-                    />
+                        };
+                      } catch (error: unknown) {
+                        console.error('Failed to generate audio:', error);
+                        setMicError(error instanceof Error ? error.message : 'Failed to generate audio. Please try again.');
+                        setIsGenerating(false);
+                        setGenerationStage('idle');
+                      }
+                    }}
+                    onChatStarted={() => setChatStarted(true)}
+                    onMeditationPanelOpen={handleMeditationPanelOpen}
+                    onRequestVoiceSelection={() => setShowVoiceManager(true)}
+                    selectedVoice={selectedVoice}
+                    selectedMusic={selectedBackgroundTrack}
+                    availableMusic={BACKGROUND_TRACKS}
+                    availableTags={AUDIO_TAG_CATEGORIES}
+                    onMusicChange={(track) => setSelectedBackgroundTrack(track)}
+                    isGenerating={isGenerating}
+                    isGeneratingAudio={isGenerating && generationStage === 'voice'}
+                    restoredScript={restoredScript}
+                    onRestoredScriptClear={() => setRestoredScript(null)}
+                    resumeConversationId={resumeConversationId}
+                    onConversationResumed={() => setResumeConversationId(null)}
+                  />
                 </Suspense>
               )}
 
@@ -2431,17 +2432,15 @@ const App: React.FC = () => {
                     <GlassCard
                       key={category.id}
                       onClick={() => setSelectedCategory(category.id)}
-                      className={`!p-8 !rounded-3xl cursor-pointer border border-transparent transition-all hover:scale-[1.02] ${
-                        category.id === 'meditation'
-                          ? 'hover:border-cyan-500/30 '
-                          : 'hover:border-pink-500/30 '
-                      }`}
+                      className={`!p-8 !rounded-3xl cursor-pointer border border-transparent transition-all hover:scale-[1.02] ${category.id === 'meditation'
+                        ? 'hover:border-cyan-500/30 '
+                        : 'hover:border-pink-500/30 '
+                        }`}
                     >
-                      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 ${
-                        category.id === 'meditation'
-                          ? 'bg-gradient-to-br from-cyan-500/20 to-purple-500/20'
-                          : 'bg-gradient-to-br from-pink-500/20 to-purple-500/20'
-                      }`}>
+                      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 ${category.id === 'meditation'
+                        ? 'bg-gradient-to-br from-cyan-500/20 to-purple-500/20'
+                        : 'bg-gradient-to-br from-pink-500/20 to-purple-500/20'
+                        }`}>
                         {category.icon === 'sparkle' ? <ICONS.Sparkle className="w-8 h-8" /> : <ICONS.Book className="w-8 h-8" />}
                       </div>
                       <h4 className="text-2xl font-bold text-white mb-2">{category.name}</h4>
@@ -2459,11 +2458,10 @@ const App: React.FC = () => {
                     <GlassCard
                       key={subgroup.id}
                       onClick={() => setSelectedSubgroup(subgroup.id)}
-                      className={`!p-6 !rounded-2xl cursor-pointer border border-transparent transition-all hover:scale-[1.02] ${
-                        selectedCategory === 'meditation'
-                          ? 'hover:border-cyan-500/30'
-                          : 'hover:border-pink-500/30'
-                      }`}
+                      className={`!p-6 !rounded-2xl cursor-pointer border border-transparent transition-all hover:scale-[1.02] ${selectedCategory === 'meditation'
+                        ? 'hover:border-cyan-500/30'
+                        : 'hover:border-pink-500/30'
+                        }`}
                     >
                       <h5 className="text-lg font-bold text-white mb-1">{subgroup.name}</h5>
                       <p className="text-sm text-slate-400 mb-3">{subgroup.description}</p>
@@ -2483,17 +2481,15 @@ const App: React.FC = () => {
                       <GlassCard
                         key={template.id}
                         onClick={() => handleSelectTemplate(template.prompt)}
-                        className={`!p-5 !rounded-2xl cursor-pointer border border-transparent transition-all ${
-                          selectedCategory === 'meditation'
-                            ? 'hover:border-cyan-500/30'
-                            : 'hover:border-pink-500/30'
-                        }`}
+                        className={`!p-5 !rounded-2xl cursor-pointer border border-transparent transition-all ${selectedCategory === 'meditation'
+                          ? 'hover:border-cyan-500/30'
+                          : 'hover:border-pink-500/30'
+                          }`}
                       >
                         <h5 className="text-base font-bold text-white mb-1.5">{template.title}</h5>
                         <p className="text-sm text-slate-400 leading-relaxed">{template.description}</p>
-                        <div className={`mt-3 text-[10px] font-bold uppercase tracking-widest ${
-                          selectedCategory === 'meditation' ? 'text-cyan-400' : 'text-pink-400'
-                        }`}>
+                        <div className={`mt-3 text-[10px] font-bold uppercase tracking-widest ${selectedCategory === 'meditation' ? 'text-cyan-400' : 'text-pink-400'
+                          }`}>
                           Use Template →
                         </div>
                       </GlassCard>
@@ -2600,18 +2596,7 @@ const App: React.FC = () => {
               onClose={() => setShowVoiceManager(false)}
               onSelectVoice={(voice) => {
                 // Determine provider based on available IDs (fish-audio > chatterbox)
-                const provider = voice.fish_audio_model_id ? 'fish-audio' as const : 'chatterbox' as const;
-                const voiceProfile: VoiceProfile = {
-                  id: voice.id,
-                  name: voice.name,
-                  provider,
-                  voiceName: voice.name,
-                  description: voice.description || 'Your personalized voice clone',
-                  isCloned: true,
-                  providerVoiceId: voice.provider_voice_id,
-                  fishAudioModelId: voice.fish_audio_model_id,
-                  voiceSampleUrl: voice.voice_sample_url,
-                };
+                const voiceProfile = mapDbVoiceToProfile(voice as DBVoiceProfile);
                 setSelectedVoice(voiceProfile);
                 setShowVoiceManager(false);
               }}
@@ -2766,21 +2751,19 @@ const App: React.FC = () => {
                   <div className="flex justify-center gap-2 mb-8">
                     <button
                       onClick={() => setLibraryTab('all')}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                        libraryTab === 'all'
-                          ? 'bg-emerald-500/20 text-emerald-400'
-                          : 'bg-white/5 text-slate-400 hover:text-white'
-                      }`}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${libraryTab === 'all'
+                        ? 'bg-emerald-500/20 text-emerald-400'
+                        : 'bg-white/5 text-slate-400 hover:text-white'
+                        }`}
                     >
                       My Audios
                     </button>
                     <button
                       onClick={() => setLibraryTab('favorites')}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                        libraryTab === 'favorites'
-                          ? 'bg-amber-500/20 text-amber-400'
-                          : 'bg-white/5 text-slate-400 hover:text-white'
-                      }`}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${libraryTab === 'favorites'
+                        ? 'bg-amber-500/20 text-amber-400'
+                        : 'bg-white/5 text-slate-400 hover:text-white'
+                        }`}
                     >
                       ⭐ Favorites
                     </button>
@@ -2844,11 +2827,10 @@ const App: React.FC = () => {
                                             playLibraryMeditation(meditation);
                                           }
                                         }}
-                                        className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-                                          libraryPlayingId === meditation.id
-                                            ? 'bg-emerald-500 text-white animate-pulse'
-                                            : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                                        }`}
+                                        className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${libraryPlayingId === meditation.id
+                                          ? 'bg-emerald-500 text-white animate-pulse'
+                                          : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                                          }`}
                                       >
                                         {libraryPlayingId === meditation.id ? (
                                           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -2880,11 +2862,10 @@ const App: React.FC = () => {
                                       <div className="flex items-center gap-2">
                                         <button
                                           onClick={() => handleToggleFavorite(meditation.id)}
-                                          className={`p-2 rounded-lg transition-colors ${
-                                            meditation.is_favorite
-                                              ? 'text-amber-400 bg-amber-500/20'
-                                              : 'text-slate-500 hover:text-amber-400 hover:bg-white/5'
-                                          }`}
+                                          className={`p-2 rounded-lg transition-colors ${meditation.is_favorite
+                                            ? 'text-amber-400 bg-amber-500/20'
+                                            : 'text-slate-500 hover:text-amber-400 hover:bg-white/5'
+                                            }`}
                                         >
                                           <svg className="w-4 h-4" fill={meditation.is_favorite ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
