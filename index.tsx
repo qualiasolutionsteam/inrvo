@@ -31,7 +31,7 @@ type Metric = {
 // DSN should be set via environment variable in production
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
 
-if (SENTRY_DSN) {
+if (SENTRY_DSN && import.meta.env.PROD) {
   Sentry.init({
     dsn: SENTRY_DSN,
     environment: import.meta.env.MODE,
@@ -102,38 +102,38 @@ root.render(
     <ErrorBoundary>
       <AuthProvider>
         <AuthModalProvider>
-        <ModalProvider>
-          <AudioProvider>
-            <ScriptProvider>
-              <LibraryProvider>
-                <AudioTagsProvider>
-                  <ChatHistoryProvider>
-                    <AppProvider>
-                      <OnboardingProvider>
-                      <AppRouter />
-                      <Toaster
-                      position="top-center"
-                      richColors
-                      closeButton
-                      duration={4000}
-                      toastOptions={{
-                        style: {
-                          background: 'rgba(15, 23, 42, 0.95)',
-                          border: '1px solid rgba(56, 189, 248, 0.2)',
-                          backdropFilter: 'blur(12px)',
-                          color: '#e2e8f0',
-                        },
-                      }}
-                    />
-                    <Analytics />
-                    </OnboardingProvider>
-                    </AppProvider>
-                  </ChatHistoryProvider>
-                </AudioTagsProvider>
-              </LibraryProvider>
-            </ScriptProvider>
-          </AudioProvider>
-        </ModalProvider>
+          <ModalProvider>
+            <AudioProvider>
+              <ScriptProvider>
+                <LibraryProvider>
+                  <AudioTagsProvider>
+                    <ChatHistoryProvider>
+                      <AppProvider>
+                        <OnboardingProvider>
+                          <AppRouter />
+                          <Toaster
+                            position="top-center"
+                            richColors
+                            closeButton
+                            duration={4000}
+                            toastOptions={{
+                              style: {
+                                background: 'rgba(15, 23, 42, 0.95)',
+                                border: '1px solid rgba(56, 189, 248, 0.2)',
+                                backdropFilter: 'blur(12px)',
+                                color: '#e2e8f0',
+                              },
+                            }}
+                          />
+                          <Analytics />
+                        </OnboardingProvider>
+                      </AppProvider>
+                    </ChatHistoryProvider>
+                  </AudioTagsProvider>
+                </LibraryProvider>
+              </ScriptProvider>
+            </AudioProvider>
+          </ModalProvider>
         </AuthModalProvider>
       </AuthProvider>
     </ErrorBoundary>
