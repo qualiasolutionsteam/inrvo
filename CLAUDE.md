@@ -15,16 +15,16 @@ INrVO is a meditation and wellness app that generates personalized guided medita
 npm run dev          # Start dev server on localhost:3000
 npm run build        # Production build
 npm test             # Run tests with vitest (watch mode)
-npm run test:run     # Single test run (no watch)
-npm run test:coverage # Coverage report
+npm run test:run     # Single test run (CI mode)
 npm run test:ui      # Vitest UI
 ANALYZE=true npm run build  # Bundle analyzer (opens stats.html)
+```
 
-# Run single test file
-npm test -- tests/lib/credits.test.ts
+## Path Alias
 
-# Run tests matching pattern
-npm test -- --grep "voice"
+The `@/` alias resolves to the project root (configured in `vitest.config.ts` and `tsconfig.json`):
+```typescript
+import { supabase } from '@/lib/supabase';
 ```
 
 ## Architecture
@@ -33,7 +33,7 @@ npm test -- --grep "voice"
 - **Frontend**: React 19 + TypeScript + Vite
 - **Routing**: react-router-dom v7 (lazy-loaded pages in `src/router.tsx`)
 - **Styling**: Tailwind CSS v4 + Framer Motion
-- **State**: React Context pattern (9 contexts in `src/contexts/`)
+- **State**: React Context pattern (10 contexts in `src/contexts/`)
 - **Backend**: Supabase (Auth, PostgreSQL, Edge Functions, Storage)
 - **AI/TTS**: Google Gemini (scripts), ElevenLabs (primary TTS), Web Speech API (fallback)
 - **Monitoring**: Sentry + Vercel Analytics
@@ -52,7 +52,7 @@ npm test -- --grep "voice"
 │   ├── router.tsx    # Route definitions with lazy loading + prefetching
 │   ├── pages/        # Page components
 │   │   └── marketing/  # Marketing portal (admin dashboard)
-│   ├── contexts/     # React contexts (9 contexts re-exported from index.ts)
+│   ├── contexts/     # React contexts (10 contexts, 8 re-exported from index.ts)
 │   ├── lib/          # Services and utilities
 │   │   ├── voiceService.ts    # TTS provider routing
 │   │   ├── edgeFunctions.ts   # Edge function API calls with retry/tracing
@@ -184,8 +184,26 @@ GEMINI_API_KEY=...
 
 Tests use Vitest + React Testing Library + happy-dom. Test files mirror `src/` structure in `tests/`.
 
+```bash
+# Run all tests
+npm test
+
+# Run specific test file
+npm test -- tests/lib/credits.test.ts
+
+# Run tests matching pattern
+npm test -- --grep "voice"
+
+# Single run (CI mode)
+npm run test:run
+
+# Coverage report
+npm run test:coverage
+```
+
 Coverage thresholds in `vitest.config.ts`:
-- `src/lib/credits.ts`: 90% statements/functions/lines, 85% branches
+- Global: 50% statements/functions/lines, 40% branches
+- `src/lib/credits.ts`: 90% statements/functions/lines, 85% branches (critical path)
 
 ## Build Optimization
 

@@ -2106,10 +2106,13 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              {/* Error message */}
+              {/* Error message - positioned at top for mobile visibility */}
               {micError && !isInlineMode && (
-                <div className="fixed bottom-24 left-0 right-0 z-50 text-center">
-                  <span className="px-4 py-1.5 rounded-full bg-rose-500/10 text-rose-400 text-[10px] font-bold uppercase tracking-widest border border-rose-500/20">
+                <div
+                  className="fixed left-0 right-0 z-[60] text-center px-4"
+                  style={{ top: 'max(5rem, calc(env(safe-area-inset-top, 0px) + 4rem))' }}
+                >
+                  <span className="inline-block px-4 py-2 rounded-full bg-rose-500/20 text-rose-400 text-xs font-medium border border-rose-500/30 shadow-lg backdrop-blur-sm">
                     {micError}
                   </span>
                 </div>

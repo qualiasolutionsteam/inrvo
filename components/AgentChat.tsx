@@ -493,11 +493,14 @@ export const AgentChat: React.FC<AgentChatProps> = ({
         </div>
       )}
 
-      {/* Input Area - Always fixed at bottom */}
+      {/* Input Area - Always fixed at bottom with safe-area support */}
       {!showMeditationPanel && (
-        <div className={`fixed left-0 right-0 bottom-0 px-4 z-50 pb-14 ${hasMessages
-          ? 'bg-gradient-to-t from-[#020617] via-[#020617]/95 to-transparent'
-          : ''}`}>
+        <div
+          className={`fixed left-0 right-0 bottom-0 px-4 z-50 ${hasMessages
+            ? 'bg-gradient-to-t from-[#020617] via-[#020617]/95 to-transparent'
+            : ''}`}
+          style={{ paddingBottom: 'max(3.5rem, calc(env(safe-area-inset-bottom, 0px) + 1rem))' }}
+        >
         <div className="max-w-3xl mx-auto w-full">
           <form onSubmit={handleSubmit}>
             <div
@@ -514,13 +517,13 @@ export const AgentChat: React.FC<AgentChatProps> = ({
                   : '0 0 20px rgba(34, 211, 238, 0.12), 0 0 40px rgba(139, 92, 246, 0.08), 0 0 2px rgba(34, 211, 238, 0.3)'
               }}
             >
-              {/* Voice Call Button */}
+              {/* Voice Call Button - 44px touch target for mobile */}
               <button
                 type="button"
                 data-onboarding="voice-toggle"
                 onClick={handleOpenVoiceAgent}
                 disabled={isProcessing || isRecording}
-                className="flex-shrink-0 p-2 mr-2 rounded-full hover:bg-white/10 transition-colors text-cyan-400/70 hover:text-cyan-400 disabled:opacity-50"
+                className="flex-shrink-0 w-11 h-11 mr-1 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors text-cyan-400/70 hover:text-cyan-400 disabled:opacity-50 touch-manipulation"
                 title="Start voice chat"
                 aria-label="Start voice conversation"
               >
@@ -547,15 +550,16 @@ export const AgentChat: React.FC<AgentChatProps> = ({
                 onClick={showMicButton || isRecording ? handleMicClick : undefined}
                 disabled={isProcessing && !isRecording}
                 className={`
-                  flex-shrink-0 ml-2
+                  flex-shrink-0 ml-2 touch-manipulation
                   flex items-center justify-center transition-all duration-200
+                  h-11 w-11 min-w-[44px] min-h-[44px] rounded-full
                   ${isProcessing && !isRecording
-                    ? 'h-10 w-10 rounded-full bg-cyan-500/50 cursor-not-allowed'
+                    ? 'bg-cyan-500/50 cursor-not-allowed'
                     : isRecording
-                      ? 'h-10 w-10 rounded-full bg-cyan-500/90 hover:bg-cyan-400 active:scale-95 text-white'
+                      ? 'bg-cyan-500/90 hover:bg-cyan-400 active:scale-95 text-white'
                       : inputValue.trim()
-                        ? 'h-10 w-10 rounded-full bg-cyan-500 hover:bg-cyan-400 active:scale-95 text-white'
-                        : 'p-2 hover:opacity-80 active:scale-95'
+                        ? 'bg-cyan-500 hover:bg-cyan-400 active:scale-95 text-white'
+                        : 'bg-transparent hover:bg-white/10 active:scale-95 text-cyan-400/70 hover:text-cyan-400'
                   }
                 `}
               >
