@@ -407,29 +407,7 @@ export class ConversationStore {
     this.scheduleSave();
   }
 
-  /**
-   * Delete a conversation
-   */
-  async deleteConversation(conversationId: string): Promise<void> {
-    if (!this.userId) return;
 
-    // Delete from Supabase
-    const { error } = await supabase
-      .from('conversations')
-      .delete()
-      .eq('id', conversationId)
-      .eq('user_id', this.userId);
-
-    if (error) {
-      console.error('Error deleting conversation:', error);
-      throw error;
-    }
-
-    // If the deleted conversation is the current one, clear it
-    if (this.currentConversation?.id === conversationId) {
-      this.clearCurrentConversation();
-    }
-  }
 
   /**
    * Clear current conversation

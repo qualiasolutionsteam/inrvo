@@ -252,7 +252,6 @@ export const Sidebar = memo(({
   isLoadingChatHistory,
   onLoadConversation,
   onStartNewConversation,
-  onStartNewConversation,
   onConversationSelected,
   onDeleteConversation,
   onMeditationRestore,
