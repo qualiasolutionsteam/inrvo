@@ -72,34 +72,34 @@ const getTimeOfDay = (): 'morning' | 'afternoon' | 'evening' | 'night' => {
 
 const TAGLINES_BY_TIME = {
   morning: [
-    { main: 'Start your day', highlight: 'mindfully', sub: 'How are you feeling this morning?' },
-    { main: 'Good morning.', highlight: 'Breathe deep.', sub: 'What would help you begin today?' },
-    { main: 'A fresh start', highlight: 'awaits', sub: 'Tell us what you need.' },
+    { main: 'Start your day', highlight: 'mindfully', sub: '' },
+    { main: 'Good morning.', highlight: 'Breathe deep.', sub: '' },
+    { main: 'A fresh start', highlight: 'awaits', sub: '' },
   ],
   afternoon: [
-    { main: 'Take a moment', highlight: 'to reset', sub: 'What do you need right now?' },
-    { main: 'Pause.', highlight: 'Breathe.', sub: 'Describe how you feel.' },
-    { main: 'Find your', highlight: 'center', sub: 'Tell us what you seek.' },
+    { main: 'Take a moment', highlight: 'to reset', sub: '' },
+    { main: 'Pause.', highlight: 'Breathe.', sub: '' },
+    { main: 'Find your', highlight: 'center', sub: '' },
   ],
   evening: [
-    { main: 'Unwind', highlight: 'your mind', sub: 'How was your day?' },
-    { main: 'Let the day', highlight: 'fade away', sub: 'What would bring you peace?' },
-    { main: 'Time to', highlight: 'decompress', sub: 'Tell us what you need.' },
+    { main: 'Unwind', highlight: 'your mind', sub: '' },
+    { main: 'Let the day', highlight: 'fade away', sub: '' },
+    { main: 'Time to', highlight: 'decompress', sub: '' },
   ],
   night: [
-    { main: 'Quiet your', highlight: 'thoughts', sub: 'Prepare for restful sleep.' },
-    { main: 'Drift into', highlight: 'tranquility', sub: 'What would help you relax?' },
-    { main: 'Peace', highlight: 'before sleep', sub: 'Tell us how you feel.' },
+    { main: 'Quiet your', highlight: 'thoughts', sub: '' },
+    { main: 'Drift into', highlight: 'tranquility', sub: '' },
+    { main: 'Peace', highlight: 'before sleep', sub: '' },
   ],
 };
 
 // Universal taglines (fallback and variety)
 const UNIVERSAL_TAGLINES = [
-  { main: 'Meditation,', highlight: 'made for you', sub: 'Just describe how you feel.' },
-  { main: 'Your moment of', highlight: 'calm', sub: 'Describe it. We create it.' },
-  { main: 'Designed', highlight: 'around you', sub: 'Describe your state of mind.' },
-  { main: 'Your personal', highlight: 'sanctuary', sub: 'Say how you are feeling.' },
-  { main: 'Peace,', highlight: 'on your terms', sub: 'Tell us what you seek.' },
+  { main: 'Meditation,', highlight: 'made for you', sub: '' },
+  { main: 'Your moment of', highlight: 'calm', sub: '' },
+  { main: 'Designed', highlight: 'around you', sub: '' },
+  { main: 'Your personal', highlight: 'sanctuary', sub: '' },
+  { main: 'Peace,', highlight: 'on your terms', sub: '' },
 ];
 
 // Get a contextual tagline based on time of day
@@ -2102,7 +2102,7 @@ const App: React.FC = () => {
                   <p className="text-2xl md:text-4xl font-light tracking-wide text-white/70">
                     {tagline.main} <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-cyan-500 font-semibold">{tagline.highlight}</span>
                   </p>
-                  <p className="text-base md:text-2xl text-slate-500 mt-1 md:mt-2 hidden sm:block">{tagline.sub}</p>
+                  {tagline.sub && <p className="text-base md:text-2xl text-slate-500 mt-1 md:mt-2 hidden sm:block">{tagline.sub}</p>}
                 </div>
               )}
 
