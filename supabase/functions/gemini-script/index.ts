@@ -482,7 +482,7 @@ serve(async (req) => {
                 'X-Title': 'Innrvo Meditation App',
               },
               body: JSON.stringify({
-                model: Deno.env.get('GEMINI_MODEL') || 'google/gemini-2.0-flash-001',
+                model: Deno.env.get('GEMINI_MODEL') || 'google/gemini-3-flash-preview',
                 messages: [{ role: 'user', content: prompt }],
                 temperature,
                 max_tokens: maxOutputTokens,
