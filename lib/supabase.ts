@@ -421,14 +421,17 @@ export const hasCompletedOnboarding = async (userId?: string): Promise<boolean> 
     .from('users')
     .select('onboarding_completed')
     .eq('id', targetUserId)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('Error checking onboarding status:', error);
     return true; // Default to completed on error
   }
 
-  return data?.onboarding_completed ?? true;
+  // If no user row exists yet, treat as not completed (show onboarding)
+  if (!data) return false;
+
+  return data.onboarding_completed ?? true;
 };
 
 /**
@@ -1241,7 +1244,7 @@ export const getAudioTagPreferences = async (): Promise<AudioTagPreference> => {
     .from('users')
     .select('audio_tag_preferences')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
   if (error || !data?.audio_tag_preferences) {
     return { enabled: false, favorite_tags: [] };
