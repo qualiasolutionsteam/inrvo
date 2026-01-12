@@ -3,74 +3,67 @@
  *
  * Parses and renders audio tags within script text.
  * Provides script statistics (word count, duration, tag count).
+ *
+ * Returns HTML string for dangerouslySetInnerHTML to avoid React/contentEditable conflicts.
  */
 
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import type { ScriptStats } from '../types';
 
 const AUDIO_TAG_REGEX = /\[([^\]]+)\]/g;
 
 export interface UseAudioTagsReturn {
-  /** React nodes with styled audio tags */
-  renderStyledContent: React.ReactNode[];
+  /** HTML string with styled audio tags for dangerouslySetInnerHTML */
+  styledContentHtml: string;
   /** Script statistics */
   stats: ScriptStats;
 }
 
+/**
+ * Escape HTML special characters to prevent XSS
+ */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export function useAudioTags(script: string): UseAudioTagsReturn {
   /**
-   * Render script with styled audio tags (purple highlights)
+   * Generate HTML string with styled audio tags (purple highlights)
+   * Using HTML string instead of React nodes to avoid contentEditable conflicts
    */
-  const renderStyledContent = useMemo(() => {
-    const parts: React.ReactNode[] = [];
+  const styledContentHtml = useMemo(() => {
+    const parts: string[] = [];
     let lastIndex = 0;
     let match;
-    let tagIndex = 0;
 
     const regex = new RegExp(AUDIO_TAG_REGEX.source, 'g');
 
     while ((match = regex.exec(script)) !== null) {
-      // Add text before the tag (with stable key)
+      // Add escaped text before the tag
       if (match.index > lastIndex) {
-        parts.push(
-          React.createElement(
-            React.Fragment,
-            { key: `text-${tagIndex}` },
-            script.slice(lastIndex, match.index)
-          )
-        );
+        parts.push(escapeHtml(script.slice(lastIndex, match.index)));
       }
 
-      // Add styled audio tag with stable key based on index + content
+      // Add styled audio tag span (tag content is escaped)
+      const escapedTag = escapeHtml(match[0]);
       parts.push(
-        React.createElement(
-          'span',
-          {
-            key: `tag-${tagIndex}-${match[0]}`,
-            className: 'audio-tag',
-            contentEditable: false,
-            'data-tag': match[0],
-          },
-          match[0]
-        )
+        `<span class="audio-tag" contenteditable="false" data-tag="${escapedTag}">${escapedTag}</span>`
       );
 
-      tagIndex++;
       lastIndex = match.index + match[0].length;
     }
 
-    // Add remaining text (with stable key)
+    // Add remaining escaped text
     if (lastIndex < script.length) {
-      parts.push(
-        React.createElement(
-          React.Fragment,
-          { key: `text-end` },
-          script.slice(lastIndex)
-        )
-      );
+      parts.push(escapeHtml(script.slice(lastIndex)));
     }
 
-    return parts;
+    return parts.join('');
   }, [script]);
 
   /**
@@ -94,5 +87,5 @@ export function useAudioTags(script: string): UseAudioTagsReturn {
     return { wordCount, estimatedMinutes, tagCount };
   }, [script]);
 
-  return { renderStyledContent, stats };
+  return { styledContentHtml, stats };
 }

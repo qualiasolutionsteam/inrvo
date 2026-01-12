@@ -104,8 +104,12 @@ export const MeditationEditor = memo<MeditationEditorProps>(
     }, [editedScript]);
 
     // Hooks - use sanitized script for rendering
-    const { renderStyledContent, stats } = useAudioTags(sanitizedScript);
+    const { styledContentHtml, stats } = useAudioTags(sanitizedScript);
     const { restoreCursorPosition, insertAtCursor } = useEditorCursor(editorRef);
+
+    // Track if user is actively editing to prevent re-render conflicts
+    const isUserEditingRef = useRef(false);
+    const lastExternalScriptRef = useRef(script);
 
     // Keyboard shortcuts
     useKeyboard({
@@ -115,16 +119,30 @@ export const MeditationEditor = memo<MeditationEditorProps>(
       isActive: true,
     });
 
-    // Sync script prop with local state
+    // Sync script prop with local state when it changes from props
     useEffect(() => {
-      setEditedScript(script);
+      if (script !== lastExternalScriptRef.current) {
+        lastExternalScriptRef.current = script;
+        setEditedScript(script);
+      }
     }, [script]);
+
+    // Sync styled content to editor when content changes (from any source)
+    // Skip during active editing to avoid fighting the browser's DOM updates
+    useEffect(() => {
+      if (editorRef.current && !isUserEditingRef.current) {
+        editorRef.current.innerHTML = styledContentHtml;
+      }
+    }, [styledContentHtml]);
 
     // Handle content input with RAF batching to prevent rapid re-renders on mobile
     const pendingInputRef = useRef<number | null>(null);
     const handleInput = useCallback(
       (e: React.FormEvent<HTMLDivElement>) => {
         try {
+          // Mark that user is actively editing
+          isUserEditingRef.current = true;
+
           const target = e.currentTarget;
           const text = target.innerText;
 
@@ -136,11 +154,18 @@ export const MeditationEditor = memo<MeditationEditorProps>(
           // Batch updates via requestAnimationFrame to prevent rapid re-renders
           pendingInputRef.current = requestAnimationFrame(() => {
             setEditedScript(text);
+            lastExternalScriptRef.current = text; // Track as external to prevent re-sync
             pendingInputRef.current = null;
+
+            // Reset editing flag after state update
+            requestAnimationFrame(() => {
+              isUserEditingRef.current = false;
+            });
           });
         } catch (err) {
           // Silently handle any DOM access errors on mobile
           console.warn('Input handling error:', err);
+          isUserEditingRef.current = false;
         }
       },
       []
@@ -438,7 +463,7 @@ export const MeditationEditor = memo<MeditationEditorProps>(
                 </div>
               </div>
 
-              {/* Editable Area */}
+              {/* Editable Area - uses effect to set innerHTML, avoiding React/contentEditable conflicts */}
               <div
                 ref={editorRef}
                 contentEditable={!readOnly}
@@ -460,9 +485,7 @@ export const MeditationEditor = memo<MeditationEditorProps>(
                   fontSize: '16px', // Prevent iOS zoom on focus
                   wordBreak: 'break-word',
                 }}
-              >
-                {renderStyledContent}
-              </div>
+              />
 
               {/* Placeholder */}
               {!editedScript && (

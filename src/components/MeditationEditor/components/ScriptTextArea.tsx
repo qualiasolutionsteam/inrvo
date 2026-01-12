@@ -2,9 +2,10 @@
  * ScriptTextArea Component
  *
  * contentEditable script editing area with styled audio tags.
+ * Uses effect-based innerHTML updates to avoid React/contentEditable conflicts.
  */
 
-import React, { memo, useRef, useEffect, useCallback } from 'react';
+import { memo, useRef, useEffect, useCallback } from 'react';
 import { useEditorCursor } from '../hooks/useEditorCursor';
 import { useAudioTags } from '../hooks/useAudioTags';
 import type { ScriptStats } from '../types';
@@ -52,20 +53,35 @@ export const ScriptTextArea = memo<ScriptTextAreaProps>(
   }) => {
     const editorRef = useRef<HTMLDivElement>(null);
     const cursorPositionRef = useRef<number | null>(null);
+    const isUserEditingRef = useRef(false);
     const { restoreCursorPosition } = useEditorCursor(editorRef);
-    const { renderStyledContent, stats } = useAudioTags(content);
+    const { styledContentHtml, stats } = useAudioTags(content);
 
     // Notify parent of stats changes
     useEffect(() => {
       onStatsChange?.(stats);
     }, [stats, onStatsChange]);
 
+    // Sync styled content to editor when content changes (from any source)
+    // Skip during active editing to avoid fighting the browser's DOM updates
+    useEffect(() => {
+      if (editorRef.current && !isUserEditingRef.current) {
+        editorRef.current.innerHTML = styledContentHtml;
+      }
+    }, [styledContentHtml]);
+
     // Handle content input
     const handleInput = useCallback(
       (e: React.FormEvent<HTMLDivElement>) => {
+        isUserEditingRef.current = true;
         const target = e.currentTarget;
         const text = target.innerText;
         onChange(text);
+
+        // Reset editing flag after a frame to allow state updates
+        requestAnimationFrame(() => {
+          isUserEditingRef.current = false;
+        });
       },
       [onChange]
     );
@@ -105,7 +121,7 @@ export const ScriptTextArea = memo<ScriptTextAreaProps>(
           </div>
         )}
 
-        {/* Editable Area */}
+        {/* Editable Area - uses effect to set innerHTML, avoiding React/contentEditable conflicts */}
         <div
           ref={editorRef}
           contentEditable={!readOnly}
@@ -127,9 +143,7 @@ export const ScriptTextArea = memo<ScriptTextAreaProps>(
             fontSize: '16px', // Prevent iOS zoom on focus
             wordBreak: 'break-word',
           }}
-        >
-          {renderStyledContent}
-        </div>
+        />
 
         {/* Placeholder */}
         {!content && (
