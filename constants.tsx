@@ -1039,13 +1039,7 @@ export function getSuggestedTags(prompt: string): string[] {
 
 export const ICONS = {
   Logo: ({ className = "h-8" }: { className?: string }) => (
-    <svg viewBox="0 0 160 50" fill="none" xmlns="http://www.w3.org/2000/svg" className={`${className} transition-all duration-300`}>
-      <text x="0" y="38" className="font-sans" fill="currentColor" style={{ fontWeight: 200, fontSize: '32px', letterSpacing: '0.1em' }}>INR</text>
-      <text x="75" y="38" className="font-sans" fill="currentColor" style={{ fontWeight: 800, fontSize: '32px' }}>V</text>
-      <circle cx="115" cy="30" r="14" stroke="currentColor" strokeWidth="4" />
-      <path d="M112 24C115 24 118 27 118 30C118 33 115 36 112 36" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <path d="M108 20C113 20 118 25 118 30C118 35 113 40 108 40" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
+    <img src="/logo.png" alt="Innrvo" className={`${className} transition-all duration-300`} />
   ),
 
   // Duotone Sparkle with gradient

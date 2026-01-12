@@ -39,14 +39,14 @@ const LandingPage = () => {
           className="text-center max-w-2xl"
         >
           {/* Logo/Brand */}
-          <motion.h1
+          <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="font-neural text-5xl md:text-6xl lg:text-7xl font-light tracking-tight text-white mb-4"
+            className="mb-4 flex justify-center"
           >
-            innrvo
-          </motion.h1>
+            <img src="/logo.png" alt="Innrvo" className="h-16 md:h-20 lg:h-24" />
+          </motion.div>
 
           {/* Subtitle */}
           <motion.p
