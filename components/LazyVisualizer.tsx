@@ -16,7 +16,7 @@ function VisualizerPlaceholder({ size = 400 }: { size?: number }) {
       style={{ width: size, height: size }}
     >
       {/* Static placeholder orb */}
-      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 animate-pulse" />
+      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-500/20 to-teal-500/20 animate-pulse" />
     </div>
   );
 }

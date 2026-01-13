@@ -3057,19 +3057,19 @@ const App: React.FC = () => {
                   </div>
                   <ul className="space-y-3 mb-6">
                     <li className="flex items-center gap-2 text-sm text-slate-300">
-                      <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      <svg className="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                       Everything in Pro
                     </li>
                     <li className="flex items-center gap-2 text-sm text-slate-300">
-                      <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      <svg className="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                       5 team members
                     </li>
                     <li className="flex items-center gap-2 text-sm text-slate-300">
-                      <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      <svg className="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                       Shared library
                     </li>
                     <li className="flex items-center gap-2 text-sm text-slate-300">
-                      <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      <svg className="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                       Priority support
                     </li>
                   </ul>
@@ -3182,7 +3182,7 @@ const App: React.FC = () => {
             <div className="flex-1 flex flex-col items-center pt-20 md:pt-16 relative z-10 max-w-4xl mx-auto w-full">
               <div className="inline-block px-4 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-6">Legal</div>
               <h2 className="text-3xl md:text-5xl font-extralight text-center mb-4 tracking-tight">
-                <span className="bg-gradient-to-r from-cyan-300 via-purple-200 to-pink-300 bg-clip-text text-transparent">Terms of Service</span>
+                <span className="bg-gradient-to-r from-cyan-300 via-white to-teal-300 bg-clip-text text-transparent">Terms of Service</span>
               </h2>
               <p className="text-slate-500 text-center mb-8">Last updated: December 2024</p>
 
@@ -3243,9 +3243,9 @@ const App: React.FC = () => {
             </button>
 
             <div className="flex-1 flex flex-col items-center pt-20 md:pt-16 relative z-10 max-w-4xl mx-auto w-full">
-              <div className="inline-block px-4 py-1 rounded-full bg-purple-500/10 text-purple-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-6">Legal</div>
+              <div className="inline-block px-4 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-6">Legal</div>
               <h2 className="text-3xl md:text-5xl font-extralight text-center mb-4 tracking-tight">
-                <span className="bg-gradient-to-r from-purple-300 via-pink-200 to-rose-300 bg-clip-text text-transparent">Privacy Policy</span>
+                <span className="bg-gradient-to-r from-cyan-300 via-white to-teal-300 bg-clip-text text-transparent">Privacy Policy</span>
               </h2>
               <p className="text-slate-500 text-center mb-8">Last updated: December 2024</p>
 
@@ -3282,7 +3282,7 @@ const App: React.FC = () => {
 
                 <GlassCard className="!p-6 !rounded-2xl">
                   <h3 className="text-lg font-bold text-white mb-3">7. Contact</h3>
-                  <p className="text-slate-400">For privacy inquiries, contact us at <a href="https://qualiasolutions.net" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 transition-colors">qualiasolutions.net</a></p>
+                  <p className="text-slate-400">For privacy inquiries, contact us at <a href="https://qualiasolutions.net" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300 transition-colors">qualiasolutions.net</a></p>
                 </GlassCard>
               </div>
             </div>

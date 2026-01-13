@@ -518,13 +518,13 @@ const AgentChatComponent: React.FC<AgentChatProps> = ({
                           rounded-full px-4 md:px-6 py-2.5
                           transition-all duration-300
                           ${isRecording
-                            ? 'border-cyan-400/60 bg-cyan-500/5'
-                            : 'border-cyan-500/30 focus-within:border-cyan-400/50 focus-within:bg-white/[0.05]'
+                            ? 'border-blue-400/60 bg-blue-500/5'
+                            : 'border-blue-500/30 focus-within:border-blue-400/50 focus-within:bg-white/[0.05]'
                           }`}
               style={{
                 boxShadow: isRecording
-                  ? '0 0 20px rgba(34, 211, 238, 0.25), 0 0 40px rgba(139, 92, 246, 0.2), 0 0 60px rgba(34, 211, 238, 0.1)'
-                  : '0 0 20px rgba(34, 211, 238, 0.12), 0 0 40px rgba(139, 92, 246, 0.08), 0 0 2px rgba(34, 211, 238, 0.3)'
+                  ? '0 0 20px rgba(59, 130, 246, 0.3), 0 0 40px rgba(59, 130, 246, 0.15), 0 0 60px rgba(59, 130, 246, 0.1)'
+                  : '0 0 20px rgba(59, 130, 246, 0.15), 0 0 40px rgba(59, 130, 246, 0.08), 0 0 2px rgba(96, 165, 250, 0.3)'
               }}
             >
               {/* Voice Call Button - 44px touch target for mobile */}

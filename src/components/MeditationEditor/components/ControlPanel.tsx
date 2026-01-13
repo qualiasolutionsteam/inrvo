@@ -280,9 +280,9 @@ export const ControlPanel = memo<ControlPanelProps>(
         {expanded && (
           <div className="animate-in slide-in-from-bottom-2 duration-200 px-4 pb-4">
             <div
-              className="bg-white/5 backdrop-blur-sm rounded-xl p-3 border border-cyan-500/30"
+              className="bg-white/5 backdrop-blur-sm rounded-xl p-3 border border-blue-500/30"
               style={{
-                boxShadow: '0 0 20px rgba(34, 211, 238, 0.12), 0 0 40px rgba(139, 92, 246, 0.08), 0 0 2px rgba(34, 211, 238, 0.3)'
+                boxShadow: '0 0 20px rgba(59, 130, 246, 0.15), 0 0 40px rgba(59, 130, 246, 0.08), 0 0 2px rgba(96, 165, 250, 0.3)'
               }}
             >
               {/* Tab Buttons */}

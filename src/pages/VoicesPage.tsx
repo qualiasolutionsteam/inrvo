@@ -315,7 +315,9 @@ const VoicesPage: React.FC = () => {
 
   // Fetch voices from Supabase
   const loadVoices = useCallback(async () => {
+    console.log('[VoicesPage] loadVoices called, user:', !!user, 'isSessionReady:', isSessionReady);
     if (!user || !isSessionReady) {
+      console.log('[VoicesPage] Skipping load - user:', !!user, 'isSessionReady:', isSessionReady);
       setLoading(false);
       return;
     }

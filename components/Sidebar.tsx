@@ -358,7 +358,7 @@ export const Sidebar = memo(({
               />
               {isAdmin && (
                 <>
-                  <div className="mx-1 my-2 h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
+                  <div className="mx-1 my-2 h-px bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent" />
                   <MenuItem
                     icon={Icons.Shield}
                     label="Admin"
@@ -431,7 +431,7 @@ export const Sidebar = memo(({
                 <>
                   {/* User info */}
                   <div className="flex items-center gap-3 px-3 py-2 mb-1">
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center text-cyan-400">
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-cyan-500/20 to-teal-500/20 flex items-center justify-center text-cyan-400">
                       <Icons.User />
                     </div>
                     <span className="flex-1 text-[12px] text-slate-400 truncate">

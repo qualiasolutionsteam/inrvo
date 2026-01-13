@@ -288,7 +288,9 @@ const LibraryPage: React.FC = () => {
 
   // Fetch meditations directly from Supabase
   const loadMeditations = useCallback(async (pageNum = 0, append = false) => {
+    console.log('[LibraryPage] loadMeditations called, user:', !!user, 'isSessionReady:', isSessionReady);
     if (!user || !isSessionReady) {
+      console.log('[LibraryPage] Skipping load - user:', !!user, 'isSessionReady:', isSessionReady);
       setLoading(false);
       return;
     }
