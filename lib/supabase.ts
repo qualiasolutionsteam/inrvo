@@ -971,9 +971,15 @@ export const getMeditationAudioUrl = (audioPath: string): string | null => {
 
 /**
  * Get signed URL for meditation audio (for private buckets)
+ * Handles both relative paths and full URLs
  */
 export const getMeditationAudioSignedUrl = async (audioPath: string): Promise<string | null> => {
   if (!supabase || !audioPath) return null;
+
+  // If it's already a full URL, return it directly
+  if (audioPath.startsWith('http://') || audioPath.startsWith('https://')) {
+    return audioPath;
+  }
 
   const { data, error } = await supabase.storage
     .from('meditation-audio')
@@ -1054,7 +1060,7 @@ export const saveMeditationHistory = async (
 };
 
 // Fields needed for meditation history display
-const MEDITATION_HISTORY_FIELDS = 'id, user_id, prompt, title, enhanced_script, voice_id, voice_name, background_track_name, duration_seconds, audio_url, is_favorite, created_at, updated_at' as const;
+const MEDITATION_HISTORY_FIELDS = 'id, user_id, prompt, title, enhanced_script, voice_id, voice_name, voice_profile_id, background_track_name, duration_seconds, audio_duration, audio_url, is_favorite, content_category, content_sub_type, meditation_type, created_at, updated_at' as const;
 
 export const getMeditationHistory = async (limit = 50): Promise<MeditationHistory[]> => {
   const user = await getCurrentUser();
