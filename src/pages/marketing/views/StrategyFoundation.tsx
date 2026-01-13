@@ -53,11 +53,11 @@ const DeliverableCard: React.FC<DeliverableCardProps> = ({
       <div className="mt-4">
         <div className="flex justify-between text-sm mb-1">
           <span className="text-slate-400">Progress</span>
-          <span className="text-cyan-400">{deliverable.progress}%</span>
+          <span className="text-sky-500">{deliverable.progress}%</span>
         </div>
         <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-cyan-500 to-teal-500"
+            className="h-full bg-gradient-to-r from-sky-500 to-sky-500"
             initial={{ width: 0 }}
             animate={{ width: `${deliverable.progress}%` }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
@@ -83,7 +83,7 @@ const DeliverableCard: React.FC<DeliverableCardProps> = ({
       {/* Expandable Section */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="mt-4 text-cyan-400 text-sm flex items-center gap-1 hover:text-cyan-300"
+        className="mt-4 text-sky-500 text-sm flex items-center gap-1 hover:text-sky-400"
       >
         {expanded ? 'Hide Details' : 'Show Details'}
         <ChevronDown className={`w-4 h-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
@@ -116,10 +116,10 @@ const DeliverableCard: React.FC<DeliverableCardProps> = ({
                   onChange={(e) => setFeedback(e.target.value)}
                   onBlur={handleFeedbackBlur}
                   placeholder="Add your notes or feedback here..."
-                  className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 resize-none"
+                  className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 resize-none"
                   rows={3}
                 />
-                {isSaving && <p className="text-xs text-cyan-400 mt-1">Saving...</p>}
+                {isSaving && <p className="text-xs text-sky-500 mt-1">Saving...</p>}
               </div>
 
               {/* Approval Actions */}
@@ -156,7 +156,7 @@ const StrategyFoundation: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-cyan-500 border-t-transparent" />
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-sky-500 border-t-transparent" />
       </div>
     );
   }
@@ -166,7 +166,7 @@ const StrategyFoundation: React.FC = () => {
       {/* Strategy Deliverables */}
       <section>
         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          <FileText className="w-5 h-5 text-cyan-400" />
+          <FileText className="w-5 h-5 text-sky-500" />
           Strategy Deliverables
         </h2>
         <div className="space-y-4">
@@ -184,7 +184,7 @@ const StrategyFoundation: React.FC = () => {
       {/* Client Inputs */}
       <section>
         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-cyan-400" />
+          <MessageSquare className="w-5 h-5 text-sky-500" />
           Your Brand Inputs
         </h2>
         <p className="text-slate-400 text-sm mb-4">
@@ -208,7 +208,7 @@ const StrategyFoundation: React.FC = () => {
                   defaultValue={input.content}
                   onBlur={(e) => updateInput(input.id, e.target.value)}
                   placeholder="Enter your response..."
-                  className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 resize-none mt-2"
+                  className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 resize-none mt-2"
                   rows={3}
                 />
               </GlassCard>
@@ -220,7 +220,7 @@ const StrategyFoundation: React.FC = () => {
       {/* Strategy Documents */}
       <section>
         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          <FileText className="w-5 h-5 text-cyan-400" />
+          <FileText className="w-5 h-5 text-sky-500" />
           Strategy Documents
         </h2>
         {docsLoading ? (
@@ -239,7 +239,7 @@ const StrategyFoundation: React.FC = () => {
               <GlassCard key={doc.id} className="!p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <FileText className="w-8 h-8 text-cyan-400" />
+                    <FileText className="w-8 h-8 text-sky-500" />
                     <div>
                       <h3 className="text-sm font-semibold text-white">{doc.title}</h3>
                       <p className="text-xs text-slate-400">

@@ -51,7 +51,7 @@ export const MusicSelectorModal: React.FC<MusicSelectorModalProps> = ({
       <div className="flex-1 flex flex-col items-center pt-16 md:pt-12 relative z-10 max-w-5xl mx-auto w-full">
         <div className="inline-block px-4 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-4 md:mb-6">Background</div>
         <h2 className="text-2xl md:text-4xl font-extralight text-center mb-2 tracking-tight">
-          <span className="bg-gradient-to-r from-emerald-300 via-cyan-200 to-teal-300 bg-clip-text text-transparent">Choose Music</span>
+          <span className="bg-gradient-to-r from-emerald-300 via-sky-200 to-sky-400 bg-clip-text text-transparent">Choose Music</span>
         </h2>
         <p className="text-slate-500 text-center mb-6 md:mb-8 text-sm">Select background audio for your meditation</p>
 

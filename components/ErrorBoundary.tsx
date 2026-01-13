@@ -77,9 +77,9 @@ class ErrorBoundary extends Component<Props, State> {
         return (
           <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-900 to-slate-800 p-4">
             <div className="max-w-md w-full bg-white/10 backdrop-blur-lg rounded-2xl p-8 text-center border border-white/20">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-500/20 flex items-center justify-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-sky-500/20 flex items-center justify-center">
                 <svg
-                  className="w-8 h-8 text-cyan-400"
+                  className="w-8 h-8 text-sky-500"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -103,7 +103,7 @@ class ErrorBoundary extends Component<Props, State> {
 
               <button
                 onClick={this.handleHardRefresh}
-                className="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-blue-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white font-medium transition-all shadow-lg shadow-blue-500/20"
+                className="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-sky-500 to-sky-500 hover:from-sky-600 hover:to-sky-600 text-white font-medium transition-all shadow-lg shadow-sky-500/20"
               >
                 Refresh Now
               </button>
@@ -154,7 +154,7 @@ class ErrorBoundary extends Component<Props, State> {
               </button>
               <button
                 onClick={this.handleReload}
-                className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-cyan-600 text-white transition-colors"
+                className="px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-600 text-white transition-colors"
               >
                 Refresh Page
               </button>

@@ -15,7 +15,7 @@ function getPasswordStrength(password: string): { score: number; label: string; 
 
   if (score <= 1) return { score, label: 'Weak', color: 'bg-rose-500' };
   if (score <= 2) return { score, label: 'Fair', color: 'bg-amber-500' };
-  if (score <= 3) return { score, label: 'Good', color: 'bg-teal-500' };
+  if (score <= 3) return { score, label: 'Good', color: 'bg-sky-500' };
   return { score, label: 'Strong', color: 'bg-emerald-500' };
 }
 
@@ -138,7 +138,7 @@ export default function ResetPasswordPage() {
       <div ref={starsRef} className="fixed inset-0 z-0 overflow-hidden" />
 
       {/* Subtle gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-cyan-950/30 via-transparent to-slate-950/20 z-0" />
+      <div className="absolute inset-0 bg-gradient-to-br from-sky-950/30 via-transparent to-slate-950/20 z-0" />
 
       {/* Content */}
       <div className="relative z-10 w-full max-w-sm">
@@ -147,7 +147,7 @@ export default function ResetPasswordPage() {
           {/* Loading State */}
           {pageState === 'loading' && (
             <div className="py-8">
-              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-gradient-to-br from-sky-500 to-sky-500 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-6 w-6 border-2 border-white/30 border-t-white" />
               </div>
               <p className="text-white/60 text-sm">Verifying reset link...</p>
@@ -164,7 +164,7 @@ export default function ResetPasswordPage() {
               <p className="text-sm text-white/50 mb-6">{error}</p>
               <button
                 onClick={() => navigate('/')}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-500 to-teal-500 text-white font-medium text-sm hover:from-blue-400 hover:to-teal-400 active:scale-[0.98] transition-all shadow-lg shadow-blue-500/20"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-500 to-sky-500 text-white font-medium text-sm hover:from-sky-500 hover:to-sky-500 active:scale-[0.98] transition-all shadow-lg shadow-sky-500/20"
               >
                 Request New Link
               </button>
@@ -174,7 +174,7 @@ export default function ResetPasswordPage() {
           {/* Success State */}
           {pageState === 'success' && (
             <div className="py-4">
-              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-gradient-to-br from-emerald-500 to-sky-600 flex items-center justify-center">
                 <CheckCircle className="h-6 w-6 text-white" />
               </div>
               <h2 className="text-xl font-semibold text-white mb-2">Password Updated!</h2>
@@ -183,7 +183,7 @@ export default function ResetPasswordPage() {
               </p>
               <button
                 onClick={handleSignIn}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-500 to-teal-500 text-white font-medium text-sm hover:from-blue-400 hover:to-teal-400 active:scale-[0.98] transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-500 to-sky-500 text-white font-medium text-sm hover:from-sky-500 hover:to-sky-500 active:scale-[0.98] transition-all shadow-lg shadow-sky-500/20 flex items-center justify-center gap-2"
               >
                 <LogIn className="w-4 h-4" />
                 Sign In
@@ -199,7 +199,7 @@ export default function ResetPasswordPage() {
             <>
               {/* Header */}
               <div className="text-center mb-6">
-                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center">
+                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-gradient-to-br from-sky-500 to-sky-500 flex items-center justify-center">
                   <KeyRound className="h-6 w-6 text-white" />
                 </div>
                 <h2 className="text-xl font-semibold text-white mb-1">Set new password</h2>
@@ -228,7 +228,7 @@ export default function ResetPasswordPage() {
                     className={`w-full px-4 py-3 rounded-xl bg-white/5 border text-white text-sm placeholder:text-white/30 focus:outline-none focus:bg-white/[0.08] transition-all ${
                       touched.password && !isPasswordValid
                         ? 'border-rose-500/50 focus:border-rose-500/50'
-                        : 'border-white/10 focus:border-blue-500/50'
+                        : 'border-white/10 focus:border-sky-500/50'
                     }`}
                     placeholder="New password (min 8 characters)"
                   />
@@ -249,7 +249,7 @@ export default function ResetPasswordPage() {
                       <span className={`text-xs ${
                         passwordStrength.score <= 1 ? 'text-rose-400' :
                         passwordStrength.score <= 2 ? 'text-amber-400' :
-                        'text-teal-400'
+                        'text-sky-500'
                       }`}>
                         {passwordStrength.label}
                       </span>
@@ -270,7 +270,7 @@ export default function ResetPasswordPage() {
                     className={`w-full px-4 py-3 rounded-xl bg-white/5 border text-white text-sm placeholder:text-white/30 focus:outline-none focus:bg-white/[0.08] transition-all ${
                       touched.confirm && !passwordsMatch && confirmPassword
                         ? 'border-rose-500/50 focus:border-rose-500/50'
-                        : 'border-white/10 focus:border-blue-500/50'
+                        : 'border-white/10 focus:border-sky-500/50'
                     }`}
                     placeholder="Confirm new password"
                   />
@@ -282,7 +282,7 @@ export default function ResetPasswordPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-500 to-teal-500 text-white font-medium text-sm hover:from-blue-400 hover:to-teal-400 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-500 to-sky-500 text-white font-medium text-sm hover:from-sky-500 hover:to-sky-500 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-sky-500/20"
                 >
                   {loading ? (
                     <div className="flex items-center justify-center gap-2">

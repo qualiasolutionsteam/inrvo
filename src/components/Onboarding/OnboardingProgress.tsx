@@ -31,14 +31,14 @@ export const OnboardingProgress: React.FC<OnboardingProgressProps> = ({
             className={`
               relative w-2 h-2 rounded-full transition-all duration-300
               ${onGoToStep ? 'cursor-pointer' : 'cursor-default'}
-              ${isActive ? 'bg-cyan-400' : isPast ? 'bg-cyan-500/50' : 'bg-white/20'}
+              ${isActive ? 'bg-sky-500' : isPast ? 'bg-sky-500/50' : 'bg-white/20'}
             `}
             aria-label={`Go to step ${index + 1}`}
             aria-current={isActive ? 'step' : undefined}
           >
             {isActive && (
               <m.div
-                className="absolute inset-0 rounded-full bg-cyan-400"
+                className="absolute inset-0 rounded-full bg-sky-500"
                 initial={{ scale: 1 }}
                 animate={{ scale: [1, 1.5, 1] }}
                 transition={{

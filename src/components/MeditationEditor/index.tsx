@@ -427,7 +427,7 @@ export const MeditationEditor = memo<MeditationEditorProps>(
                 {/* Left section - Duration stat (desktop only, mobile shows on right) */}
                 <div className="flex items-center gap-3">
                   <div className="hidden md:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
-                    <span className="text-cyan-400 font-bold text-sm">
+                    <span className="text-sky-500 font-bold text-sm">
                       {stats.estimatedMinutes}
                     </span>
                     <span className="text-white/50 text-xs">min</span>
@@ -446,7 +446,7 @@ export const MeditationEditor = memo<MeditationEditorProps>(
                 <div className="flex items-center gap-1.5">
                   {/* Mobile: Duration stat */}
                   <div className="md:hidden flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 border border-white/10">
-                    <span className="text-cyan-400 font-bold text-xs">
+                    <span className="text-sky-500 font-bold text-xs">
                       {stats.estimatedMinutes}
                     </span>
                     <span className="text-white/50 text-[10px]">min</span>

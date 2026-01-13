@@ -16,15 +16,15 @@ const CATEGORY_COLORS: Record<string, {
 }> = {
   emerald: {
     border: 'border-emerald-500/30',
-    bg: 'bg-gradient-to-br from-emerald-500/20 to-teal-500/20',
+    bg: 'bg-gradient-to-br from-emerald-500/20 to-sky-500/20',
     text: 'text-emerald-400',
     hoverBorder: 'hover:border-emerald-500/30',
   },
   cyan: {
-    border: 'border-cyan-500/30',
-    bg: 'bg-gradient-to-br from-cyan-500/20 to-purple-500/20',
-    text: 'text-cyan-400',
-    hoverBorder: 'hover:border-cyan-500/30',
+    border: 'border-sky-500/30',
+    bg: 'bg-gradient-to-br from-sky-500/20 to-purple-500/20',
+    text: 'text-sky-500',
+    hoverBorder: 'hover:border-sky-500/30',
   },
   violet: {
     border: 'border-violet-500/30',
@@ -171,7 +171,7 @@ const TemplatesPage: React.FC = () => {
           <div data-onboarding="templates-grid" className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {isLoading ? (
               <div className="col-span-2 flex justify-center py-12">
-                <div className="w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-sky-500/30 border-t-sky-500 rounded-full animate-spin" />
               </div>
             ) : (
               dbCategories.map(category => {

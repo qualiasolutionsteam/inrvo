@@ -9,33 +9,33 @@ interface StatusBadgeProps {
 const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
   // Deliverable statuses
   not_started: { bg: 'bg-slate-500/20', text: 'text-slate-400', label: 'Not Started' },
-  in_progress: { bg: 'bg-cyan-500/20', text: 'text-cyan-400', label: 'In Progress' },
+  in_progress: { bg: 'bg-sky-500/20', text: 'text-sky-500', label: 'In Progress' },
   pending_review: { bg: 'bg-amber-500/20', text: 'text-amber-400', label: 'Pending Review' },
   approved: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'Approved' },
   completed: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'Completed' },
 
   // Content calendar statuses
   planned: { bg: 'bg-slate-500/20', text: 'text-slate-400', label: 'Planned' },
-  created: { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'Created' },
+  created: { bg: 'bg-sky-500/20', text: 'text-sky-500', label: 'Created' },
   pending_approval: { bg: 'bg-amber-500/20', text: 'text-amber-400', label: 'Pending Approval' },
   published: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'Published' },
 
   // Influencer statuses
   researching: { bg: 'bg-slate-500/20', text: 'text-slate-400', label: 'Researching' },
-  contacted: { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'Contacted' },
+  contacted: { bg: 'bg-sky-500/20', text: 'text-sky-500', label: 'Contacted' },
   negotiating: { bg: 'bg-amber-500/20', text: 'text-amber-400', label: 'Negotiating' },
-  agreed: { bg: 'bg-cyan-500/20', text: 'text-cyan-400', label: 'Agreed' },
+  agreed: { bg: 'bg-sky-500/20', text: 'text-sky-500', label: 'Agreed' },
   content_live: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'Content Live' },
   declined: { bg: 'bg-red-500/20', text: 'text-red-400', label: 'Declined' },
 
   // Partnership statuses
   identified: { bg: 'bg-slate-500/20', text: 'text-slate-400', label: 'Identified' },
-  outreach: { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'Outreach' },
+  outreach: { bg: 'bg-sky-500/20', text: 'text-sky-500', label: 'Outreach' },
   discussing: { bg: 'bg-amber-500/20', text: 'text-amber-400', label: 'Discussing' },
   active: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'Active' },
 
   // Client input statuses
-  submitted: { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'Submitted' },
+  submitted: { bg: 'bg-sky-500/20', text: 'text-sky-500', label: 'Submitted' },
   reviewed: { bg: 'bg-amber-500/20', text: 'text-amber-400', label: 'Reviewed' },
   incorporated: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'Incorporated' },
 

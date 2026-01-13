@@ -37,8 +37,8 @@ const ReportCard: React.FC<ReportCardProps> = ({ report, onAcknowledge }) => {
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-lg bg-cyan-500/10">
-                <FileText className="w-5 h-5 text-cyan-400" />
+              <div className="p-2 rounded-lg bg-sky-500/10">
+                <FileText className="w-5 h-5 text-sky-500" />
               </div>
               <div>
                 <h3 className="text-base font-semibold text-white">{report.report_period}</h3>
@@ -57,7 +57,7 @@ const ReportCard: React.FC<ReportCardProps> = ({ report, onAcknowledge }) => {
                 <ul className="space-y-1">
                   {report.insights.slice(0, 3).map((insight, index) => (
                     <li key={index} className="text-sm text-slate-400 flex items-start gap-2">
-                      <span className="text-cyan-400 mt-1">•</span>
+                      <span className="text-sky-500 mt-1">•</span>
                       {insight}
                     </li>
                   ))}
@@ -90,7 +90,7 @@ const ReportCard: React.FC<ReportCardProps> = ({ report, onAcknowledge }) => {
             ) : (
               <button
                 onClick={() => onAcknowledge(report.id)}
-                className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-medium rounded-lg transition-colors"
+                className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-lg transition-colors"
               >
                 Acknowledge
               </button>
@@ -101,7 +101,7 @@ const ReportCard: React.FC<ReportCardProps> = ({ report, onAcknowledge }) => {
                 href={report.report_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 text-cyan-400 hover:text-cyan-300 text-sm"
+                className="flex items-center gap-1 text-sky-500 hover:text-sky-400 text-sm"
               >
                 <ExternalLink className="w-4 h-4" />
                 Full Report
@@ -117,7 +117,7 @@ const ReportCard: React.FC<ReportCardProps> = ({ report, onAcknowledge }) => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {Object.entries(report.metrics).slice(0, 4).map(([key, value]) => (
                 <div key={key} className="text-center p-2 bg-slate-800/50 rounded-lg">
-                  <p className="text-lg font-bold text-cyan-400">
+                  <p className="text-lg font-bold text-sky-500">
                     {typeof value === 'number' ? value.toLocaleString() : String(value)}
                   </p>
                   <p className="text-xs text-slate-400 capitalize">{key.replace(/_/g, ' ')}</p>
@@ -145,7 +145,7 @@ const AnalyticsReports: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-cyan-500 border-t-transparent" />
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-sky-500 border-t-transparent" />
       </div>
     );
   }
@@ -155,7 +155,7 @@ const AnalyticsReports: React.FC = () => {
       {/* Analytics Setup Checklist */}
       <section>
         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-cyan-400" />
+          <BarChart3 className="w-5 h-5 text-sky-500" />
           Analytics Setup
         </h2>
         <GlassCard className="!p-6">
@@ -207,7 +207,7 @@ const AnalyticsReports: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right">
-                    <p className="text-sm font-bold text-cyan-400">{d.progress}%</p>
+                    <p className="text-sm font-bold text-sky-500">{d.progress}%</p>
                     {d.due_date && (
                       <p className="text-xs text-slate-500">
                         Due {new Date(d.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
@@ -225,7 +225,7 @@ const AnalyticsReports: React.FC = () => {
       {/* Performance Reports */}
       <section>
         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          <FileText className="w-5 h-5 text-cyan-400" />
+          <FileText className="w-5 h-5 text-sky-500" />
           Performance Reports
         </h2>
 

@@ -76,9 +76,9 @@ const ProgressDots: React.FC<{ current: number; total: number }> = ({ current, t
         key={i}
         className={`rounded-full transition-all duration-300 ${
           i === current
-            ? 'w-6 h-1.5 bg-cyan-400'
+            ? 'w-6 h-1.5 bg-sky-500'
             : i < current
-              ? 'w-1.5 h-1.5 bg-cyan-400/50'
+              ? 'w-1.5 h-1.5 bg-sky-500/50'
               : 'w-1.5 h-1.5 bg-white/20'
         }`}
         initial={false}
@@ -256,7 +256,7 @@ export const OnboardingTooltip: React.FC<OnboardingTooltipProps> = ({
           >
             {/* Decorative gradient border */}
             <div className="absolute inset-0 rounded-2xl sm:rounded-3xl p-[1px] -z-10 overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-transparent to-purple-500/20" />
+              <div className="absolute inset-0 bg-gradient-to-br from-sky-500/20 via-transparent to-purple-500/20" />
             </div>
 
             {/* Close button */}
@@ -273,12 +273,12 @@ export const OnboardingTooltip: React.FC<OnboardingTooltipProps> = ({
               {/* Icon for welcome/complete */}
               {(step.id === 'welcome' || step.id === 'complete') && (
                 <m.div
-                  className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 mb-4"
+                  className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-sky-500/20 to-sky-600/10 mb-4"
                   initial={{ scale: 0, rotate: -180 }}
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ delay: 0.2, duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
                 >
-                  <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 text-cyan-400" />
+                  <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 text-sky-500" />
                 </m.div>
               )}
 
@@ -326,7 +326,7 @@ export const OnboardingTooltip: React.FC<OnboardingTooltipProps> = ({
 
                 <m.button
                   onClick={onNext}
-                  className="flex items-center justify-center gap-1.5 px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-600 text-white font-medium text-sm shadow-lg shadow-cyan-500/25 min-w-[100px]"
+                  className="flex items-center justify-center gap-1.5 px-6 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 text-white font-medium text-sm shadow-lg shadow-sky-500/25 min-w-[100px]"
                   whileHover={{ scale: 1.02, boxShadow: '0 8px 24px rgba(6, 182, 212, 0.35)' }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ duration: 0.15 }}
@@ -400,7 +400,7 @@ export const OnboardingTooltip: React.FC<OnboardingTooltipProps> = ({
 
           <m.button
             onClick={onNext}
-            className="flex items-center gap-1 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-600 text-white font-medium text-xs sm:text-sm shadow-lg shadow-cyan-500/20"
+            className="flex items-center gap-1 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 text-white font-medium text-xs sm:text-sm shadow-lg shadow-sky-500/20"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             transition={{ duration: 0.15 }}

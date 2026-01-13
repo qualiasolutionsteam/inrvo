@@ -94,7 +94,7 @@ const MarketingPage: React.FC = () => {
 
   if (authLoading || isCheckingAdmin) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-cyan-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-sky-50 flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -118,8 +118,8 @@ const MarketingPage: React.FC = () => {
     { id: 'overview', label: 'Overview', icon: LayoutDashboard, color: 'from-violet-500 to-indigo-500' },
     { id: 'strategy', label: 'Strategy', icon: Target, color: 'from-rose-500 to-pink-500' },
     { id: 'social', label: 'Social', icon: Calendar, color: 'from-amber-500 to-orange-500' },
-    { id: 'influencers', label: 'Influencers', icon: Users, color: 'from-emerald-500 to-teal-500' },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3, color: 'from-blue-500 to-cyan-500' },
+    { id: 'influencers', label: 'Influencers', icon: Users, color: 'from-emerald-500 to-sky-500' },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3, color: 'from-sky-500 to-sky-500' },
     { id: 'communication', label: 'Messages', icon: MessageSquare, color: 'from-fuchsia-500 to-purple-500' },
   ];
 
@@ -130,7 +130,7 @@ const MarketingPage: React.FC = () => {
       {/* Decorative background elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-violet-200/40 to-indigo-200/40 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-cyan-200/40 to-teal-200/40 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-sky-200/40 to-sky-200/40 rounded-full blur-3xl" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-violet-100/20 to-transparent rounded-full" />
       </div>
 

@@ -41,7 +41,7 @@ const LandingPage = () => {
           onClick={() => openAuthModal('signup')}
           whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(6, 182, 212, 0.4)" }}
           whileTap={{ scale: 0.98 }}
-          className="relative px-6 py-2 rounded-full bg-gradient-to-r from-blue-500 to-teal-500 text-white font-medium text-sm tracking-wide overflow-hidden shadow-lg shadow-blue-500/25 transition-all duration-300"
+          className="relative px-6 py-2 rounded-full bg-gradient-to-r from-sky-500 to-sky-500 text-white font-medium text-sm tracking-wide overflow-hidden shadow-lg shadow-sky-500/25 transition-all duration-300"
         >
           Get Started
         </motion.button>
@@ -87,7 +87,7 @@ const LandingPage = () => {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="text-2xl md:text-3xl font-light tracking-wide mb-4 text-slate-300"
           >
-            Speak it. Feel it. <span className="text-blue-400">Become it.</span>
+            Speak it. Feel it. <span className="text-sky-500">Become it.</span>
           </motion.p>
 
           {/* Description */}

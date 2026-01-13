@@ -172,7 +172,7 @@ const VoiceOrb: React.FC<{ state: VoiceState; volume: number }> = ({ state, volu
       >
         {isProcessing ? (
           <m.div
-            className="w-8 h-8 border-3 border-white/30 border-t-cyan-400 rounded-full"
+            className="w-8 h-8 border-3 border-white/30 border-t-sky-500 rounded-full"
             animate={{ rotate: 360 }}
             transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
           />
@@ -198,7 +198,7 @@ const TranscriptBubble: React.FC<{ transcript: Transcript }> = ({ transcript }) 
     <div
       className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
         transcript.role === 'user'
-          ? 'bg-gradient-to-br from-cyan-500/25 to-cyan-600/20 text-white border border-cyan-500/30 rounded-br-md'
+          ? 'bg-gradient-to-br from-sky-500/25 to-sky-600/20 text-white border border-sky-500/30 rounded-br-md'
           : 'bg-white/[0.08] text-white/90 border border-white/10 rounded-bl-md'
       }`}
     >
@@ -584,7 +584,7 @@ export const VoiceAgent: React.FC<VoiceAgentProps> = ({ onClose }) => {
           >
             {state === 'processing' && (
               <m.div
-                className="absolute inset-0 rounded-full border-2 border-cyan-400/50"
+                className="absolute inset-0 rounded-full border-2 border-sky-500/50"
                 animate={{ scale: [1, 1.25, 1], opacity: [0.5, 0, 0.5] }}
                 transition={{ duration: 1.3, repeat: Infinity }}
               />
@@ -592,10 +592,10 @@ export const VoiceAgent: React.FC<VoiceAgentProps> = ({ onClose }) => {
             <div
               className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-all duration-200 ${
                 state === 'processing'
-                  ? 'bg-cyan-500/20 border-2 border-cyan-500/50'
+                  ? 'bg-sky-500/20 border-2 border-sky-500/50'
                   : isActive
                     ? 'bg-rose-500 border-2 border-rose-400 shadow-lg shadow-rose-500/35'
-                    : 'bg-cyan-500 border-2 border-cyan-400 shadow-lg shadow-cyan-500/35 hover:shadow-cyan-500/50'
+                    : 'bg-sky-500 border-2 border-sky-500 shadow-lg shadow-sky-500/35 hover:shadow-sky-500/50'
               }`}
             >
               {state === 'processing' ? (

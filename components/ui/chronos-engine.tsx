@@ -281,7 +281,7 @@ const PHASE_CONFIG: Record<GenerationPhase, { label: string; progress: number; c
   idle: { label: 'Ready', progress: 0, color: 'text-slate-400' },
   thinking: { label: 'Thinking...', progress: 15, color: 'text-amber-400/80' },
   script: { label: 'Creating meditation...', progress: 40, color: 'text-amber-400/80' },
-  voice: { label: 'Generating audio...', progress: 75, color: 'text-cyan-400/80' },
+  voice: { label: 'Generating audio...', progress: 75, color: 'text-sky-500/80' },
   ready: { label: 'Complete!', progress: 100, color: 'text-emerald-400' },
 };
 

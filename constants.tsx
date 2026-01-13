@@ -864,14 +864,14 @@ export const NATURE_SOUNDS: NatureSound[] = [
 
 // Nature sound category styling
 export const NATURE_SOUND_CATEGORIES: Record<string, { label: string; color: string; bgColor: string }> = {
-  'rain': { label: 'Rain', color: 'text-blue-400', bgColor: 'bg-blue-500/10' },
+  'rain': { label: 'Rain', color: 'text-sky-500', bgColor: 'bg-sky-500/10' },
   'fire': { label: 'Fire', color: 'text-orange-400', bgColor: 'bg-orange-500/10' },
   'wind': { label: 'Wind', color: 'text-slate-400', bgColor: 'bg-slate-500/10' },
   'noise': { label: 'Noise', color: 'text-gray-400', bgColor: 'bg-gray-500/10' },
-  'ocean': { label: 'Ocean', color: 'text-cyan-400', bgColor: 'bg-cyan-500/10' },
+  'ocean': { label: 'Ocean', color: 'text-sky-500', bgColor: 'bg-sky-500/10' },
   'forest': { label: 'Forest', color: 'text-emerald-400', bgColor: 'bg-emerald-500/10' },
   'storm': { label: 'Storm', color: 'text-purple-400', bgColor: 'bg-purple-500/10' },
-  'water': { label: 'Water', color: 'text-teal-400', bgColor: 'bg-teal-500/10' },
+  'water': { label: 'Water', color: 'text-sky-500', bgColor: 'bg-sky-500/10' },
 };
 
 // Pre-computed nature sounds grouped by category
@@ -900,8 +900,8 @@ export const AUDIO_TAG_CATEGORIES: { id: string; name: string; color: string; bg
   {
     id: 'breathing',
     name: 'Breathing',
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/10',
+    color: 'text-sky-500',
+    bgColor: 'bg-sky-500/10',
     tags: [
       { id: 'deep_breath', label: '[deep breath]', description: 'Natural sigh with breathing cue' },
       { id: 'inhale', label: '[inhale]', description: 'Breathing in with subtle sound' },
@@ -993,7 +993,7 @@ export const KEYWORD_TAG_MAP: Record<string, string[]> = {
  * Background music category styling configuration
  */
 export const MUSIC_CATEGORY_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
-  'ambient': { label: 'Ambient', color: 'text-cyan-400', bgColor: 'bg-cyan-500/10' },
+  'ambient': { label: 'Ambient', color: 'text-sky-500', bgColor: 'bg-sky-500/10' },
   'nature': { label: 'Nature', color: 'text-emerald-400', bgColor: 'bg-emerald-500/10' },
   'binaural': { label: 'Binaural', color: 'text-violet-400', bgColor: 'bg-violet-500/10' },
   'instrumental': { label: 'Instrumental', color: 'text-purple-400', bgColor: 'bg-purple-500/10' },

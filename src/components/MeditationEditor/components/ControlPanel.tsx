@@ -188,9 +188,9 @@ export const ControlPanel = memo<ControlPanelProps>(
       <div className="flex-shrink-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent backdrop-blur-xl">
         {/* Glowing separator line */}
         <div className="relative h-px mx-4">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-500/60 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/40 to-transparent blur-sm" />
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-teal-400/30 to-transparent blur-md" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-sky-500/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-sky-500/40 to-transparent blur-sm" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-sky-500/30 to-transparent blur-md" />
         </div>
 
         {/* Status Row */}
@@ -201,7 +201,7 @@ export const ControlPanel = memo<ControlPanelProps>(
             className={`flex-shrink-0 h-10 w-10 sm:w-auto sm:px-4 rounded-xl flex items-center justify-center gap-2 text-xs font-medium border transition-all duration-200
               ${
                 expanded
-                  ? 'bg-blue-500/20 text-cyan-300 border-blue-500/30 shadow-lg shadow-blue-500/10'
+                  ? 'bg-sky-500/20 text-sky-400 border-sky-500/30 shadow-lg shadow-sky-500/10'
                   : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20'
               }`}
             aria-expanded={expanded}
@@ -225,7 +225,7 @@ export const ControlPanel = memo<ControlPanelProps>(
               className={`flex-shrink-0 h-10 px-4 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all duration-200
                 ${
                   selectedVoice
-                    ? 'bg-blue-500/15 text-cyan-300 border-blue-500/30 hover:bg-blue-500/25'
+                    ? 'bg-sky-500/15 text-sky-400 border-sky-500/30 hover:bg-sky-500/25'
                     : 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25 animate-pulse'
                 }`}
             >
@@ -256,14 +256,14 @@ export const ControlPanel = memo<ControlPanelProps>(
               disabled={isHarmonizing}
               className={`flex-shrink-0 h-10 px-4 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all duration-200
                 ${isHarmonizing
-                  ? 'bg-blue-500/20 text-cyan-300 border-blue-500/30 cursor-wait'
-                  : 'bg-gradient-to-r from-blue-500/15 to-teal-500/15 hover:from-blue-500/25 hover:to-teal-500/25 text-cyan-300 border-blue-500/30 hover:border-blue-400/50'
+                  ? 'bg-sky-500/20 text-sky-400 border-sky-500/30 cursor-wait'
+                  : 'bg-gradient-to-r from-sky-500/15 to-sky-500/15 hover:from-sky-500/25 hover:to-sky-500/25 text-sky-400 border-sky-500/30 hover:border-sky-500/50'
                 }`}
               title="AI-powered: Automatically add pauses and breathing cues"
             >
               {isHarmonizing ? (
                 <>
-                  <div className="w-5 h-5 sm:w-4 sm:h-4 border-2 border-cyan-300/30 border-t-cyan-300 rounded-full animate-spin" />
+                  <div className="w-5 h-5 sm:w-4 sm:h-4 border-2 border-sky-400/30 border-t-sky-400 rounded-full animate-spin" />
                   <span className="hidden sm:inline">Harmonizing...</span>
                 </>
               ) : (
@@ -280,7 +280,7 @@ export const ControlPanel = memo<ControlPanelProps>(
         {expanded && (
           <div className="animate-in slide-in-from-bottom-2 duration-200 px-4 pb-4">
             <div
-              className="bg-white/5 backdrop-blur-sm rounded-xl p-3 border border-blue-500/30"
+              className="bg-white/5 backdrop-blur-sm rounded-xl p-3 border border-sky-500/30"
               style={{
                 boxShadow: '0 0 20px rgba(59, 130, 246, 0.15), 0 0 40px rgba(59, 130, 246, 0.08), 0 0 2px rgba(96, 165, 250, 0.3)'
               }}
@@ -292,7 +292,7 @@ export const ControlPanel = memo<ControlPanelProps>(
                   className={`flex-1 py-2.5 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5
                     ${
                       activeTab === 'voice'
-                        ? 'bg-blue-500/30 text-cyan-300'
+                        ? 'bg-sky-500/30 text-sky-400'
                         : 'text-white/50 hover:text-white/70 hover:bg-white/5'
                     }`}
                   aria-selected={activeTab === 'voice'}
@@ -341,13 +341,13 @@ export const ControlPanel = memo<ControlPanelProps>(
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center ${
                           selectedVoice
-                            ? 'bg-blue-500/20'
+                            ? 'bg-sky-500/20'
                             : 'bg-white/10'
                         }`}
                       >
                         <VoiceIcon
                           className={`w-5 h-5 ${
-                            selectedVoice ? 'text-blue-400' : 'text-white/40'
+                            selectedVoice ? 'text-sky-500' : 'text-white/40'
                           }`}
                         />
                       </div>
@@ -364,7 +364,7 @@ export const ControlPanel = memo<ControlPanelProps>(
                         </p>
                       </div>
                       {selectedVoice && (
-                        <div className="text-xs text-blue-400/60">
+                        <div className="text-xs text-sky-500/60">
                           {selectedVoice.isCloned ? 'Cloned' : 'Preset'}
                         </div>
                       )}
@@ -372,10 +372,10 @@ export const ControlPanel = memo<ControlPanelProps>(
 
                     {/* Voice Preview Section */}
                     {selectedVoice && onGenerateVoicePreview && (
-                      <div className="p-3 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20">
+                      <div className="p-3 rounded-xl bg-gradient-to-r from-sky-500/10 to-purple-500/10 border border-sky-500/20">
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-xs font-medium text-white/70 flex items-center gap-1.5">
-                            <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3.5 h-3.5 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15.536a5 5 0 001.414 1.414m0-9.9a5 5 0 011.414-1.414" />
                             </svg>
                             Voice Preview
@@ -407,13 +407,13 @@ export const ControlPanel = memo<ControlPanelProps>(
                               disabled={isGeneratingPreview}
                               className={`w-full py-3 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2
                                 ${isGeneratingPreview
-                                  ? 'bg-blue-500/20 text-cyan-300 cursor-wait'
-                                  : 'bg-blue-500/20 hover:bg-blue-500/30 text-cyan-300 active:scale-[0.98]'
+                                  ? 'bg-sky-500/20 text-sky-400 cursor-wait'
+                                  : 'bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 active:scale-[0.98]'
                                 }`}
                             >
                               {isGeneratingPreview ? (
                                 <>
-                                  <div className="w-4 h-4 border-2 border-cyan-300/30 border-t-cyan-300 rounded-full animate-spin" />
+                                  <div className="w-4 h-4 border-2 border-sky-400/30 border-t-sky-400 rounded-full animate-spin" />
                                   <span>Generating preview...</span>
                                 </>
                               ) : (
@@ -441,7 +441,7 @@ export const ControlPanel = memo<ControlPanelProps>(
                   <div className="space-y-3">
                     {/* Currently previewing track */}
                     {previewingMusicId && onMusicPreviewToggle && (
-                      <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20">
+                      <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-500/10 to-sky-500/10 border border-emerald-500/20">
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-xs font-medium text-white/70 flex items-center gap-1.5">
                             <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

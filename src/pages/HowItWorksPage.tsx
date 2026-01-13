@@ -12,12 +12,12 @@ const HowItWorksPage: React.FC = () => {
       <div className="flex-1 flex flex-col items-center justify-center pt-16 md:pt-0 max-w-4xl mx-auto w-full">
         {/* Badge with Restart Tour */}
         <div className="flex items-center gap-3 mb-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div className="inline-block px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-semibold uppercase tracking-[0.35em] shadow-[0_0_20px_rgba(6,182,212,0.15)]">
+          <div className="inline-block px-4 py-1.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-500 text-[10px] font-semibold uppercase tracking-[0.35em] shadow-[0_0_20px_rgba(6,182,212,0.15)]">
             Guide
           </div>
           <button
             onClick={restartOnboarding}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-blue-400 hover:border-blue-500/30 hover:bg-blue-500/10 transition-all"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-sky-500 hover:border-sky-500/30 hover:bg-sky-500/10 transition-all"
             title="Restart Tour"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,7 +28,7 @@ const HowItWorksPage: React.FC = () => {
 
         {/* Title */}
         <h2 className="text-3xl md:text-5xl font-extralight text-center mb-3 tracking-tight animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: '100ms' }}>
-          <span className="bg-gradient-to-r from-blue-300 via-white to-teal-300 bg-clip-text text-transparent">How Innrvo Works</span>
+          <span className="bg-gradient-to-r from-sky-400 via-white to-sky-400 bg-clip-text text-transparent">How Innrvo Works</span>
         </h2>
         <p className="text-slate-500 text-center mb-14 max-w-md text-sm animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: '150ms' }}>Create personalized meditations in seconds with AI</p>
 
@@ -36,9 +36,9 @@ const HowItWorksPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full">
           {/* Step 1 */}
           <div className="step-card group">
-            <GlassCard className="!p-7 !rounded-2xl text-center h-full border-white/[0.04] hover:border-blue-500/20 transition-all duration-300" hover={false}>
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/15 to-blue-400/5 border border-blue-500/20 flex items-center justify-center mx-auto mb-5 group-hover:scale-105 transition-transform duration-300">
-                <span className="text-2xl font-bold bg-gradient-to-br from-blue-300 to-blue-500 bg-clip-text text-transparent">1</span>
+            <GlassCard className="!p-7 !rounded-2xl text-center h-full border-white/[0.04] hover:border-sky-500/20 transition-all duration-300" hover={false}>
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-500/15 to-sky-500/5 border border-sky-500/20 flex items-center justify-center mx-auto mb-5 group-hover:scale-105 transition-transform duration-300">
+                <span className="text-2xl font-bold bg-gradient-to-br from-sky-400 to-sky-500 bg-clip-text text-transparent">1</span>
               </div>
               <h3 className="text-lg font-semibold text-white mb-2.5">Write Your Intention</h3>
               <p className="text-sm text-slate-500 leading-relaxed">Type a short phrase like "calm my anxiety" or "help me sleep" - or use voice input</p>
@@ -47,9 +47,9 @@ const HowItWorksPage: React.FC = () => {
 
           {/* Step 2 */}
           <div className="step-card group">
-            <GlassCard className="!p-7 !rounded-2xl text-center h-full border-white/[0.04] hover:border-teal-500/20 transition-all duration-300" hover={false}>
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-500/15 to-teal-400/5 border border-teal-500/20 flex items-center justify-center mx-auto mb-5 group-hover:scale-105 transition-transform duration-300">
-                <span className="text-2xl font-bold bg-gradient-to-br from-teal-300 to-teal-500 bg-clip-text text-transparent">2</span>
+            <GlassCard className="!p-7 !rounded-2xl text-center h-full border-white/[0.04] hover:border-sky-500/20 transition-all duration-300" hover={false}>
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-500/15 to-sky-500/5 border border-sky-500/20 flex items-center justify-center mx-auto mb-5 group-hover:scale-105 transition-transform duration-300">
+                <span className="text-2xl font-bold bg-gradient-to-br from-sky-400 to-sky-500 bg-clip-text text-transparent">2</span>
               </div>
               <h3 className="text-lg font-semibold text-white mb-2.5">Customize</h3>
               <p className="text-sm text-slate-500 leading-relaxed">Choose a voice, select background music, or browse templates for inspiration</p>
@@ -73,11 +73,11 @@ const HowItWorksPage: React.FC = () => {
           <h4 className="text-sm font-semibold text-slate-400 uppercase tracking-[0.2em] text-center mb-6">Pro Tips</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="pro-tip flex items-start gap-3.5 p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
-              <ICONS.Sparkle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+              <ICONS.Sparkle className="w-5 h-5 text-sky-500 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-slate-500"><span className="text-slate-300 font-medium">Be specific:</span> "5-minute morning energy boost" works better than just "energy"</p>
             </div>
             <div className="pro-tip flex items-start gap-3.5 p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
-              <ICONS.Microphone className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+              <ICONS.Microphone className="w-5 h-5 text-sky-500 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-slate-500"><span className="text-slate-300 font-medium">Clone your voice:</span> Record yourself to hear meditations in your own voice</p>
             </div>
             <div className="pro-tip flex items-start gap-3.5 p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">

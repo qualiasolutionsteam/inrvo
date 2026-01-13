@@ -96,7 +96,7 @@ const SuggestionModal: React.FC<SuggestionModalProps> = ({ type, onClose, onSubm
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder={type === 'influencer' ? 'e.g., Jane Doe' : 'e.g., Mindful Living Podcast'}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
               required
             />
           </div>
@@ -110,7 +110,7 @@ const SuggestionModal: React.FC<SuggestionModalProps> = ({ type, onClose, onSubm
                   value={handle}
                   onChange={e => setHandle(e.target.value)}
                   placeholder="@username"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
                 />
               </div>
               <div>
@@ -118,7 +118,7 @@ const SuggestionModal: React.FC<SuggestionModalProps> = ({ type, onClose, onSubm
                 <select
                   value={platform}
                   onChange={e => setPlatform(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-500/50"
                 >
                   <option value="instagram">Instagram</option>
                   <option value="tiktok">TikTok</option>
@@ -136,7 +136,7 @@ const SuggestionModal: React.FC<SuggestionModalProps> = ({ type, onClose, onSubm
               <select
                 value={partnerType}
                 onChange={e => setPartnerType(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-500/50"
               >
                 <option value="community">Community</option>
                 <option value="affiliate">Affiliate</option>
@@ -154,7 +154,7 @@ const SuggestionModal: React.FC<SuggestionModalProps> = ({ type, onClose, onSubm
               value={notes}
               onChange={e => setNotes(e.target.value)}
               placeholder="Why do you think this would be a good fit?"
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 resize-none"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 resize-none"
               rows={3}
             />
           </div>
@@ -162,7 +162,7 @@ const SuggestionModal: React.FC<SuggestionModalProps> = ({ type, onClose, onSubm
           <button
             type="submit"
             disabled={isSubmitting || !name.trim()}
-            className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white py-2.5 px-4 rounded-lg text-sm font-medium transition-colors"
+            className="w-full bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white py-2.5 px-4 rounded-lg text-sm font-medium transition-colors"
           >
             {isSubmitting ? 'Submitting...' : 'Submit Suggestion'}
           </button>
@@ -195,7 +195,7 @@ const InfluencerCard: React.FC<{ influencer: MarketingInfluencer }> = ({ influen
         </div>
       </div>
       {influencer.niche && (
-        <p className="text-xs text-cyan-400 mb-2">{influencer.niche}</p>
+        <p className="text-xs text-sky-500 mb-2">{influencer.niche}</p>
       )}
       {influencer.notes && (
         <p className="text-xs text-slate-500 line-clamp-2">{influencer.notes}</p>
@@ -219,7 +219,7 @@ const InfluencersView: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-cyan-500 border-t-transparent" />
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-sky-500 border-t-transparent" />
       </div>
     );
   }
@@ -232,12 +232,12 @@ const InfluencersView: React.FC = () => {
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Users className="w-5 h-5 text-cyan-400" />
+            <Users className="w-5 h-5 text-sky-500" />
             Influencer Pipeline
           </h2>
           <button
             onClick={() => setShowSuggestionModal('influencer')}
-            className="flex items-center gap-2 px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-medium rounded-lg transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-lg transition-colors"
           >
             <Plus className="w-4 h-4" />
             Suggest
@@ -287,12 +287,12 @@ const InfluencersView: React.FC = () => {
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-cyan-400" />
+            <Building2 className="w-5 h-5 text-sky-500" />
             Partnership Opportunities
           </h2>
           <button
             onClick={() => setShowSuggestionModal('partnership')}
-            className="flex items-center gap-2 px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-medium rounded-lg transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-lg transition-colors"
           >
             <Plus className="w-4 h-4" />
             Suggest

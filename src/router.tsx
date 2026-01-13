@@ -82,7 +82,7 @@ const usePrefetchAdjacent = () => {
 // Simple loading spinner - minimal and fast
 const PageLoader = () => (
   <div className="fixed inset-0 z-[100] bg-[#020617] flex items-center justify-center">
-    <div className="animate-spin rounded-full h-8 w-8 border-2 border-cyan-500 border-t-transparent" />
+    <div className="animate-spin rounded-full h-8 w-8 border-2 border-sky-500 border-t-transparent" />
   </div>
 );
 

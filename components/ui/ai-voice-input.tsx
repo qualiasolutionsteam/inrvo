@@ -191,7 +191,7 @@ export function AIVoiceInput({
 
     if (audioLevelData.isClipping) return "bg-rose-400";
     if (audioLevelData.isOptimal) return "bg-emerald-400";
-    if (audioLevelData.isGood) return "bg-cyan-400";
+    if (audioLevelData.isGood) return "bg-sky-500";
     if (audioLevelData.isTooQuiet) return "bg-amber-400";
 
     return "bg-white/50";
@@ -264,7 +264,7 @@ export function AIVoiceInput({
               </>
             ) : (
               <div className="flex flex-col items-center gap-1.5">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center shadow-lg shadow-cyan-500/25">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-sky-500 to-sky-500 flex items-center justify-center shadow-lg shadow-sky-500/25">
                   <Mic className="w-5 h-5 text-white" />
                 </div>
               </div>
@@ -273,7 +273,7 @@ export function AIVoiceInput({
 
           {/* Subtle pulse animation */}
           {!isRecording && (
-            <div className="absolute inset-0 rounded-full border border-cyan-500/30 animate-[pulse_2s_ease-in-out_infinite]" />
+            <div className="absolute inset-0 rounded-full border border-sky-500/30 animate-[pulse_2s_ease-in-out_infinite]" />
           )}
         </button>
 

@@ -16,8 +16,8 @@ const typeLabels: Record<CommunicationType, string> = {
 const typeColors: Record<CommunicationType, string> = {
   meeting: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
   question: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  feedback: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  update: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+  feedback: 'bg-sky-500/20 text-sky-500 border-sky-500/30',
+  update: 'bg-sky-500/20 text-sky-500 border-sky-500/30',
   decision: 'bg-green-500/20 text-green-400 border-green-500/30',
 };
 
@@ -58,10 +58,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ communication, onMarkReso
     >
       {/* Avatar */}
       <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-        isFromAgency ? 'bg-cyan-500/20' : 'bg-purple-500/20'
+        isFromAgency ? 'bg-sky-500/20' : 'bg-purple-500/20'
       }`}>
         {isFromAgency ? (
-          <Building2 className="w-4 h-4 text-cyan-400" />
+          <Building2 className="w-4 h-4 text-sky-500" />
         ) : (
           <User className="w-4 h-4 text-purple-400" />
         )}
@@ -72,7 +72,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ communication, onMarkReso
         <div className={`inline-block text-left rounded-2xl p-4 ${
           isFromAgency
             ? 'bg-slate-800 rounded-tl-none'
-            : 'bg-cyan-900/30 rounded-tr-none'
+            : 'bg-sky-900/30 rounded-tr-none'
         }`}>
           {/* Header */}
           <div className="flex items-center gap-2 mb-2">
@@ -104,7 +104,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ communication, onMarkReso
           {isLongContent && (
             <button
               onClick={() => setExpanded(!expanded)}
-              className="text-xs text-cyan-400 hover:text-cyan-300 mt-2 flex items-center gap-1"
+              className="text-xs text-sky-500 hover:text-sky-400 mt-2 flex items-center gap-1"
             >
               {expanded ? 'Show less' : 'Show more'}
               <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />
@@ -119,7 +119,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ communication, onMarkReso
             {!communication.is_resolved && isFromAgency && (
               <button
                 onClick={() => onMarkResolved(communication.id)}
-                className="text-xs text-cyan-400 hover:text-cyan-300"
+                className="text-xs text-sky-500 hover:text-sky-400"
               >
                 Mark as resolved
               </button>
@@ -159,7 +159,7 @@ const CommunicationView: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-cyan-500 border-t-transparent" />
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-sky-500 border-t-transparent" />
       </div>
     );
   }
@@ -169,7 +169,7 @@ const CommunicationView: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-cyan-400" />
+          <MessageSquare className="w-5 h-5 text-sky-500" />
           Communications
           {unreadCount > 0 && (
             <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs font-medium rounded-full">
@@ -182,7 +182,7 @@ const CommunicationView: React.FC = () => {
             onClick={() => setFilter('all')}
             className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
               filter === 'all'
-                ? 'bg-cyan-500/20 text-cyan-400'
+                ? 'bg-sky-500/20 text-sky-500'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -192,7 +192,7 @@ const CommunicationView: React.FC = () => {
             onClick={() => setFilter('unresolved')}
             className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
               filter === 'unresolved'
-                ? 'bg-cyan-500/20 text-cyan-400'
+                ? 'bg-sky-500/20 text-sky-500'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -208,14 +208,14 @@ const CommunicationView: React.FC = () => {
           value={newMessage}
           onChange={e => setNewMessage(e.target.value)}
           placeholder="Ask a question, provide feedback, or share updates..."
-          className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 resize-none"
+          className="w-full bg-slate-900/50 border border-slate-700 rounded-lg p-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 resize-none"
           rows={3}
         />
         <div className="flex items-center justify-between mt-3">
           <select
             value={messageType}
             onChange={e => setMessageType(e.target.value as CommunicationType)}
-            className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+            className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-500/50"
           >
             <option value="question">Question</option>
             <option value="feedback">Feedback</option>
@@ -224,7 +224,7 @@ const CommunicationView: React.FC = () => {
           <button
             onClick={handleSendMessage}
             disabled={!newMessage.trim() || isSending}
-            className="flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
           >
             <Send className="w-4 h-4" />
             {isSending ? 'Sending...' : 'Send'}

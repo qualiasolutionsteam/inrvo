@@ -18,10 +18,10 @@ const platformIcons: Record<Platform, React.ElementType> = {
 
 const platformColors: Record<Platform, string> = {
   instagram: 'bg-pink-500/20 text-pink-400 border-pink-500/30',
-  facebook: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  facebook: 'bg-sky-500/20 text-sky-500 border-sky-500/30',
   tiktok: 'bg-slate-500/20 text-slate-300 border-slate-500/30',
   twitter: 'bg-slate-500/20 text-slate-300 border-slate-500/30',
-  linkedin: 'bg-blue-600/20 text-blue-400 border-blue-600/30',
+  linkedin: 'bg-blue-600/20 text-sky-500 border-blue-600/30',
   youtube: 'bg-red-500/20 text-red-400 border-red-500/30',
   multiple: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
 };
@@ -131,7 +131,7 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                   value={feedback}
                   onChange={e => setFeedback(e.target.value)}
                   placeholder="Describe the changes needed..."
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 resize-none"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 resize-none"
                   rows={3}
                 />
                 <div className="flex gap-3">
@@ -231,7 +231,7 @@ const SocialMediaView: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-cyan-500 border-t-transparent" />
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-sky-500 border-t-transparent" />
       </div>
     );
   }
@@ -264,7 +264,7 @@ const SocialMediaView: React.FC = () => {
           <select
             value={platformFilter}
             onChange={e => setPlatformFilter(e.target.value as Platform | 'all')}
-            className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+            className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-500/50"
           >
             <option value="all">All Platforms</option>
             <option value="instagram">Instagram</option>
@@ -316,11 +316,11 @@ const SocialMediaView: React.FC = () => {
                   key={date.toISOString()}
                   className={`min-h-[100px] p-2 rounded-lg border ${
                     isToday
-                      ? 'bg-cyan-500/10 border-cyan-500/30'
+                      ? 'bg-sky-500/10 border-sky-500/30'
                       : 'bg-slate-800/30 border-slate-700/30'
                   }`}
                 >
-                  <div className={`text-sm font-medium mb-2 ${isToday ? 'text-cyan-400' : 'text-slate-400'}`}>
+                  <div className={`text-sm font-medium mb-2 ${isToday ? 'text-sky-500' : 'text-slate-400'}`}>
                     {date.getDate()}
                   </div>
                   <div className="space-y-1">

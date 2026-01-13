@@ -105,7 +105,7 @@ export default function EmailVerifiedPage() {
       <div ref={starsRef} className="fixed inset-0 z-0 overflow-hidden" />
 
       {/* Subtle gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-cyan-950/30 via-transparent to-slate-950/20 z-0" />
+      <div className="absolute inset-0 bg-gradient-to-br from-sky-950/30 via-transparent to-slate-950/20 z-0" />
 
       {/* Content */}
       <div className="relative z-10 w-full max-w-sm">
@@ -114,7 +114,7 @@ export default function EmailVerifiedPage() {
           {/* Loading State */}
           {pageState === 'loading' && (
             <div className="py-8">
-              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-gradient-to-br from-sky-500 to-sky-500 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-6 w-6 border-2 border-white/30 border-t-white" />
               </div>
               <p className="text-white/60 text-sm">Verifying your email...</p>
@@ -131,7 +131,7 @@ export default function EmailVerifiedPage() {
               <p className="text-sm text-white/50 mb-6">{error}</p>
               <button
                 onClick={() => navigate('/')}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-500 to-teal-500 text-white font-medium text-sm hover:from-blue-400 hover:to-teal-400 active:scale-[0.98] transition-all shadow-lg shadow-blue-500/20"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-500 to-sky-500 text-white font-medium text-sm hover:from-sky-500 hover:to-sky-500 active:scale-[0.98] transition-all shadow-lg shadow-sky-500/20"
               >
                 Go to Homepage
               </button>
@@ -141,7 +141,7 @@ export default function EmailVerifiedPage() {
           {/* Success State */}
           {pageState === 'success' && (
             <div className="py-4">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-emerald-500 to-sky-600 flex items-center justify-center">
                 <CheckCircle className="h-8 w-8 text-white" />
               </div>
               <h2 className="text-2xl font-semibold text-white mb-2">
@@ -163,7 +163,7 @@ export default function EmailVerifiedPage() {
 
               <button
                 onClick={handleSignIn}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-500 to-teal-500 text-white font-medium text-sm hover:from-blue-400 hover:to-teal-400 active:scale-[0.98] transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-500 to-sky-500 text-white font-medium text-sm hover:from-sky-500 hover:to-sky-500 active:scale-[0.98] transition-all shadow-lg shadow-sky-500/20 flex items-center justify-center gap-2"
               >
                 <LogIn className="w-4 h-4" />
                 Sign In to Continue

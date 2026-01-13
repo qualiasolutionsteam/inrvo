@@ -436,7 +436,7 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
         {/* Success State */}
         {isSuccess && (
           <div className="flex flex-col items-center justify-center min-h-full px-6 py-12">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500/20 to-blue-500/20 flex items-center justify-center mb-6 ring-2 ring-emerald-500/30">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500/20 to-sky-500/20 flex items-center justify-center mb-6 ring-2 ring-emerald-500/30">
               <svg className="w-10 h-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
@@ -447,7 +447,7 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
             </p>
             <button
               onClick={onClose}
-              className="w-full max-w-xs px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all"
+              className="w-full max-w-xs px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-sky-500 text-white font-semibold shadow-lg shadow-sky-500/25 hover:shadow-sky-500/40 transition-all"
             >
               Start Creating
             </button>
@@ -467,7 +467,7 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
                   <div key={stepItem.state} className="flex items-center gap-3 mb-3">
                     <div className={`
                       w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
-                      ${isActive ? 'bg-blue-500/20 text-blue-400' : ''}
+                      ${isActive ? 'bg-sky-500/20 text-sky-500' : ''}
                       ${isPast ? 'bg-emerald-500/20 text-emerald-400' : ''}
                       ${!isActive && !isPast ? 'bg-white/5 text-slate-500' : ''}
                     `}>
@@ -476,7 +476,7 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                       ) : isActive ? (
-                        <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                        <div className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
                       ) : (
                         <span>{i + 1}</span>
                       )}
@@ -536,7 +536,7 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
                     {/* Simple glow ring when recording - no expensive animations */}
                     {isRecording && (
                       <div
-                        className="absolute -inset-4 rounded-full bg-blue-500/10"
+                        className="absolute -inset-4 rounded-full bg-sky-500/10"
                         style={{ animation: 'pulse 2s ease-in-out infinite', willChange: 'opacity' }}
                       />
                     )}
@@ -598,7 +598,7 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
                         className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
                       >
                         <span className="flex items-center gap-2 text-sm font-medium text-slate-300">
-                          <Sparkles className="w-4 h-4 text-blue-400" />
+                          <Sparkles className="w-4 h-4 text-sky-500" />
                           Recording Tips for Best Quality
                         </span>
                         {showRecordingTips ? (
@@ -611,8 +611,8 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
                       {showRecordingTips && (
                         <div className="mt-3 p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
                           <div className="flex gap-3">
-                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
-                              <Mic className="w-4 h-4 text-blue-400" />
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-sky-500/20 flex items-center justify-center">
+                              <Mic className="w-4 h-4 text-sky-500" />
                             </div>
                             <div>
                               <p className="text-sm font-medium text-white">Quiet Environment</p>
@@ -678,8 +678,8 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
                           onClick={togglePreview}
                           className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors active:scale-95 ${
                             isPlayingPreview
-                              ? 'bg-blue-500/30 text-blue-300'
-                              : 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
+                              ? 'bg-sky-500/30 text-sky-400'
+                              : 'bg-sky-500/20 text-sky-500 hover:bg-sky-500/30'
                           }`}
                         >
                           {isPlayingPreview ? (
@@ -691,7 +691,7 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
                         <div className="flex-1">
                           <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-blue-400 origin-left"
+                              className="h-full bg-sky-500 origin-left"
                               style={{
                                 transform: `scaleX(${previewProgress / 100})`,
                                 willChange: isPlayingPreview ? 'transform' : 'auto',
@@ -719,7 +719,7 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
                     {canProceed && (
                       <button
                         onClick={() => setStep('describe')}
-                        className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white font-medium shadow-lg shadow-blue-500/25 transition-all"
+                        className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-sky-500 text-white font-medium shadow-lg shadow-sky-500/25 transition-all"
                       >
                         Continue
                       </button>
@@ -742,7 +742,7 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
                 value={profileName}
                 onChange={(e) => setProfileName(e.target.value)}
                 placeholder="My Meditation Voice"
-                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-600 focus:outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/50 transition-all"
               />
               <p className="text-xs text-slate-500">
                 Voice characteristics will be auto-detected from your recording
@@ -758,7 +758,7 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
                   aria-checked={removeBackgroundNoise}
                   onClick={() => setRemoveBackgroundNoise(!removeBackgroundNoise)}
                   className={`relative mt-0.5 flex-shrink-0 w-11 h-6 rounded-full transition-colors ${
-                    removeBackgroundNoise ? 'bg-blue-500' : 'bg-white/10'
+                    removeBackgroundNoise ? 'bg-sky-500' : 'bg-white/10'
                   }`}
                 >
                   <span
@@ -845,7 +845,7 @@ export const SimpleVoiceClone: React.FC<SimpleVoiceCloneProps> = ({
             <button
               onClick={handleCloneVoice}
               disabled={!canProceed || isProcessing || !creditInfo.canClone}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-sky-500 text-white font-semibold shadow-lg shadow-sky-500/25 hover:shadow-sky-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
             >
               Create Voice Clone
             </button>

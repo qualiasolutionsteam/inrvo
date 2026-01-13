@@ -118,7 +118,7 @@ const ScriptReader: React.FC<ScriptReaderProps> = memo(({
                   className={`
                     transition-all duration-150 inline
                     ${isPast ? 'text-white/90' : ''}
-                    ${isCurrent ? 'text-cyan-400 font-medium' : ''}
+                    ${isCurrent ? 'text-sky-500 font-medium' : ''}
                     ${isFuture ? 'text-white/40' : ''}
                   `}
                   style={undefined}

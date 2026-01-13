@@ -26,7 +26,7 @@ function getPasswordStrength(password: string): { score: number; label: string; 
 
   if (score <= 1) return { score, label: 'Weak', color: 'bg-rose-500' };
   if (score <= 2) return { score, label: 'Fair', color: 'bg-amber-500' };
-  if (score <= 3) return { score, label: 'Good', color: 'bg-teal-500' };
+  if (score <= 3) return { score, label: 'Good', color: 'bg-sky-500' };
   return { score, label: 'Strong', color: 'bg-emerald-500' };
 }
 
@@ -107,7 +107,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
   return (
     <div className="fixed inset-0 z-[90] bg-[#0a0a12] flex items-center justify-center p-4 animate-in fade-in duration-300">
       {/* Subtle gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-cyan-950/30 via-transparent to-slate-950/20" />
+      <div className="absolute inset-0 bg-gradient-to-br from-sky-950/30 via-transparent to-slate-950/20" />
 
       {/* Content */}
       <div className="relative z-10 w-full max-w-sm">
@@ -129,8 +129,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
           <div className="text-center mb-6">
             <div className={`w-12 h-12 mx-auto mb-4 rounded-full flex items-center justify-center ${
               emailSent || signupComplete
-                ? 'bg-gradient-to-br from-emerald-500 to-teal-600'
-                : 'bg-gradient-to-br from-blue-500 to-teal-600'
+                ? 'bg-gradient-to-br from-emerald-500 to-sky-600'
+                : 'bg-gradient-to-br from-sky-500 to-sky-600'
             }`}>
               {emailSent || signupComplete ? (
                 <Mail className="h-6 w-6 text-white" />
@@ -181,7 +181,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
                   setMode('signin');
                   resetForm();
                 }}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-500 to-teal-500 text-white font-medium text-sm hover:from-blue-400 hover:to-teal-400 active:scale-[0.98] transition-all shadow-lg shadow-blue-500/20"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-500 to-sky-500 text-white font-medium text-sm hover:from-sky-500 hover:to-sky-500 active:scale-[0.98] transition-all shadow-lg shadow-sky-500/20"
               >
                 Back to Sign In
               </button>
@@ -197,7 +197,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
                   setMode('signin');
                   setError(null);
                 }}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-500 to-teal-500 text-white font-medium text-sm hover:from-blue-400 hover:to-teal-400 active:scale-[0.98] transition-all shadow-lg shadow-blue-500/20"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-500 to-sky-500 text-white font-medium text-sm hover:from-sky-500 hover:to-sky-500 active:scale-[0.98] transition-all shadow-lg shadow-sky-500/20"
               >
                 Back to Sign In
               </button>
@@ -219,14 +219,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
                       type="text"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-blue-500/50 focus:bg-white/[0.08] transition-all"
+                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-sky-500/50 focus:bg-white/[0.08] transition-all"
                       placeholder="First name"
                     />
                     <input
                       type="text"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-blue-500/50 focus:bg-white/[0.08] transition-all"
+                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-sky-500/50 focus:bg-white/[0.08] transition-all"
                       placeholder="Last name"
                     />
                   </div>
@@ -242,7 +242,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
                     className={`w-full px-4 py-3 rounded-xl bg-white/5 border text-white text-sm placeholder:text-white/30 focus:outline-none focus:bg-white/[0.08] transition-all ${
                       touched.email && !isEmailValid
                         ? 'border-rose-500/50 focus:border-rose-500/50'
-                        : 'border-white/10 focus:border-blue-500/50'
+                        : 'border-white/10 focus:border-sky-500/50'
                     }`}
                     placeholder="Email"
                   />
@@ -264,7 +264,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
                       className={`w-full px-4 py-3 rounded-xl bg-white/5 border text-white text-sm placeholder:text-white/30 focus:outline-none focus:bg-white/[0.08] transition-all ${
                         touched.password && !isPasswordValid
                           ? 'border-rose-500/50 focus:border-rose-500/50'
-                          : 'border-white/10 focus:border-blue-500/50'
+                          : 'border-white/10 focus:border-sky-500/50'
                       }`}
                       placeholder="Password (min 8 characters)"
                     />
@@ -285,7 +285,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
                         <span className={`text-xs ${
                           passwordStrength.score <= 1 ? 'text-rose-400' :
                           passwordStrength.score <= 2 ? 'text-amber-400' :
-                          'text-teal-400'
+                          'text-sky-500'
                         }`}>
                           {passwordStrength.label}
                         </span>
@@ -307,7 +307,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
                         setError(null);
                         setTouched({ email: false, password: false });
                       }}
-                      className="text-xs text-white/40 hover:text-blue-400 transition-colors"
+                      className="text-xs text-white/40 hover:text-sky-500 transition-colors"
                     >
                       Forgot password?
                     </button>
@@ -317,7 +317,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-500 to-teal-500 text-white font-medium text-sm hover:from-blue-400 hover:to-teal-400 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-500 to-sky-500 text-white font-medium text-sm hover:from-sky-500 hover:to-sky-500 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-sky-500/20"
                 >
                   {loading ? (
                     <div className="flex items-center justify-center gap-2">
@@ -346,7 +346,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
                         setMode('signin');
                         setError(null);
                       }}
-                      className="text-blue-400 hover:text-cyan-300 transition-colors"
+                      className="text-sky-500 hover:text-sky-400 transition-colors"
                     >
                       Sign in
                     </button>
@@ -359,7 +359,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
                         setMode('signup');
                         setError(null);
                       }}
-                      className="text-blue-400 hover:text-cyan-300 transition-colors"
+                      className="text-sky-500 hover:text-sky-400 transition-colors"
                     >
                       Sign up
                     </button>
@@ -372,7 +372,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
                         setMode('signin');
                         setError(null);
                       }}
-                      className="text-blue-400 hover:text-cyan-300 transition-colors"
+                      className="text-sky-500 hover:text-sky-400 transition-colors"
                     >
                       Sign in
                     </button>

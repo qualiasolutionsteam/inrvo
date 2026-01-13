@@ -33,7 +33,7 @@ const GlassCard: React.FC<GlassCardProps> = memo(({
         ${variantStyles[variant]}
         rounded-3xl p-6
         transition-all duration-200 ease-out
-        ${hover ? 'hover:scale-[1.01] hover:bg-white/[0.04] cursor-pointer hover:border-cyan-500/20 btn-press' : ''}
+        ${hover ? 'hover:scale-[1.01] hover:bg-white/[0.04] cursor-pointer hover:border-sky-500/20 btn-press' : ''}
         ${animate ? 'animate-in fade-in slide-in-from-bottom-2' : ''}
         ${className}
       `}

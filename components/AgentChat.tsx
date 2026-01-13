@@ -93,8 +93,8 @@ const MessageBubble = memo<MessageBubbleProps>(({ message, isLast }) => {
     <div className={`group flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
       {!isUser && (
         <div className="flex-shrink-0 mr-3 mt-1">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500/20 to-teal-500/20
-                        flex items-center justify-center shadow-lg shadow-blue-500/20 overflow-hidden">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500/20 to-sky-500/20
+                        flex items-center justify-center shadow-lg shadow-sky-500/20 overflow-hidden">
             <ChronosEngine variant="avatar" showSparks={false} />
           </div>
         </div>
@@ -105,7 +105,7 @@ const MessageBubble = memo<MessageBubbleProps>(({ message, isLast }) => {
           className={`
             rounded-2xl px-4 py-3
             ${isUser
-              ? 'bg-gradient-to-br from-blue-600 to-cyan-700 text-white shadow-lg shadow-blue-500/20'
+              ? 'bg-gradient-to-br from-blue-600 to-sky-600 text-white shadow-lg shadow-sky-500/20'
               : 'bg-white/[0.08] text-white/90 border border-white/10'
             }
           `}
@@ -119,7 +119,7 @@ const MessageBubble = memo<MessageBubbleProps>(({ message, isLast }) => {
           {message.quote && (
             <div className="mt-3 pt-3 border-t border-white/10">
               <p className="italic text-white/60 text-sm">"{message.quote.quote}"</p>
-              <p className="text-blue-400 text-xs mt-1.5">— {message.quote.teacher}</p>
+              <p className="text-sky-500 text-xs mt-1.5">— {message.quote.teacher}</p>
             </div>
           )}
         </div>
@@ -518,8 +518,8 @@ const AgentChatComponent: React.FC<AgentChatProps> = ({
                           rounded-full px-4 md:px-6 py-2.5
                           transition-all duration-300
                           ${isRecording
-                            ? 'border-blue-400/60 bg-blue-500/5'
-                            : 'border-blue-500/30 focus-within:border-blue-400/50 focus-within:bg-white/[0.05]'
+                            ? 'border-sky-500/60 bg-sky-500/5'
+                            : 'border-sky-500/30 focus-within:border-sky-500/50 focus-within:bg-white/[0.05]'
                           }`}
               style={{
                 boxShadow: isRecording
@@ -533,7 +533,7 @@ const AgentChatComponent: React.FC<AgentChatProps> = ({
                 data-onboarding="voice-toggle"
                 onClick={handleOpenVoiceAgent}
                 disabled={isProcessing || isRecording}
-                className="flex-shrink-0 w-11 h-11 mr-1 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors text-blue-400/70 hover:text-blue-400 disabled:opacity-50 touch-manipulation"
+                className="flex-shrink-0 w-11 h-11 mr-1 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors text-sky-500/70 hover:text-sky-500 disabled:opacity-50 touch-manipulation"
                 title="Start voice chat"
                 aria-label="Start voice conversation"
               >
@@ -583,12 +583,12 @@ const AgentChatComponent: React.FC<AgentChatProps> = ({
                   flex items-center justify-center transition-all duration-200
                   h-11 w-11 min-w-[44px] min-h-[44px] rounded-full
                   ${isProcessing && !isRecording
-                    ? 'bg-blue-500/50 cursor-not-allowed'
+                    ? 'bg-sky-500/50 cursor-not-allowed'
                     : isRecording
-                      ? 'bg-blue-500/90 hover:bg-blue-400 active:scale-95 text-white'
+                      ? 'bg-sky-500/90 hover:bg-sky-500 active:scale-95 text-white'
                       : inputValue.trim()
-                        ? 'bg-blue-500 hover:bg-blue-400 active:scale-95 text-white'
-                        : 'bg-transparent hover:bg-white/10 active:scale-95 text-blue-400/70 hover:text-blue-400'
+                        ? 'bg-sky-500 hover:bg-sky-500 active:scale-95 text-white'
+                        : 'bg-transparent hover:bg-white/10 active:scale-95 text-sky-500/70 hover:text-sky-500'
                   }
                 `}
               >
@@ -613,7 +613,7 @@ const AgentChatComponent: React.FC<AgentChatProps> = ({
         <ErrorBoundary>
           <Suspense fallback={
             <div className="fixed inset-0 z-[60] bg-[#020617] flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent" />
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-sky-500 border-t-transparent" />
             </div>
           }>
             <MeditationEditor
@@ -641,7 +641,7 @@ const AgentChatComponent: React.FC<AgentChatProps> = ({
         <ErrorBoundary>
           <Suspense fallback={
             <div className="fixed inset-0 z-[70] bg-[#020617] flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent" />
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-sky-500 border-t-transparent" />
             </div>
           }>
             <VoiceAgent onClose={handleCloseVoiceAgent} />

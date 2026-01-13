@@ -452,7 +452,7 @@ const AdminPage: React.FC = () => {
           <p className="text-red-400 mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-lg text-white"
+            className="px-4 py-2 bg-sky-600 hover:bg-sky-600 rounded-lg text-white"
           >
             Refresh Page
           </button>
@@ -519,7 +519,7 @@ const AdminPage: React.FC = () => {
                 className={`
                   flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium transition-all whitespace-nowrap text-sm sm:text-base
                   ${activeTab === tab.id
-                    ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                    ? 'bg-sky-500/20 text-sky-500 border border-sky-500/30'
                     : 'bg-white/[0.02] text-slate-400 hover:bg-white/[0.04] hover:text-white border border-white/[0.06]'
                   }
                 `}
@@ -564,7 +564,7 @@ const AdminPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="flex justify-center py-12">
-                  <div className="w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
+                  <div className="w-8 h-8 border-2 border-sky-500/30 border-t-sky-500 rounded-full animate-spin" />
                 </div>
               )}
             </GlassCard>
@@ -595,7 +595,7 @@ const AdminPage: React.FC = () => {
               {/* Recent Signups */}
               <GlassCard className="!p-4 sm:!p-6 !rounded-xl sm:!rounded-2xl">
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                  <Users className="w-5 h-5 text-cyan-400" />
+                  <Users className="w-5 h-5 text-sky-500" />
                   Recent Signups
                 </h3>
                 {recentSignups.length > 0 ? (
@@ -611,7 +611,7 @@ const AdminPage: React.FC = () => {
                             <span className="text-slate-500 text-xs">
                               {new Date(signup.created_at).toLocaleDateString()}
                             </span>
-                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-cyan-500/20 text-cyan-400">
+                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-sky-500/20 text-sky-500">
                               {signup.tier}
                             </span>
                           </div>
@@ -643,7 +643,7 @@ const AdminPage: React.FC = () => {
                             {new Date(med.created_at).toLocaleDateString()}
                           </span>
                           {med.user_email && (
-                            <span className="text-cyan-400/70 text-xs truncate max-w-[150px]">
+                            <span className="text-sky-500/70 text-xs truncate max-w-[150px]">
                               {med.user_email}
                             </span>
                           )}
@@ -784,11 +784,11 @@ const AdminPage: React.FC = () => {
                     <button
                       onClick={handleLoadMoreUsers}
                       disabled={usersLoading}
-                      className="flex items-center gap-2 px-6 py-2 bg-cyan-500/20 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center gap-2 px-6 py-2 bg-sky-500/20 text-sky-500 rounded-lg hover:bg-sky-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {usersLoading ? (
                         <>
-                          <div className="w-4 h-4 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
+                          <div className="w-4 h-4 border-2 border-sky-500/30 border-t-sky-500 rounded-full animate-spin" />
                           Loading...
                         </>
                       ) : (
@@ -825,7 +825,7 @@ const AdminPage: React.FC = () => {
                             {new Date(m.created_at).toLocaleString()}
                           </p>
                           {m.users?.email && (
-                            <span className="text-cyan-400/70 text-[10px] sm:text-xs truncate max-w-[120px] sm:max-w-none">
+                            <span className="text-sky-500/70 text-[10px] sm:text-xs truncate max-w-[120px] sm:max-w-none">
                               by {m.users.email}
                             </span>
                           )}
@@ -874,7 +874,7 @@ const AdminPage: React.FC = () => {
                           </span>
                         </div>
                         {v.users?.email && (
-                          <p className="text-cyan-400/70 text-[10px] sm:text-xs mt-1 truncate">{v.users.email}</p>
+                          <p className="text-sky-500/70 text-[10px] sm:text-xs mt-1 truncate">{v.users.email}</p>
                         )}
                       </div>
                       <button
@@ -899,7 +899,7 @@ const AdminPage: React.FC = () => {
               <h2 className="text-xl sm:text-2xl font-bold text-white">Audio Tags ({audioTags.length})</h2>
               <button
                 onClick={() => setShowAddTag(true)}
-                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-cyan-500/20 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors text-sm sm:text-base"
+                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-sky-500/20 text-sky-500 rounded-lg hover:bg-sky-500/30 transition-colors text-sm sm:text-base"
               >
                 <Plus className="w-4 h-4" />
                 <span className="hidden xs:inline">Add Tag</span>
@@ -918,7 +918,7 @@ const AdminPage: React.FC = () => {
                       value={newTag.tag_key}
                       onChange={e => setNewTag(prev => ({ ...prev, tag_key: e.target.value }))}
                       placeholder="e.g., deep_sigh"
-                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm placeholder-slate-500 focus:border-cyan-500/50 focus:outline-none"
+                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm placeholder-slate-500 focus:border-sky-500/50 focus:outline-none"
                     />
                   </div>
                   <div>
@@ -928,7 +928,7 @@ const AdminPage: React.FC = () => {
                       value={newTag.tag_label}
                       onChange={e => setNewTag(prev => ({ ...prev, tag_label: e.target.value }))}
                       placeholder="e.g., [deep sigh]"
-                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm placeholder-slate-500 focus:border-cyan-500/50 focus:outline-none"
+                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm placeholder-slate-500 focus:border-sky-500/50 focus:outline-none"
                     />
                   </div>
                   <div>
@@ -936,7 +936,7 @@ const AdminPage: React.FC = () => {
                     <select
                       value={newTag.category}
                       onChange={e => setNewTag(prev => ({ ...prev, category: e.target.value }))}
-                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm focus:border-cyan-500/50 focus:outline-none"
+                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm focus:border-sky-500/50 focus:outline-none"
                     >
                       <option value="pauses">Pauses</option>
                       <option value="breathing">Breathing</option>
@@ -950,7 +950,7 @@ const AdminPage: React.FC = () => {
                       type="number"
                       value={newTag.sort_order}
                       onChange={e => setNewTag(prev => ({ ...prev, sort_order: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm focus:border-cyan-500/50 focus:outline-none"
+                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm focus:border-sky-500/50 focus:outline-none"
                     />
                   </div>
                   <div className="sm:col-span-2">
@@ -960,14 +960,14 @@ const AdminPage: React.FC = () => {
                       value={newTag.tag_description}
                       onChange={e => setNewTag(prev => ({ ...prev, tag_description: e.target.value }))}
                       placeholder="A brief description of the tag"
-                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm placeholder-slate-500 focus:border-cyan-500/50 focus:outline-none"
+                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm placeholder-slate-500 focus:border-sky-500/50 focus:outline-none"
                     />
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={handleAddTag}
-                    className="px-3 sm:px-4 py-2 bg-cyan-500/20 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors text-sm"
+                    className="px-3 sm:px-4 py-2 bg-sky-500/20 text-sky-500 rounded-lg hover:bg-sky-500/30 transition-colors text-sm"
                   >
                     Create Tag
                   </button>
@@ -1134,7 +1134,7 @@ const AdminPage: React.FC = () => {
               </h2>
               <button
                 onClick={() => setShowAddTemplate(true)}
-                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-cyan-500/20 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors text-sm sm:text-base"
+                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-sky-500/20 text-sky-500 rounded-lg hover:bg-sky-500/30 transition-colors text-sm sm:text-base"
               >
                 <Plus className="w-4 h-4" />
                 <span className="hidden xs:inline">Add Template</span>
@@ -1153,7 +1153,7 @@ const AdminPage: React.FC = () => {
                       value={newTemplate.title}
                       onChange={e => setNewTemplate(prev => ({ ...prev, title: e.target.value }))}
                       placeholder="Template title"
-                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm placeholder-slate-500 focus:border-cyan-500/50 focus:outline-none"
+                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm placeholder-slate-500 focus:border-sky-500/50 focus:outline-none"
                     />
                   </div>
                   <div>
@@ -1163,7 +1163,7 @@ const AdminPage: React.FC = () => {
                       value={newTemplate.description}
                       onChange={e => setNewTemplate(prev => ({ ...prev, description: e.target.value }))}
                       placeholder="Brief description"
-                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm placeholder-slate-500 focus:border-cyan-500/50 focus:outline-none"
+                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm placeholder-slate-500 focus:border-sky-500/50 focus:outline-none"
                     />
                   </div>
                   <div>
@@ -1173,7 +1173,7 @@ const AdminPage: React.FC = () => {
                       onChange={e => {
                         setNewTemplate(prev => ({ ...prev, category_id: e.target.value, subgroup_id: '' }));
                       }}
-                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm focus:border-cyan-500/50 focus:outline-none"
+                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm focus:border-sky-500/50 focus:outline-none"
                     >
                       <option value="">Select category</option>
                       {templateCategories.filter(c => c.is_active).map(c => (
@@ -1186,7 +1186,7 @@ const AdminPage: React.FC = () => {
                     <select
                       value={newTemplate.subgroup_id}
                       onChange={e => setNewTemplate(prev => ({ ...prev, subgroup_id: e.target.value }))}
-                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm focus:border-cyan-500/50 focus:outline-none"
+                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm focus:border-sky-500/50 focus:outline-none"
                       disabled={!newTemplate.category_id}
                     >
                       <option value="">Select subgroup</option>
@@ -1204,14 +1204,14 @@ const AdminPage: React.FC = () => {
                       onChange={e => setNewTemplate(prev => ({ ...prev, prompt: e.target.value }))}
                       placeholder="The prompt text that generates the meditation"
                       rows={4}
-                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm placeholder-slate-500 focus:border-cyan-500/50 focus:outline-none resize-none"
+                      className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm placeholder-slate-500 focus:border-sky-500/50 focus:outline-none resize-none"
                     />
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={handleAddTemplate}
-                    className="px-3 sm:px-4 py-2 bg-cyan-500/20 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors text-sm"
+                    className="px-3 sm:px-4 py-2 bg-sky-500/20 text-sky-500 rounded-lg hover:bg-sky-500/30 transition-colors text-sm"
                   >
                     Create Template
                   </button>
@@ -1246,7 +1246,7 @@ const AdminPage: React.FC = () => {
                       <span className="text-slate-500 text-xs sm:text-sm">({categoryTemplates.length})</span>
                     </div>
                     <span className={`px-2 py-0.5 rounded text-xs ${
-                      category.color === 'cyan' ? 'bg-cyan-500/20 text-cyan-400' :
+                      category.color === 'cyan' ? 'bg-sky-500/20 text-sky-500' :
                       category.color === 'amber' ? 'bg-amber-500/20 text-amber-400' :
                       category.color === 'violet' ? 'bg-violet-500/20 text-violet-400' :
                       category.color === 'pink' ? 'bg-pink-500/20 text-pink-400' :
@@ -1291,7 +1291,7 @@ const AdminPage: React.FC = () => {
                             <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
                               <button
                                 onClick={() => setEditingTemplate(template)}
-                                className="text-slate-500 hover:text-cyan-400 p-1.5 sm:p-2 transition-colors"
+                                className="text-slate-500 hover:text-sky-500 p-1.5 sm:p-2 transition-colors"
                                 title="Edit template"
                               >
                                 <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -1387,7 +1387,7 @@ const AdminPage: React.FC = () => {
                     type="text"
                     value={editingTemplate.title}
                     onChange={e => setEditingTemplate(prev => prev ? { ...prev, title: e.target.value } : null)}
-                    className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm focus:border-cyan-500/50 focus:outline-none"
+                    className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm focus:border-sky-500/50 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -1396,7 +1396,7 @@ const AdminPage: React.FC = () => {
                     type="text"
                     value={editingTemplate.description || ''}
                     onChange={e => setEditingTemplate(prev => prev ? { ...prev, description: e.target.value } : null)}
-                    className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm focus:border-cyan-500/50 focus:outline-none"
+                    className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm focus:border-sky-500/50 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -1405,7 +1405,7 @@ const AdminPage: React.FC = () => {
                     value={editingTemplate.prompt}
                     onChange={e => setEditingTemplate(prev => prev ? { ...prev, prompt: e.target.value } : null)}
                     rows={6}
-                    className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm focus:border-cyan-500/50 focus:outline-none resize-none"
+                    className="w-full px-3 py-2 bg-white/[0.02] border border-white/[0.1] rounded-lg text-white text-sm focus:border-sky-500/50 focus:outline-none resize-none"
                   />
                 </div>
                 <div className="flex items-center gap-2">
@@ -1414,7 +1414,7 @@ const AdminPage: React.FC = () => {
                     id="edit-active"
                     checked={editingTemplate.is_active}
                     onChange={e => setEditingTemplate(prev => prev ? { ...prev, is_active: e.target.checked } : null)}
-                    className="w-4 h-4 rounded border-white/20 bg-white/5 text-cyan-500 focus:ring-cyan-500/30"
+                    className="w-4 h-4 rounded border-white/20 bg-white/5 text-sky-500 focus:ring-sky-500/30"
                   />
                   <label htmlFor="edit-active" className="text-slate-300 text-sm">Active</label>
                 </div>
@@ -1428,7 +1428,7 @@ const AdminPage: React.FC = () => {
                 </button>
                 <button
                   onClick={handleUpdateTemplate}
-                  className="flex-1 px-3 sm:px-4 py-2 bg-cyan-500/20 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors text-sm sm:text-base"
+                  className="flex-1 px-3 sm:px-4 py-2 bg-sky-500/20 text-sky-500 rounded-lg hover:bg-sky-500/30 transition-colors text-sm sm:text-base"
                 >
                   Save Changes
                 </button>
@@ -1484,7 +1484,7 @@ interface StatCardProps {
 
 const StatCard = memo<StatCardProps>(({ label, value, subtext, color = 'cyan' }) => {
   const colorClasses = {
-    cyan: 'text-cyan-400',
+    cyan: 'text-sky-500',
     emerald: 'text-emerald-400',
     purple: 'text-purple-400',
     amber: 'text-amber-400',

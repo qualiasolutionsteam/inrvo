@@ -189,7 +189,7 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
           {/* Progress bar */}
           <div className="relative px-1">
             <div
-              className="absolute -inset-1 rounded-full bg-blue-400/20 blur-md transition-all"
+              className="absolute -inset-1 rounded-full bg-sky-500/20 blur-md transition-all"
               style={{ width: `${Math.max(progress, 1)}%` }}
             />
             <div
@@ -197,7 +197,7 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
               onClick={handleProgressClick}
             >
               <div
-                className="absolute left-0 top-0 h-full bg-gradient-to-r from-cyan-400/80 to-blue-400/80 rounded-full transition-all duration-100"
+                className="absolute left-0 top-0 h-full bg-gradient-to-r from-sky-500/80 to-sky-500/80 rounded-full transition-all duration-100"
                 style={{ width: `${progress}%` }}
               />
               {/* Thumb indicator */}
@@ -308,7 +308,7 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                         onClick={onBackgroundMusicToggle}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors ${
                           backgroundMusicEnabled
-                            ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
+                            ? 'bg-sky-500/20 text-sky-500 hover:bg-sky-500/30'
                             : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80'
                         }`}
                       >
@@ -341,16 +341,16 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                   {onVoiceVolumeChange && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-cyan-400/80 flex items-center gap-2">
+                        <span className="text-sky-500/80 flex items-center gap-2">
                           <Volume2 className="h-4 w-4" />
                           Voice Volume
                         </span>
-                        <span className="text-cyan-300 font-mono">{Math.round(voiceVolume * 100)}%</span>
+                        <span className="text-sky-400 font-mono">{Math.round(voiceVolume * 100)}%</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="text-xs text-blue-400/40">0%</span>
+                        <span className="text-xs text-sky-500/40">0%</span>
                         <div className="relative flex-1 h-4 flex items-center">
-                          <div className="absolute inset-x-0 h-1.5 rounded-full bg-gradient-to-r from-blue-500/20 to-blue-400/30 pointer-events-none" />
+                          <div className="absolute inset-x-0 h-1.5 rounded-full bg-gradient-to-r from-sky-500/20 to-sky-500/30 pointer-events-none" />
                           <input
                             type="range"
                             min="0"
@@ -360,13 +360,13 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                             onChange={(e) => onVoiceVolumeChange(parseFloat(e.target.value))}
                             className="relative z-10 w-full h-1.5 bg-transparent rounded-full appearance-none cursor-pointer
                               [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                              [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-blue-400 [&::-webkit-slider-thumb]:to-blue-500
+                              [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-sky-500 [&::-webkit-slider-thumb]:to-sky-500
                               [&::-webkit-slider-thumb]:shadow-[0_0_12px_rgba(59,130,246,0.6),0_0_4px_rgba(59,130,246,0.8)]
                               [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
-                              [&::-moz-range-thumb]:bg-blue-400 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:shadow-[0_0_12px_rgba(59,130,246,0.6)]"
+                              [&::-moz-range-thumb]:bg-sky-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:shadow-[0_0_12px_rgba(59,130,246,0.6)]"
                           />
                         </div>
-                        <span className="text-xs text-blue-400/40">100%</span>
+                        <span className="text-xs text-sky-500/40">100%</span>
                       </div>
                     </div>
                   )}
@@ -384,7 +384,7 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                       <div className="flex items-center gap-3">
                         <span className="text-xs text-emerald-400/40">0%</span>
                         <div className="relative flex-1 h-4 flex items-center">
-                          <div className="absolute inset-x-0 h-1.5 rounded-full bg-gradient-to-r from-emerald-500/20 to-teal-500/25 pointer-events-none" />
+                          <div className="absolute inset-x-0 h-1.5 rounded-full bg-gradient-to-r from-emerald-500/20 to-sky-500/25 pointer-events-none" />
                           <input
                             type="range"
                             min="0"
@@ -394,7 +394,7 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                             onChange={(e) => onNatureSoundVolumeChange(parseFloat(e.target.value))}
                             className="relative z-10 w-full h-1.5 bg-transparent rounded-full appearance-none cursor-pointer
                               [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                              [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-emerald-400 [&::-webkit-slider-thumb]:to-teal-500
+                              [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-emerald-400 [&::-webkit-slider-thumb]:to-sky-500
                               [&::-webkit-slider-thumb]:shadow-[0_0_12px_rgba(52,211,153,0.6),0_0_4px_rgba(52,211,153,0.8)]
                               [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
                               [&::-moz-range-thumb]:bg-emerald-400 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:shadow-[0_0_12px_rgba(52,211,153,0.6)]"
@@ -409,16 +409,16 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                   {backgroundMusicEnabled && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-blue-400/80 flex items-center gap-2">
+                        <span className="text-sky-500/80 flex items-center gap-2">
                           <span>🎵</span>
                           Music Volume
                         </span>
-                        <span className="text-blue-300 font-mono">{Math.round(backgroundVolume * 100)}%</span>
+                        <span className="text-sky-400 font-mono">{Math.round(backgroundVolume * 100)}%</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="text-xs text-blue-400/40">0%</span>
+                        <span className="text-xs text-sky-500/40">0%</span>
                         <div className="relative flex-1 h-4 flex items-center">
-                          <div className="absolute inset-x-0 h-1.5 rounded-full bg-gradient-to-r from-blue-500/20 to-blue-400/30 pointer-events-none" />
+                          <div className="absolute inset-x-0 h-1.5 rounded-full bg-gradient-to-r from-sky-500/20 to-sky-500/30 pointer-events-none" />
                           <input
                             type="range"
                             min="0"
@@ -428,13 +428,13 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                             onChange={(e) => onBackgroundVolumeChange(parseFloat(e.target.value))}
                             className="relative z-10 w-full h-1.5 bg-transparent rounded-full appearance-none cursor-pointer
                               [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                              [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-blue-400 [&::-webkit-slider-thumb]:to-blue-600
+                              [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-sky-500 [&::-webkit-slider-thumb]:to-blue-600
                               [&::-webkit-slider-thumb]:shadow-[0_0_12px_rgba(59,130,246,0.6),0_0_4px_rgba(59,130,246,0.8)]
                               [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
-                              [&::-moz-range-thumb]:bg-blue-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:shadow-[0_0_12px_rgba(59,130,246,0.6)]"
+                              [&::-moz-range-thumb]:bg-sky-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:shadow-[0_0_12px_rgba(59,130,246,0.6)]"
                           />
                         </div>
-                        <span className="text-xs text-blue-400/40">100%</span>
+                        <span className="text-xs text-sky-500/40">100%</span>
                       </div>
                     </div>
                   )}

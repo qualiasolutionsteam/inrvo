@@ -55,7 +55,7 @@ export function VolumeMeter({
       case 'optimal':
         return 'bg-emerald-500';
       case 'good':
-        return 'bg-cyan-500';
+        return 'bg-sky-500';
       case 'quiet':
         return 'bg-amber-500';
       case 'silent':
@@ -72,7 +72,7 @@ export function VolumeMeter({
       case 'optimal':
         return 'shadow-emerald-500/50';
       case 'good':
-        return 'shadow-cyan-500/50';
+        return 'shadow-sky-500/50';
       case 'quiet':
         return 'shadow-amber-500/50';
       default:
