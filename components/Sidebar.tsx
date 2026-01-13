@@ -309,13 +309,13 @@ export const Sidebar = memo(({
             <div className="flex items-center justify-between h-14 px-4 border-b border-white/[0.04]">
               <button
                 onClick={() => { handleNavigation('/'); }}
-                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                className="flex-1 flex items-center justify-center hover:opacity-80 transition-opacity"
               >
-                <Logo className="h-5 text-white" />
+                <Logo className="h-9 text-white" />
               </button>
               <button
                 onClick={onClose}
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
+                className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
               >
                 <Icons.Close />
               </button>
