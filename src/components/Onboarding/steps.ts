@@ -58,7 +58,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     title: 'Clone Your Voice',
     description: 'The magic feature! Record 30 seconds of your voice, and meditations will sound like YOU.',
     position: 'bottom',
-    route: '/voice',
+    route: '/voices',
     waitForElement: true,
     highlightPadding: 16,
   },
@@ -71,7 +71,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     title: 'Your Voice Collection',
     description: 'All your cloned voices appear here. Select one before generating a meditation.',
     position: 'left',
-    route: '/voice',
+    route: '/voices',
     highlightPadding: 12,
   },
 
