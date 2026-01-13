@@ -175,7 +175,7 @@ const MenuItem = memo(({
   const variantStyles = {
     default: `text-slate-300 hover:text-white hover:bg-white/[0.06] hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)] ${isActive ? 'bg-white/[0.08] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]' : ''}`,
     danger: 'text-slate-400 hover:text-rose-400 hover:bg-rose-500/[0.08] hover:shadow-[inset_0_0_0_1px_rgba(244,63,94,0.1)]',
-    accent: 'text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/[0.1] hover:shadow-[inset_0_0_0_1px_rgba(34,211,238,0.15)]',
+    accent: 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/[0.1] hover:shadow-[inset_0_0_0_1px_rgba(34,211,238,0.15)]',
     admin: 'text-purple-400 hover:text-purple-300 hover:bg-purple-500/[0.1] hover:shadow-[inset_0_0_0_1px_rgba(168,85,247,0.15)]'
   };
 
@@ -211,14 +211,14 @@ const ChatItem = memo(({
     onClick={onClick}
     className="group w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-200 hover:bg-white/[0.04] hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)] pr-1"
   >
-    <span className="flex-shrink-0 text-slate-500 group-hover:text-cyan-400 transition-colors duration-200">
+    <span className="flex-shrink-0 text-slate-500 group-hover:text-blue-400 transition-colors duration-200">
       <Icons.Chat />
     </span>
     <span className="flex-1 text-[13px] text-slate-400 group-hover:text-slate-200 truncate transition-colors duration-200">
       {item.preview}
     </span>
     {item.hasScript && (
-      <span className="flex-shrink-0 p-1 rounded-md bg-cyan-500/10 text-cyan-400/80 border border-cyan-500/20" title="Has meditation">
+      <span className="flex-shrink-0 p-1 rounded-md bg-blue-500/10 text-blue-400/80 border border-blue-500/20" title="Has meditation">
         <Icons.Meditation />
       </span>
     )}
@@ -326,7 +326,7 @@ export const Sidebar = memo(({
               <div className="px-3 py-3">
                 <button
                   onClick={handleNewChat}
-                  className="group w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-slate-200 text-[13px] font-medium hover:bg-white/[0.06] hover:border-cyan-500/30 hover:text-white hover:shadow-[0_0_20px_rgba(34,211,238,0.1)] active:scale-[0.98] transition-all duration-200"
+                  className="group w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-slate-200 text-[13px] font-medium hover:bg-white/[0.06] hover:border-blue-500/30 hover:text-white hover:shadow-[0_0_20px_rgba(34,211,238,0.1)] active:scale-[0.98] transition-all duration-200"
                 >
                   <span className="transition-transform duration-200 group-hover:rotate-90"><Icons.NewChat /></span>
                   <span>New chat</span>
@@ -358,7 +358,7 @@ export const Sidebar = memo(({
               />
               {isAdmin && (
                 <>
-                  <div className="mx-1 my-2 h-px bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent" />
+                  <div className="mx-1 my-2 h-px bg-gradient-to-r from-transparent via-blue-500/20 to-transparent" />
                   <MenuItem
                     icon={Icons.Shield}
                     label="Admin"
@@ -384,7 +384,7 @@ export const Sidebar = memo(({
                 {user ? (
                   isLoadingChatHistory ? (
                     <div className="flex justify-center py-8">
-                      <div className="w-5 h-5 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
+                      <div className="w-5 h-5 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
                     </div>
                   ) : chatHistory.length > 0 ? (
                     chatHistory.slice(0, 20).map((item, index) => (
@@ -415,7 +415,7 @@ export const Sidebar = memo(({
                     <p className="text-[13px] text-slate-400 mb-3">Sign in to save your history</p>
                     <button
                       onClick={() => { onClose(); onSignIn(); }}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[12px] font-medium hover:bg-cyan-500/20 transition-all"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[12px] font-medium hover:bg-blue-500/20 transition-all"
                     >
                       <Icons.SignIn />
                       Sign In
@@ -431,7 +431,7 @@ export const Sidebar = memo(({
                 <>
                   {/* User info */}
                   <div className="flex items-center gap-3 px-3 py-2 mb-1">
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-cyan-500/20 to-teal-500/20 flex items-center justify-center text-cyan-400">
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500/20 to-teal-500/20 flex items-center justify-center text-blue-400">
                       <Icons.User />
                     </div>
                     <span className="flex-1 text-[12px] text-slate-400 truncate">

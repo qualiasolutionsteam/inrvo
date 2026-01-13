@@ -188,8 +188,8 @@ export const ControlPanel = memo<ControlPanelProps>(
       <div className="flex-shrink-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent backdrop-blur-xl">
         {/* Glowing separator line */}
         <div className="relative h-px mx-4">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/60 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent blur-sm" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-500/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/40 to-transparent blur-sm" />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-teal-400/30 to-transparent blur-md" />
         </div>
 
@@ -201,7 +201,7 @@ export const ControlPanel = memo<ControlPanelProps>(
             className={`flex-shrink-0 h-10 w-10 sm:w-auto sm:px-4 rounded-xl flex items-center justify-center gap-2 text-xs font-medium border transition-all duration-200
               ${
                 expanded
-                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30 shadow-lg shadow-cyan-500/10'
+                  ? 'bg-blue-500/20 text-cyan-300 border-blue-500/30 shadow-lg shadow-blue-500/10'
                   : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20'
               }`}
             aria-expanded={expanded}
@@ -225,7 +225,7 @@ export const ControlPanel = memo<ControlPanelProps>(
               className={`flex-shrink-0 h-10 px-4 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all duration-200
                 ${
                   selectedVoice
-                    ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/25'
+                    ? 'bg-blue-500/15 text-cyan-300 border-blue-500/30 hover:bg-blue-500/25'
                     : 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25 animate-pulse'
                 }`}
             >
@@ -256,8 +256,8 @@ export const ControlPanel = memo<ControlPanelProps>(
               disabled={isHarmonizing}
               className={`flex-shrink-0 h-10 px-4 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all duration-200
                 ${isHarmonizing
-                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30 cursor-wait'
-                  : 'bg-gradient-to-r from-cyan-500/15 to-teal-500/15 hover:from-cyan-500/25 hover:to-teal-500/25 text-cyan-300 border-cyan-500/30 hover:border-cyan-400/50'
+                  ? 'bg-blue-500/20 text-cyan-300 border-blue-500/30 cursor-wait'
+                  : 'bg-gradient-to-r from-blue-500/15 to-teal-500/15 hover:from-blue-500/25 hover:to-teal-500/25 text-cyan-300 border-blue-500/30 hover:border-blue-400/50'
                 }`}
               title="AI-powered: Automatically add pauses and breathing cues"
             >
@@ -292,7 +292,7 @@ export const ControlPanel = memo<ControlPanelProps>(
                   className={`flex-1 py-2.5 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5
                     ${
                       activeTab === 'voice'
-                        ? 'bg-cyan-500/30 text-cyan-300'
+                        ? 'bg-blue-500/30 text-cyan-300'
                         : 'text-white/50 hover:text-white/70 hover:bg-white/5'
                     }`}
                   aria-selected={activeTab === 'voice'}
@@ -341,13 +341,13 @@ export const ControlPanel = memo<ControlPanelProps>(
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center ${
                           selectedVoice
-                            ? 'bg-cyan-500/20'
+                            ? 'bg-blue-500/20'
                             : 'bg-white/10'
                         }`}
                       >
                         <VoiceIcon
                           className={`w-5 h-5 ${
-                            selectedVoice ? 'text-cyan-400' : 'text-white/40'
+                            selectedVoice ? 'text-blue-400' : 'text-white/40'
                           }`}
                         />
                       </div>
@@ -364,7 +364,7 @@ export const ControlPanel = memo<ControlPanelProps>(
                         </p>
                       </div>
                       {selectedVoice && (
-                        <div className="text-xs text-cyan-400/60">
+                        <div className="text-xs text-blue-400/60">
                           {selectedVoice.isCloned ? 'Cloned' : 'Preset'}
                         </div>
                       )}
@@ -372,10 +372,10 @@ export const ControlPanel = memo<ControlPanelProps>(
 
                     {/* Voice Preview Section */}
                     {selectedVoice && onGenerateVoicePreview && (
-                      <div className="p-3 rounded-xl bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-500/20">
+                      <div className="p-3 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20">
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-xs font-medium text-white/70 flex items-center gap-1.5">
-                            <svg className="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15.536a5 5 0 001.414 1.414m0-9.9a5 5 0 011.414-1.414" />
                             </svg>
                             Voice Preview
@@ -407,8 +407,8 @@ export const ControlPanel = memo<ControlPanelProps>(
                               disabled={isGeneratingPreview}
                               className={`w-full py-3 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2
                                 ${isGeneratingPreview
-                                  ? 'bg-cyan-500/20 text-cyan-300 cursor-wait'
-                                  : 'bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 active:scale-[0.98]'
+                                  ? 'bg-blue-500/20 text-cyan-300 cursor-wait'
+                                  : 'bg-blue-500/20 hover:bg-blue-500/30 text-cyan-300 active:scale-[0.98]'
                                 }`}
                             >
                               {isGeneratingPreview ? (

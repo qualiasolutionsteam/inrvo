@@ -107,7 +107,7 @@ const VoiceCard: React.FC<VoiceCardProps> = memo(({
       return 'bg-amber-500';
     }
     if (voice.status === 'PROCESSING') {
-      return 'bg-cyan-500 animate-pulse';
+      return 'bg-blue-500 animate-pulse';
     }
     return 'bg-slate-500';
   };
@@ -126,7 +126,7 @@ const VoiceCard: React.FC<VoiceCardProps> = memo(({
       <GlassCard
         className={`!p-5 border transition-all duration-300 ${
           isSelected
-            ? 'border-cyan-500/50 bg-cyan-500/10 shadow-[0_0_40px_rgba(34,211,238,0.15)]'
+            ? 'border-blue-500/50 bg-blue-500/10 shadow-[0_0_40px_rgba(34,211,238,0.15)]'
             : 'border-white/5 hover:border-white/15 hover:shadow-[0_8px_32px_rgba(0,0,0,0.3)]'
         }`}
         hover={false}
@@ -144,7 +144,7 @@ const VoiceCard: React.FC<VoiceCardProps> = memo(({
                     if (e.key === 'Enter') handleSaveRename();
                     if (e.key === 'Escape') handleCancelRename();
                   }}
-                  className="flex-1 px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-cyan-500 transition-colors"
+                  className="flex-1 px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
                   autoFocus
                 />
                 <button
@@ -170,7 +170,7 @@ const VoiceCard: React.FC<VoiceCardProps> = memo(({
 
           {/* Status Badge */}
           {isSelected && (
-            <span className="shrink-0 px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-bold uppercase tracking-widest border border-cyan-500/30">
+            <span className="shrink-0 px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-widest border border-blue-500/30">
               Selected
             </span>
           )}
@@ -211,8 +211,8 @@ const VoiceCard: React.FC<VoiceCardProps> = memo(({
                 onClick={handlePreview}
                 className={`p-2 rounded-lg transition-all ${
                   isPlaying
-                    ? 'bg-cyan-500/30 text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.3)]'
-                    : 'bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20'
+                    ? 'bg-blue-500/30 text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.3)]'
+                    : 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
                 }`}
                 title={isPlaying ? 'Stop preview' : 'Preview voice'}
               >
@@ -286,8 +286,8 @@ const EmptyState: React.FC<{ onClone: () => void }> = ({ onClone }) => (
     animate={{ opacity: 1, y: 0 }}
     className="text-center py-16"
   >
-    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-cyan-500/20 to-teal-500/20 flex items-center justify-center">
-      <Mic className="w-10 h-10 text-cyan-400" />
+    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-blue-500/20 to-teal-500/20 flex items-center justify-center">
+      <Mic className="w-10 h-10 text-blue-400" />
     </div>
     <h3 className="text-xl font-semibold text-white mb-2">No voices yet</h3>
     <p className="text-slate-400 mb-8 max-w-sm mx-auto">
@@ -295,7 +295,7 @@ const EmptyState: React.FC<{ onClone: () => void }> = ({ onClone }) => (
     </p>
     <button
       onClick={onClone}
-      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 text-white font-medium hover:shadow-lg hover:shadow-cyan-500/25 transition-all hover:scale-105 active:scale-95"
+      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-teal-500 text-white font-medium hover:shadow-lg hover:shadow-blue-500/25 transition-all hover:scale-105 active:scale-95"
     >
       <Plus className="w-5 h-5" />
       Clone Your Voice
@@ -410,7 +410,7 @@ const VoicesPage: React.FC = () => {
           <m.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-block px-4 py-1 mb-4 rounded-full bg-cyan-500/10 text-cyan-400 text-[10px] font-bold uppercase tracking-[0.4em] border border-cyan-500/20"
+            className="inline-block px-4 py-1 mb-4 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase tracking-[0.4em] border border-blue-500/20"
           >
             Voice Library
           </m.div>
@@ -438,7 +438,7 @@ const VoicesPage: React.FC = () => {
             transition={{ delay: 0.3 }}
             onClick={handleClone}
             data-onboarding="clone-voice"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 text-white font-medium hover:shadow-lg hover:shadow-cyan-500/25 transition-all hover:scale-105 active:scale-95"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-teal-500 text-white font-medium hover:shadow-lg hover:shadow-blue-500/25 transition-all hover:scale-105 active:scale-95"
           >
             <Plus className="w-5 h-5" />
             Clone New Voice
@@ -527,16 +527,16 @@ const VoicesPage: React.FC = () => {
           <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full bg-slate-900/90 backdrop-blur-xl border border-cyan-500/30 shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full bg-slate-900/90 backdrop-blur-xl border border-blue-500/30 shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
           >
             <div className="flex items-center gap-3">
-              <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
               <span className="text-sm text-slate-300">
-                Using: <span className="text-cyan-400 font-medium">{selectedVoice.name}</span>
+                Using: <span className="text-blue-400 font-medium">{selectedVoice.name}</span>
               </span>
               <button
                 onClick={() => navigate('/')}
-                className="ml-2 px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-400 text-xs font-medium hover:bg-cyan-500/30 transition-colors"
+                className="ml-2 px-3 py-1 rounded-lg bg-blue-500/20 text-blue-400 text-xs font-medium hover:bg-blue-500/30 transition-colors"
               >
                 Create Meditation
               </button>

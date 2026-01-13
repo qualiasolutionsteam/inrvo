@@ -6,9 +6,9 @@ const AboutPage: React.FC = () => {
   return (
     <AppLayout showBackButton backTo="/" className="flex flex-col p-6 overflow-y-auto">
       <div className="flex-1 flex flex-col items-center justify-center pt-16 md:pt-0 max-w-2xl mx-auto w-full">
-        <div className="inline-block px-4 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-6">About</div>
+        <div className="inline-block px-4 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-6">About</div>
         <h2 className="text-3xl md:text-5xl font-extralight text-center mb-4 tracking-tight">
-          <span className="bg-gradient-to-r from-cyan-300 via-white to-teal-300 bg-clip-text text-transparent">About Innrvo</span>
+          <span className="bg-gradient-to-r from-blue-300 via-white to-teal-300 bg-clip-text text-transparent">About Innrvo</span>
         </h2>
 
         <GlassCard className="!p-8 !rounded-2xl mt-8">

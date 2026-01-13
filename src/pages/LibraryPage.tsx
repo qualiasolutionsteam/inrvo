@@ -185,7 +185,7 @@ const MeditationCard: React.FC<MeditationCardProps> = memo(({
                 <span>{durationDisplay}</span>
               )}
               {meditation.voice_name && (
-                <span className="flex items-center gap-1 text-cyan-400">
+                <span className="flex items-center gap-1 text-blue-400">
                   <Mic className="w-3 h-3" />
                   {meditation.voice_name}
                 </span>
@@ -203,7 +203,7 @@ const MeditationCard: React.FC<MeditationCardProps> = memo(({
             {!hasAudio && (
               <button
                 onClick={(e) => { e.stopPropagation(); onRestore(); }}
-                className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-colors"
+                className="p-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
                 title="Restore script"
               >
                 <RotateCcw className="w-4 h-4" />
@@ -415,8 +415,8 @@ const LibraryPage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-center py-16"
           >
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-cyan-500/20 to-teal-500/20 flex items-center justify-center">
-              <Music className="w-10 h-10 text-cyan-400" />
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-blue-500/20 to-teal-500/20 flex items-center justify-center">
+              <Music className="w-10 h-10 text-blue-400" />
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">Sign in to access your library</h3>
             <p className="text-slate-400 mb-8 max-w-sm mx-auto">
@@ -424,7 +424,7 @@ const LibraryPage: React.FC = () => {
             </p>
             <button
               onClick={() => setShowAuthModal(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 text-white font-medium hover:shadow-lg hover:shadow-cyan-500/25 transition-all hover:scale-105 active:scale-95"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-teal-500 text-white font-medium hover:shadow-lg hover:shadow-blue-500/25 transition-all hover:scale-105 active:scale-95"
             >
               Sign In
             </button>
@@ -531,7 +531,7 @@ const LibraryPage: React.FC = () => {
                           </div>
                           <button
                             onClick={() => handleRestore(meditation)}
-                            className="shrink-0 px-3 py-1.5 rounded-lg bg-cyan-500/20 text-cyan-400 text-xs font-medium hover:bg-cyan-500/30 transition-colors"
+                            className="shrink-0 px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-400 text-xs font-medium hover:bg-blue-500/30 transition-colors"
                           >
                             Restore
                           </button>

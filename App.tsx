@@ -2035,10 +2035,10 @@ const App: React.FC = () => {
               <button
                 onClick={() => setShowBurgerMenu(true)}
                 className="ml-1 md:ml-2 p-2 md:p-2.5 min-w-[40px] min-h-[40px] md:min-w-[44px] md:min-h-[44px]
-                           rounded-lg md:rounded-xl bg-cyan-500/10
-                           hover:bg-cyan-500/20
-                           text-cyan-400 hover:text-cyan-300 transition-all flex items-center justify-center
-                           border border-cyan-500/20 hover:border-cyan-500/40"
+                           rounded-lg md:rounded-xl bg-blue-500/10
+                           hover:bg-blue-500/20
+                           text-blue-400 hover:text-blue-300 transition-all flex items-center justify-center
+                           border border-blue-500/20 hover:border-blue-500/40"
                 title="Open sidebar"
               >
                 <ICONS.SidebarToggle className="w-5 h-5" />
@@ -2058,7 +2058,7 @@ const App: React.FC = () => {
                     const voice = availableVoices.find(v => v.id === e.target.value);
                     if (voice) setSelectedVoice(voice);
                   }}
-                  className="bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-2 md:px-3 py-1.5 md:py-2 text-[10px] md:text-[11px] font-bold uppercase tracking-wider md:tracking-widest text-slate-300 outline-none focus:border-cyan-500 transition-all cursor-pointer hover:bg-white/10 max-w-[100px] md:max-w-none truncate"
+                  className="bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-2 md:px-3 py-1.5 md:py-2 text-[10px] md:text-[11px] font-bold uppercase tracking-wider md:tracking-widest text-slate-300 outline-none focus:border-blue-500 transition-all cursor-pointer hover:bg-white/10 max-w-[100px] md:max-w-none truncate"
                 >
                   {availableVoices.map(v => (
                     <option key={v.id} value={v.id} className="bg-slate-900">
@@ -2069,7 +2069,7 @@ const App: React.FC = () => {
               ) : (
                 <button
                   onClick={() => setShowCloneModal(true)}
-                  className="bg-cyan-500/20 border border-cyan-500/30 rounded-lg md:rounded-xl px-2 md:px-3 py-1.5 md:py-2 text-[10px] md:text-[11px] font-bold uppercase tracking-wider text-cyan-300 hover:bg-cyan-500/30 transition-all"
+                  className="bg-blue-500/20 border border-blue-500/30 rounded-lg md:rounded-xl px-2 md:px-3 py-1.5 md:py-2 text-[10px] md:text-[11px] font-bold uppercase tracking-wider text-blue-300 hover:bg-blue-500/30 transition-all"
                 >
                   Clone Voice
                 </button>
@@ -2080,7 +2080,7 @@ const App: React.FC = () => {
             {!user && (
               <button
                 onClick={() => setShowAuthModal(true)}
-                className="px-3 md:px-4 py-2 min-h-[40px] md:min-h-[44px] rounded-lg md:rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 hover:border-cyan-500/40 text-[10px] font-bold uppercase tracking-wider md:tracking-widest text-cyan-400 transition-all shadow-[0_0_15px_rgba(6,182,212,0.15)]"
+                className="px-3 md:px-4 py-2 min-h-[40px] md:min-h-[44px] rounded-lg md:rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 hover:border-blue-500/40 text-[10px] font-bold uppercase tracking-wider md:tracking-widest text-blue-400 transition-all shadow-[0_0_15px_rgba(6,182,212,0.15)]"
               >
                 Sign In
               </button>
@@ -2098,7 +2098,7 @@ const App: React.FC = () => {
               {!chatStarted && !isInlineMode && (
                 <div className="fixed top-24 md:top-32 left-0 right-0 text-center z-10 px-4 animate-in fade-in slide-in-from-top-4 duration-500">
                   <p className="text-2xl md:text-4xl font-light tracking-wide text-white/70">
-                    {tagline.main} <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-cyan-500 font-semibold">{tagline.highlight}</span>
+                    {tagline.main} <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-500 font-semibold">{tagline.highlight}</span>
                   </p>
                   {tagline.sub && <p className="text-base md:text-2xl text-slate-500 mt-1 md:mt-2 hidden sm:block">{tagline.sub}</p>}
                 </div>
@@ -2298,7 +2298,7 @@ const App: React.FC = () => {
 
           {/* VIEW: PLAYER (Immersive Mode) */}
           {currentView === View.PLAYER && (
-            <Suspense fallback={<div className="fixed inset-0 z-[100] bg-[#0f172a] flex items-center justify-center"><div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" /></div>}>
+            <Suspense fallback={<div className="fixed inset-0 z-[100] bg-[#0f172a] flex items-center justify-center"><div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>}>
               <MeditationPlayer
                 isPlaying={isPlaying}
                 currentTime={currentTime}
@@ -2350,7 +2350,7 @@ const App: React.FC = () => {
 
         {/* MODAL: Voice Clone (lazy-loaded) */}
         {showCloneModal && (
-          <Suspense fallback={<div className="fixed inset-0 z-[90] bg-slate-950/90 flex items-center justify-center"><div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" /></div>}>
+          <Suspense fallback={<div className="fixed inset-0 z-[90] bg-slate-950/90 flex items-center justify-center"><div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>}>
             <SimpleVoiceClone
               onClose={() => {
                 setShowCloneModal(false);
@@ -2385,7 +2385,7 @@ const App: React.FC = () => {
 
             <div className="w-full max-w-5xl mx-auto space-y-8 relative py-16 md:py-20">
               <div className="text-center space-y-4">
-                <div className="inline-block px-4 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-[10px] font-bold uppercase tracking-[0.4em]">Templates</div>
+                <div className="inline-block px-4 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase tracking-[0.4em]">Templates</div>
                 <h3 className="text-3xl md:text-4xl font-serif font-bold text-white tracking-tight">
                   {selectedSubgroup
                     ? TEMPLATE_CATEGORIES.find(c => c.id === selectedCategory)?.subgroups.find(s => s.id === selectedSubgroup)?.name
@@ -2441,12 +2441,12 @@ const App: React.FC = () => {
                       key={category.id}
                       onClick={() => setSelectedCategory(category.id)}
                       className={`!p-8 !rounded-3xl cursor-pointer border border-transparent transition-all hover:scale-[1.02] ${category.id === 'meditation'
-                        ? 'hover:border-cyan-500/30 '
+                        ? 'hover:border-blue-500/30 '
                         : 'hover:border-pink-500/30 '
                         }`}
                     >
                       <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 ${category.id === 'meditation'
-                        ? 'bg-gradient-to-br from-cyan-500/20 to-teal-500/20'
+                        ? 'bg-gradient-to-br from-blue-500/20 to-teal-500/20'
                         : 'bg-gradient-to-br from-pink-500/20 to-rose-500/20'
                         }`}>
                         {category.icon === 'sparkle' ? <ICONS.Sparkle className="w-8 h-8" /> : <ICONS.Book className="w-8 h-8" />}
@@ -2467,7 +2467,7 @@ const App: React.FC = () => {
                       key={subgroup.id}
                       onClick={() => setSelectedSubgroup(subgroup.id)}
                       className={`!p-6 !rounded-2xl cursor-pointer border border-transparent transition-all hover:scale-[1.02] ${selectedCategory === 'meditation'
-                        ? 'hover:border-cyan-500/30'
+                        ? 'hover:border-blue-500/30'
                         : 'hover:border-pink-500/30'
                         }`}
                     >
@@ -2490,13 +2490,13 @@ const App: React.FC = () => {
                         key={template.id}
                         onClick={() => handleSelectTemplate(template.prompt)}
                         className={`!p-5 !rounded-2xl cursor-pointer border border-transparent transition-all ${selectedCategory === 'meditation'
-                          ? 'hover:border-cyan-500/30'
+                          ? 'hover:border-blue-500/30'
                           : 'hover:border-pink-500/30'
                           }`}
                       >
                         <h5 className="text-base font-bold text-white mb-1.5">{template.title}</h5>
                         <p className="text-sm text-slate-400 leading-relaxed">{template.description}</p>
-                        <div className={`mt-3 text-[10px] font-bold uppercase tracking-widest ${selectedCategory === 'meditation' ? 'text-cyan-400' : 'text-pink-400'
+                        <div className={`mt-3 text-[10px] font-bold uppercase tracking-widest ${selectedCategory === 'meditation' ? 'text-blue-400' : 'text-pink-400'
                           }`}>
                           Use Template →
                         </div>
@@ -2552,7 +2552,7 @@ const App: React.FC = () => {
           <ErrorBoundary>
             <Suspense fallback={
               <div className="fixed inset-0 z-[60] bg-[#020617] flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-cyan-500 border-t-transparent" />
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent" />
               </div>
             }>
               <MeditationEditor
@@ -2627,7 +2627,7 @@ const App: React.FC = () => {
               onClick={() => setShowHowItWorks(false)}
               className="fixed top-6 left-6 md:top-8 md:left-8 text-slate-600 hover:text-white transition-all flex items-center gap-3 group btn-press focus-ring rounded-full z-[100]"
             >
-              <div className="w-12 h-12 min-w-[44px] min-h-[44px] rounded-full border border-white/[0.06] bg-white/[0.02] flex items-center justify-center group-hover:bg-white/[0.08] group-hover:scale-105 group-hover:border-cyan-500/20 transition-all">
+              <div className="w-12 h-12 min-w-[44px] min-h-[44px] rounded-full border border-white/[0.06] bg-white/[0.02] flex items-center justify-center group-hover:bg-white/[0.08] group-hover:scale-105 group-hover:border-blue-500/20 transition-all">
                 <ICONS.ArrowBack className="w-5 h-5" />
               </div>
               <span className="hidden md:inline text-[11px] font-medium uppercase tracking-[0.25em] text-slate-500 group-hover:text-white transition-colors">Back</span>
@@ -2635,13 +2635,13 @@ const App: React.FC = () => {
 
             <div className="flex-1 flex flex-col items-center justify-center pt-16 md:pt-0 relative z-10 max-w-4xl mx-auto w-full">
               {/* Badge */}
-              <div className="inline-block px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-semibold uppercase tracking-[0.35em] mb-6 animate-in fade-in slide-in-from-bottom-2 duration-500 shadow-[0_0_20px_rgba(6,182,212,0.15)]">
+              <div className="inline-block px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-semibold uppercase tracking-[0.35em] mb-6 animate-in fade-in slide-in-from-bottom-2 duration-500 shadow-[0_0_20px_rgba(6,182,212,0.15)]">
                 Guide
               </div>
 
               {/* Title */}
               <h2 className="text-3xl md:text-5xl font-extralight text-center mb-3 tracking-tight animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: '100ms' }}>
-                <span className="bg-gradient-to-r from-cyan-300 via-white to-teal-300 bg-clip-text text-transparent">How INrVO Works</span>
+                <span className="bg-gradient-to-r from-blue-300 via-white to-teal-300 bg-clip-text text-transparent">How INrVO Works</span>
               </h2>
               <p className="text-slate-500 text-center mb-14 max-w-md text-sm animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: '150ms' }}>Create personalized meditations in seconds with AI</p>
 
@@ -2649,9 +2649,9 @@ const App: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full">
                 {/* Step 1 */}
                 <div className="step-card group">
-                  <GlassCard className="!p-7 !rounded-2xl text-center h-full border-white/[0.04] hover:border-cyan-500/20 transition-all duration-300" hover={false}>
-                    <div className="step-number w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/15 to-cyan-400/5 border border-cyan-500/20 flex items-center justify-center mx-auto mb-5 group-hover:scale-105 transition-transform duration-300">
-                      <span className="text-2xl font-bold bg-gradient-to-br from-cyan-300 to-cyan-500 bg-clip-text text-transparent">1</span>
+                  <GlassCard className="!p-7 !rounded-2xl text-center h-full border-white/[0.04] hover:border-blue-500/20 transition-all duration-300" hover={false}>
+                    <div className="step-number w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/15 to-blue-400/5 border border-blue-500/20 flex items-center justify-center mx-auto mb-5 group-hover:scale-105 transition-transform duration-300">
+                      <span className="text-2xl font-bold bg-gradient-to-br from-blue-300 to-blue-500 bg-clip-text text-transparent">1</span>
                     </div>
                     <h3 className="text-lg font-semibold text-white mb-2.5">Write Your Intention</h3>
                     <p className="text-sm text-slate-500 leading-relaxed">Type a short phrase like "calm my anxiety" or "help me sleep" - or use voice input</p>
@@ -2686,11 +2686,11 @@ const App: React.FC = () => {
                 <h4 className="text-sm font-semibold text-slate-400 uppercase tracking-[0.2em] text-center mb-6">Pro Tips</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="pro-tip flex items-start gap-3.5 p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
-                    <ICONS.Sparkle className="tip-icon w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
+                    <ICONS.Sparkle className="tip-icon w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
                     <p className="text-sm text-slate-500"><span className="text-slate-300 font-medium">Be specific:</span> "5-minute morning energy boost" works better than just "energy"</p>
                   </div>
                   <div className="pro-tip flex items-start gap-3.5 p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
-                    <ICONS.Microphone className="tip-icon w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
+                    <ICONS.Microphone className="tip-icon w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
                     <p className="text-sm text-slate-500"><span className="text-slate-300 font-medium">Clone your voice:</span> Record yourself to hear meditations in your own voice</p>
                   </div>
                   <div className="pro-tip flex items-start gap-3.5 p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
@@ -2837,7 +2837,7 @@ const App: React.FC = () => {
                                             <span>{Math.floor(meditation.duration_seconds / 60)}:{String(meditation.duration_seconds % 60).padStart(2, '0')}</span>
                                           )}
                                           {meditation.voice_name && (
-                                            <span className="text-cyan-400">{meditation.voice_name}</span>
+                                            <span className="text-blue-400">{meditation.voice_name}</span>
                                           )}
                                         </div>
                                       </div>
@@ -2902,7 +2902,7 @@ const App: React.FC = () => {
                                           setRestoredScript(scriptToRestore);
                                           setShowLibrary(false);
                                         }}
-                                        className="px-3 py-1.5 rounded-lg bg-cyan-500/20 text-cyan-400 text-xs hover:bg-cyan-500/30 transition-colors"
+                                        className="px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-400 text-xs hover:bg-blue-500/30 transition-colors"
                                       >
                                         Restore
                                       </button>
@@ -2944,8 +2944,8 @@ const App: React.FC = () => {
                 </div>
               ) : (
                 <GlassCard className="!p-8 !rounded-2xl text-center max-w-md">
-                  <div className="w-20 h-20 rounded-full bg-cyan-500/10 flex items-center justify-center mx-auto mb-6">
-                    <svg className="w-10 h-10 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-20 h-20 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-6">
+                    <svg className="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                     </svg>
                   </div>
@@ -2956,7 +2956,7 @@ const App: React.FC = () => {
                       setShowLibrary(false);
                       setShowAuthModal(true);
                     }}
-                    className="px-6 py-3 rounded-full bg-gradient-to-r from-cyan-500 to-teal-500 text-white font-bold text-sm hover:scale-105 active:scale-95 transition-all shadow-lg shadow-cyan-500/25"
+                    className="px-6 py-3 rounded-full bg-gradient-to-r from-blue-500 to-teal-500 text-white font-bold text-sm hover:scale-105 active:scale-95 transition-all shadow-lg shadow-blue-500/25"
                   >
                     Sign In
                   </button>
@@ -3100,7 +3100,7 @@ const App: React.FC = () => {
             <div className="flex-1 flex flex-col items-center justify-center pt-16 md:pt-0 relative z-10 max-w-3xl mx-auto">
               <div className="inline-block px-4 py-1 rounded-full bg-pink-500/10 text-pink-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-6">About</div>
               <h2 className="text-3xl md:text-5xl font-extralight text-center mb-4 tracking-tight">
-                <span className="bg-gradient-to-r from-cyan-300 via-white to-teal-300 bg-clip-text text-transparent">About INrVO</span>
+                <span className="bg-gradient-to-r from-blue-300 via-white to-teal-300 bg-clip-text text-transparent">About INrVO</span>
               </h2>
 
               <div className="w-full space-y-8 mt-8">
@@ -3117,7 +3117,7 @@ const App: React.FC = () => {
                   <h3 className="text-xl font-bold text-white mb-4">What Makes Us Different</h3>
                   <div className="space-y-4">
                     <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center flex-shrink-0">
                         <ICONS.Sparkle className="w-5 h-5" />
                       </div>
                       <div>
@@ -3180,9 +3180,9 @@ const App: React.FC = () => {
             </button>
 
             <div className="flex-1 flex flex-col items-center pt-20 md:pt-16 relative z-10 max-w-4xl mx-auto w-full">
-              <div className="inline-block px-4 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-6">Legal</div>
+              <div className="inline-block px-4 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-6">Legal</div>
               <h2 className="text-3xl md:text-5xl font-extralight text-center mb-4 tracking-tight">
-                <span className="bg-gradient-to-r from-cyan-300 via-white to-teal-300 bg-clip-text text-transparent">Terms of Service</span>
+                <span className="bg-gradient-to-r from-blue-300 via-white to-teal-300 bg-clip-text text-transparent">Terms of Service</span>
               </h2>
               <p className="text-slate-500 text-center mb-8">Last updated: December 2024</p>
 
@@ -3219,7 +3219,7 @@ const App: React.FC = () => {
 
                 <GlassCard className="!p-6 !rounded-2xl">
                   <h3 className="text-lg font-bold text-white mb-3">7. Contact</h3>
-                  <p className="text-slate-400">For questions about these Terms, contact us at <a href="https://qualiasolutions.net" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300 transition-colors">qualiasolutions.net</a></p>
+                  <p className="text-slate-400">For questions about these Terms, contact us at <a href="https://qualiasolutions.net" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors">qualiasolutions.net</a></p>
                 </GlassCard>
               </div>
             </div>
@@ -3243,9 +3243,9 @@ const App: React.FC = () => {
             </button>
 
             <div className="flex-1 flex flex-col items-center pt-20 md:pt-16 relative z-10 max-w-4xl mx-auto w-full">
-              <div className="inline-block px-4 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-6">Legal</div>
+              <div className="inline-block px-4 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-6">Legal</div>
               <h2 className="text-3xl md:text-5xl font-extralight text-center mb-4 tracking-tight">
-                <span className="bg-gradient-to-r from-cyan-300 via-white to-teal-300 bg-clip-text text-transparent">Privacy Policy</span>
+                <span className="bg-gradient-to-r from-blue-300 via-white to-teal-300 bg-clip-text text-transparent">Privacy Policy</span>
               </h2>
               <p className="text-slate-500 text-center mb-8">Last updated: December 2024</p>
 
@@ -3282,7 +3282,7 @@ const App: React.FC = () => {
 
                 <GlassCard className="!p-6 !rounded-2xl">
                   <h3 className="text-lg font-bold text-white mb-3">7. Contact</h3>
-                  <p className="text-slate-400">For privacy inquiries, contact us at <a href="https://qualiasolutions.net" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300 transition-colors">qualiasolutions.net</a></p>
+                  <p className="text-slate-400">For privacy inquiries, contact us at <a href="https://qualiasolutions.net" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors">qualiasolutions.net</a></p>
                 </GlassCard>
               </div>
             </div>
@@ -3292,7 +3292,7 @@ const App: React.FC = () => {
         {/* Music Debug Panel (Development Only) */}
         {import.meta.env.DEV && (
           <div className="fixed bottom-4 right-4 bg-slate-900/95 border border-slate-700 p-4 rounded-lg text-xs font-mono z-[200] max-w-xs shadow-xl">
-            <h3 className="font-bold text-cyan-400 mb-2 flex items-center gap-2">
+            <h3 className="font-bold text-blue-400 mb-2 flex items-center gap-2">
               <ICONS.Music className="w-4 h-4" />
               Music Debug
             </h3>
@@ -3343,7 +3343,7 @@ const App: React.FC = () => {
                   startBackgroundMusic(selectedBackgroundTrack);
                 }
               }}
-              className="mt-3 w-full bg-cyan-600 hover:bg-cyan-500 text-white py-1.5 px-3 rounded text-xs transition-colors"
+              className="mt-3 w-full bg-blue-600 hover:bg-blue-500 text-white py-1.5 px-3 rounded text-xs transition-colors"
             >
               Test Music
             </button>

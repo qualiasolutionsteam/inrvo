@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { ReactNode } from 'react';
 
 // Store mock functions to configure per-test
@@ -177,15 +177,13 @@ describe('AppContext', () => {
       });
     });
 
-    it('should have correct audio initial state', () => {
+    it('should have correct background track initial state', () => {
       const { result } = renderHook(() => useApp(), {
         wrapper: createWrapper(),
       });
 
       expect(result.current.selectedBackgroundTrack.id).toBe('none');
-      expect(result.current.backgroundVolume).toBe(0.3);
-      expect(result.current.voiceVolume).toBe(0.7);
-      expect(result.current.playbackRate).toBe(1.0);
+      // Note: backgroundVolume, voiceVolume, playbackRate moved to AudioPlaybackContext
     });
 
     it('should have correct script initial state', () => {
@@ -218,17 +216,7 @@ describe('AppContext', () => {
       expect(result.current.hasMoreHistory).toBe(false);
     });
 
-    it('should have correct playback initial state', () => {
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(result.current.isPlaying).toBe(false);
-      expect(result.current.currentTime).toBe(0);
-      expect(result.current.duration).toBe(0);
-      expect(result.current.currentWordIndex).toBe(-1);
-      expect(result.current.timingMap).toBeNull();
-    });
+    // Note: Playback state (isPlaying, currentTime, duration, etc.) moved to AudioPlaybackContext
 
     it('should have correct generation initial state', () => {
       const { result } = renderHook(() => useApp(), {
@@ -256,18 +244,7 @@ describe('AppContext', () => {
       expect(result.current.micError).toBeNull();
     });
 
-    it('should have audio refs initialized', () => {
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(result.current.audioContextRef).toBeDefined();
-      expect(result.current.audioContextRef.current).toBeNull();
-      expect(result.current.audioSourceRef).toBeDefined();
-      expect(result.current.audioBufferRef).toBeDefined();
-      expect(result.current.gainNodeRef).toBeDefined();
-      expect(result.current.backgroundAudioRef).toBeDefined();
-    });
+    // Note: Audio refs (audioContextRef, etc.) moved to AudioPlaybackContext
   });
 
   describe('state setters', () => {
@@ -324,21 +301,7 @@ describe('AppContext', () => {
       expect(result.current.creditInfo).toEqual(newCreditInfo);
     });
 
-    it('should update audio settings', () => {
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      act(() => {
-        result.current.setBackgroundVolume(0.5);
-        result.current.setVoiceVolume(0.8);
-        result.current.setPlaybackRate(1.0);
-      });
-
-      expect(result.current.backgroundVolume).toBe(0.5);
-      expect(result.current.voiceVolume).toBe(0.8);
-      expect(result.current.playbackRate).toBe(1.0);
-    });
+    // Note: Audio settings (setBackgroundVolume, etc.) moved to AudioPlaybackContext
 
     it('should update script state', () => {
       const { result } = renderHook(() => useApp(), {
@@ -372,23 +335,7 @@ describe('AppContext', () => {
       expect(result.current.favoriteAudioTags).toEqual(['pause']);
     });
 
-    it('should update playback state', () => {
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      act(() => {
-        result.current.setIsPlaying(true);
-        result.current.setCurrentTime(30);
-        result.current.setDuration(300);
-        result.current.setCurrentWordIndex(10);
-      });
-
-      expect(result.current.isPlaying).toBe(true);
-      expect(result.current.currentTime).toBe(30);
-      expect(result.current.duration).toBe(300);
-      expect(result.current.currentWordIndex).toBe(10);
-    });
+    // Note: Playback state setters (setIsPlaying, etc.) moved to AudioPlaybackContext
 
     it('should update generation state', () => {
       const { result } = renderHook(() => useApp(), {
@@ -653,27 +600,7 @@ describe('AppContext', () => {
     });
   });
 
-  describe('timing map', () => {
-    it('should update timing map for word highlighting', () => {
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      const mockTimingMap = {
-        words: [
-          { word: 'Hello', startTime: 0, endTime: 0.5 },
-          { word: 'World', startTime: 0.5, endTime: 1.0 },
-        ],
-        totalDuration: 1.0,
-      };
-
-      act(() => {
-        result.current.setTimingMap(mockTimingMap as any);
-      });
-
-      expect(result.current.timingMap).toEqual(mockTimingMap);
-    });
-  });
+  // Note: Timing map (setTimingMap) moved to AudioPlaybackContext
 
   describe('meditation history management', () => {
     it('should set meditation history directly', () => {

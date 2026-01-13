@@ -18,10 +18,11 @@ interface Star {
   baseOpacity: number;
 }
 
-interface NeuralPulse {
+interface ShootingStar {
   id: number;
-  x: number;
-  y: number;
+  startX: number;
+  startY: number;
+  duration: number;
 }
 
 // Memoized star component to prevent unnecessary re-renders
@@ -52,7 +53,7 @@ const Star = memo<{ star: Star }>(({ star }) => (
 Star.displayName = 'Star';
 
 const Starfield: React.FC = () => {
-  const [pulses, setPulses] = useState<NeuralPulse[]>([]);
+  const [shootingStars, setShootingStars] = useState<ShootingStar[]>([]);
 
   // Detect mobile for performance optimization - memoized
   const isMobile = useMemo(() =>
@@ -136,31 +137,32 @@ const Starfield: React.FC = () => {
     });
   }, [starCount]);
 
-  // Neural pulse wave effect - triggers every 8-12 seconds
+  // Shooting stars effect - triggers every 3-6 seconds
   useEffect(() => {
     if (isMobile) return; // Disable on mobile for performance
 
-    const triggerPulse = () => {
-      const newPulse: NeuralPulse = {
+    const triggerShootingStar = () => {
+      const newStar: ShootingStar = {
         id: Date.now(),
-        x: Math.random() * 100,
-        y: Math.random() * 100
+        startX: Math.random() * 70 + 10, // 10-80% from left
+        startY: Math.random() * 40, // top 40% of screen
+        duration: Math.random() * 0.5 + 0.8 // 0.8-1.3s
       };
-      setPulses(prev => [...prev, newPulse]);
+      setShootingStars(prev => [...prev, newStar]);
 
-      // Remove pulse after animation completes
+      // Remove after animation completes
       setTimeout(() => {
-        setPulses(prev => prev.filter(p => p.id !== newPulse.id));
-      }, 2500);
+        setShootingStars(prev => prev.filter(s => s.id !== newStar.id));
+      }, newStar.duration * 1000 + 100);
     };
 
-    // Initial delay before first pulse
-    const initialDelay = setTimeout(triggerPulse, 3000);
+    // Initial delay before first shooting star
+    const initialDelay = setTimeout(triggerShootingStar, 2000);
 
-    // Recurring pulses
+    // Recurring shooting stars
     const interval = setInterval(() => {
-      triggerPulse();
-    }, 8000 + Math.random() * 4000);
+      triggerShootingStar();
+    }, 3000 + Math.random() * 3000);
 
     return () => {
       clearTimeout(initialDelay);

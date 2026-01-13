@@ -16,7 +16,7 @@ function VisualizerPlaceholder({ size = 400 }: { size?: number }) {
       style={{ width: size, height: size }}
     >
       {/* Static placeholder orb */}
-      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-500/20 to-teal-500/20 animate-pulse" />
+      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500/20 to-teal-500/20 animate-pulse" />
     </div>
   );
 }
@@ -28,7 +28,7 @@ function VisualizerLoader({ size = 400 }: { size?: number }) {
       className="relative flex items-center justify-center"
       style={{ width: size, height: size }}
     >
-      <div className="w-16 h-16 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
+      <div className="w-16 h-16 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
     </div>
   );
 }
