@@ -90,10 +90,10 @@ export const GenerateButton = memo<GenerateButtonProps>(
             ${isDisabled && !needsVoice
               ? 'bg-white/10 text-white/40 cursor-not-allowed'
               : isGenerating
-              ? 'bg-gradient-to-r from-cyan-600 via-purple-600 to-cyan-600 bg-[length:200%_100%] animate-gradient text-white cursor-wait shadow-xl shadow-purple-500/20'
+              ? 'bg-gradient-to-r from-cyan-600 via-teal-600 to-cyan-600 bg-[length:200%_100%] animate-gradient text-white cursor-wait shadow-xl shadow-cyan-500/20'
               : needsVoice
               ? 'bg-gradient-to-r from-amber-500/80 to-orange-500/80 text-white shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 hover:from-amber-500 hover:to-orange-500 active:scale-[0.98]'
-              : 'bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 text-white shadow-xl shadow-cyan-500/30 hover:shadow-cyan-500/50 hover:from-cyan-400 hover:via-blue-400 hover:to-purple-500 active:scale-[0.98]'
+              : 'bg-gradient-to-r from-cyan-500 to-teal-500 text-white shadow-xl shadow-cyan-500/30 hover:shadow-cyan-500/50 hover:from-cyan-400 hover:to-teal-400 active:scale-[0.98]'
             }
           `}
         >

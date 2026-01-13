@@ -413,7 +413,7 @@ const LibraryPage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-center py-16"
           >
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-cyan-500/20 to-teal-500/20 flex items-center justify-center">
               <Music className="w-10 h-10 text-cyan-400" />
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">Sign in to access your library</h3>
@@ -422,7 +422,7 @@ const LibraryPage: React.FC = () => {
             </p>
             <button
               onClick={() => setShowAuthModal(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium hover:shadow-lg hover:shadow-cyan-500/25 transition-all hover:scale-105 active:scale-95"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 text-white font-medium hover:shadow-lg hover:shadow-cyan-500/25 transition-all hover:scale-105 active:scale-95"
             >
               Sign In
             </button>

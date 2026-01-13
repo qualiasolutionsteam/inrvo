@@ -103,7 +103,7 @@ class ErrorBoundary extends Component<Props, State> {
 
               <button
                 onClick={this.handleHardRefresh}
-                className="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white font-medium transition-all"
+                className="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white font-medium transition-all shadow-lg shadow-cyan-500/20"
               >
                 Refresh Now
               </button>

@@ -186,6 +186,13 @@ export const ControlPanel = memo<ControlPanelProps>(
 
     return (
       <div className="flex-shrink-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent backdrop-blur-xl">
+        {/* Glowing separator line */}
+        <div className="relative h-px mx-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent blur-sm" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-teal-400/30 to-transparent blur-md" />
+        </div>
+
         {/* Status Row */}
         <div className="flex items-center gap-2 px-4 py-3">
           {/* Options Toggle */}
@@ -272,7 +279,12 @@ export const ControlPanel = memo<ControlPanelProps>(
         {/* Expanded Controls */}
         {expanded && (
           <div className="animate-in slide-in-from-bottom-2 duration-200 px-4 pb-4">
-            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-3 border border-white/5">
+            <div
+              className="bg-white/5 backdrop-blur-sm rounded-xl p-3 border border-cyan-500/30"
+              style={{
+                boxShadow: '0 0 20px rgba(34, 211, 238, 0.12), 0 0 40px rgba(139, 92, 246, 0.08), 0 0 2px rgba(34, 211, 238, 0.3)'
+              }}
+            >
               {/* Tab Buttons */}
               <div className="flex gap-1 mb-3">
                 <button

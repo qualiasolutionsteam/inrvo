@@ -2035,8 +2035,8 @@ const App: React.FC = () => {
               <button
                 onClick={() => setShowBurgerMenu(true)}
                 className="ml-1 md:ml-2 p-2 md:p-2.5 min-w-[40px] min-h-[40px] md:min-w-[44px] md:min-h-[44px]
-                           rounded-lg md:rounded-xl bg-gradient-to-r from-cyan-600/20 to-purple-600/20
-                           hover:from-cyan-600/30 hover:to-purple-600/30
+                           rounded-lg md:rounded-xl bg-cyan-500/10
+                           hover:bg-cyan-500/20
                            text-cyan-400 hover:text-cyan-300 transition-all flex items-center justify-center
                            border border-cyan-500/20 hover:border-cyan-500/40"
                 title="Open sidebar"
@@ -2080,7 +2080,7 @@ const App: React.FC = () => {
             {!user && (
               <button
                 onClick={() => setShowAuthModal(true)}
-                className="px-3 md:px-4 py-2 min-h-[40px] md:min-h-[44px] rounded-lg md:rounded-xl bg-gradient-to-r from-cyan-600/20 to-purple-600/20 hover:from-cyan-600/30 hover:to-purple-600/30 border border-cyan-500/20 text-[10px] font-bold uppercase tracking-wider md:tracking-widest text-cyan-400 transition-all"
+                className="px-3 md:px-4 py-2 min-h-[40px] md:min-h-[44px] rounded-lg md:rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 hover:border-cyan-500/40 text-[10px] font-bold uppercase tracking-wider md:tracking-widest text-cyan-400 transition-all shadow-[0_0_15px_rgba(6,182,212,0.15)]"
               >
                 Sign In
               </button>
@@ -2385,7 +2385,7 @@ const App: React.FC = () => {
 
             <div className="w-full max-w-5xl mx-auto space-y-8 relative py-16 md:py-20">
               <div className="text-center space-y-4">
-                <div className="inline-block px-4 py-1 rounded-full bg-purple-500/10 text-purple-400 text-[10px] font-bold uppercase tracking-[0.4em]">Templates</div>
+                <div className="inline-block px-4 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-[10px] font-bold uppercase tracking-[0.4em]">Templates</div>
                 <h3 className="text-3xl md:text-4xl font-serif font-bold text-white tracking-tight">
                   {selectedSubgroup
                     ? TEMPLATE_CATEGORIES.find(c => c.id === selectedCategory)?.subgroups.find(s => s.id === selectedSubgroup)?.name
@@ -2446,8 +2446,8 @@ const App: React.FC = () => {
                         }`}
                     >
                       <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 ${category.id === 'meditation'
-                        ? 'bg-gradient-to-br from-cyan-500/20 to-purple-500/20'
-                        : 'bg-gradient-to-br from-pink-500/20 to-purple-500/20'
+                        ? 'bg-gradient-to-br from-cyan-500/20 to-teal-500/20'
+                        : 'bg-gradient-to-br from-pink-500/20 to-rose-500/20'
                         }`}>
                         {category.icon === 'sparkle' ? <ICONS.Sparkle className="w-8 h-8" /> : <ICONS.Book className="w-8 h-8" />}
                       </div>
@@ -2635,13 +2635,13 @@ const App: React.FC = () => {
 
             <div className="flex-1 flex flex-col items-center justify-center pt-16 md:pt-0 relative z-10 max-w-4xl mx-auto w-full">
               {/* Badge */}
-              <div className="inline-block px-4 py-1.5 rounded-full bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-semibold uppercase tracking-[0.35em] mb-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <div className="inline-block px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-semibold uppercase tracking-[0.35em] mb-6 animate-in fade-in slide-in-from-bottom-2 duration-500 shadow-[0_0_20px_rgba(6,182,212,0.15)]">
                 Guide
               </div>
 
               {/* Title */}
               <h2 className="text-3xl md:text-5xl font-extralight text-center mb-3 tracking-tight animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: '100ms' }}>
-                <span className="bg-gradient-to-r from-cyan-300 via-white to-purple-300 bg-clip-text text-transparent">How INrVO Works</span>
+                <span className="bg-gradient-to-r from-cyan-300 via-white to-teal-300 bg-clip-text text-transparent">How INrVO Works</span>
               </h2>
               <p className="text-slate-500 text-center mb-14 max-w-md text-sm animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: '150ms' }}>Create personalized meditations in seconds with AI</p>
 
@@ -2660,9 +2660,9 @@ const App: React.FC = () => {
 
                 {/* Step 2 */}
                 <div className="step-card group">
-                  <GlassCard className="!p-7 !rounded-2xl text-center h-full border-white/[0.04] hover:border-purple-500/20 transition-all duration-300" hover={false}>
-                    <div className="step-number w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/15 to-purple-400/5 border border-purple-500/20 flex items-center justify-center mx-auto mb-5 group-hover:scale-105 transition-transform duration-300">
-                      <span className="text-2xl font-bold bg-gradient-to-br from-purple-300 to-purple-500 bg-clip-text text-transparent">2</span>
+                  <GlassCard className="!p-7 !rounded-2xl text-center h-full border-white/[0.04] hover:border-teal-500/20 transition-all duration-300" hover={false}>
+                    <div className="step-number w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-500/15 to-teal-400/5 border border-teal-500/20 flex items-center justify-center mx-auto mb-5 group-hover:scale-105 transition-transform duration-300">
+                      <span className="text-2xl font-bold bg-gradient-to-br from-teal-300 to-teal-500 bg-clip-text text-transparent">2</span>
                     </div>
                     <h3 className="text-lg font-semibold text-white mb-2.5">Customize</h3>
                     <p className="text-sm text-slate-500 leading-relaxed">Choose a voice, select background music, or browse templates for inspiration</p>
@@ -2686,7 +2686,7 @@ const App: React.FC = () => {
                 <h4 className="text-sm font-semibold text-slate-400 uppercase tracking-[0.2em] text-center mb-6">Pro Tips</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="pro-tip flex items-start gap-3.5 p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
-                    <ICONS.Sparkle className="tip-icon w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
+                    <ICONS.Sparkle className="tip-icon w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
                     <p className="text-sm text-slate-500"><span className="text-slate-300 font-medium">Be specific:</span> "5-minute morning energy boost" works better than just "energy"</p>
                   </div>
                   <div className="pro-tip flex items-start gap-3.5 p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
@@ -2956,7 +2956,7 @@ const App: React.FC = () => {
                       setShowLibrary(false);
                       setShowAuthModal(true);
                     }}
-                    className="px-6 py-3 rounded-full bg-gradient-to-r from-cyan-600 to-purple-600 text-white font-bold text-sm hover:scale-105 active:scale-95 transition-all"
+                    className="px-6 py-3 rounded-full bg-gradient-to-r from-cyan-500 to-teal-500 text-white font-bold text-sm hover:scale-105 active:scale-95 transition-all shadow-lg shadow-cyan-500/25"
                   >
                     Sign In
                   </button>
@@ -3100,7 +3100,7 @@ const App: React.FC = () => {
             <div className="flex-1 flex flex-col items-center justify-center pt-16 md:pt-0 relative z-10 max-w-3xl mx-auto">
               <div className="inline-block px-4 py-1 rounded-full bg-pink-500/10 text-pink-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-6">About</div>
               <h2 className="text-3xl md:text-5xl font-extralight text-center mb-4 tracking-tight">
-                <span className="bg-gradient-to-r from-pink-300 via-rose-200 to-purple-300 bg-clip-text text-transparent">About INrVO</span>
+                <span className="bg-gradient-to-r from-cyan-300 via-white to-teal-300 bg-clip-text text-transparent">About INrVO</span>
               </h2>
 
               <div className="w-full space-y-8 mt-8">
@@ -3126,7 +3126,7 @@ const App: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center flex-shrink-0">
                         <ICONS.Microphone className="w-5 h-5" />
                       </div>
                       <div>

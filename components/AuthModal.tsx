@@ -107,7 +107,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
   return (
     <div className="fixed inset-0 z-[90] bg-[#0a0a12] flex items-center justify-center p-4 animate-in fade-in duration-300">
       {/* Subtle gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-cyan-950/30 via-transparent to-purple-950/20" />
+      <div className="absolute inset-0 bg-gradient-to-br from-cyan-950/30 via-transparent to-slate-950/20" />
 
       {/* Content */}
       <div className="relative z-10 w-full max-w-sm">
@@ -130,7 +130,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
             <div className={`w-12 h-12 mx-auto mb-4 rounded-full flex items-center justify-center ${
               emailSent || signupComplete
                 ? 'bg-gradient-to-br from-emerald-500 to-teal-600'
-                : 'bg-gradient-to-br from-cyan-500 to-purple-600'
+                : 'bg-gradient-to-br from-cyan-500 to-teal-600'
             }`}>
               {emailSent || signupComplete ? (
                 <Mail className="h-6 w-6 text-white" />
@@ -181,7 +181,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
                   setMode('signin');
                   resetForm();
                 }}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium text-sm hover:from-cyan-400 hover:to-purple-500 active:scale-[0.98] transition-all shadow-lg shadow-cyan-500/20"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 text-white font-medium text-sm hover:from-cyan-400 hover:to-teal-400 active:scale-[0.98] transition-all shadow-lg shadow-cyan-500/20"
               >
                 Back to Sign In
               </button>
@@ -197,7 +197,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
                   setMode('signin');
                   setError(null);
                 }}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium text-sm hover:from-cyan-400 hover:to-purple-500 active:scale-[0.98] transition-all shadow-lg shadow-cyan-500/20"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 text-white font-medium text-sm hover:from-cyan-400 hover:to-teal-400 active:scale-[0.98] transition-all shadow-lg shadow-cyan-500/20"
               >
                 Back to Sign In
               </button>
@@ -317,7 +317,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium text-sm hover:from-cyan-400 hover:to-purple-500 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-cyan-500/20"
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 text-white font-medium text-sm hover:from-cyan-400 hover:to-teal-400 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-cyan-500/20"
                 >
                   {loading ? (
                     <div className="flex items-center justify-center gap-2">

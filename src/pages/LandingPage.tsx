@@ -87,7 +87,7 @@ const LandingPage = () => {
               onClick={() => openAuthModal('signup')}
               whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(6, 182, 212, 0.5)" }}
               whileTap={{ scale: 0.98 }}
-              className="relative px-10 py-4 rounded-full bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium text-lg tracking-wide overflow-hidden shadow-lg shadow-cyan-500/25 transition-all duration-300"
+              className="relative px-10 py-4 rounded-full bg-gradient-to-r from-cyan-500 to-teal-500 text-white font-medium text-lg tracking-wide overflow-hidden shadow-lg shadow-cyan-500/25 transition-all duration-300"
             >
               <motion.span
                 className="relative z-10"

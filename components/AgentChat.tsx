@@ -93,7 +93,7 @@ const MessageBubble = memo<MessageBubbleProps>(({ message, isLast }) => {
     <div className={`group flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
       {!isUser && (
         <div className="flex-shrink-0 mr-3 mt-1">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-600/20
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500/20 to-teal-500/20
                         flex items-center justify-center shadow-lg shadow-cyan-500/20 overflow-hidden">
             <ChronosEngine variant="avatar" showSparks={false} />
           </div>
