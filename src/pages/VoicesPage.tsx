@@ -334,9 +334,12 @@ const EmptyState: React.FC<{ onClone: () => void }> = ({ onClone }) => (
 
 // Main Component
 const VoicesPage: React.FC = () => {
+  console.log('[VoicesPage] Component rendering');
   const navigate = useNavigate();
   const { user, isSessionReady } = useAuth();
+  console.log('[VoicesPage] Auth:', { user: !!user, isSessionReady });
   const { selectedVoice, setSelectedVoice, savedVoices, setSavedVoices } = useApp();
+  console.log('[VoicesPage] App context loaded');
 
   const [voices, setVoices] = useState<VoiceProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -444,8 +447,13 @@ const VoicesPage: React.FC = () => {
 
   const handleClone = () => navigate('/clone');
 
+  console.log('[VoicesPage] About to return JSX');
   return (
     <AppLayout className="flex flex-col">
+      {/* DEBUG: Remove after fix */}
+      <div className="fixed top-4 left-4 z-[999] bg-red-500 text-white p-2 rounded">
+        VoicesPage Loaded - User: {user ? 'Yes' : 'No'}
+      </div>
       <div className="flex-1 w-full max-w-5xl mx-auto px-4 py-8 md:py-12">
         {/* Header */}
         <div className="text-center mb-10">

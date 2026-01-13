@@ -287,10 +287,13 @@ const EmptyState: React.FC = () => (
 
 // Main Component
 const LibraryPage: React.FC = () => {
+  console.log('[LibraryPage] Component rendering');
   const navigate = useNavigate();
   const { user, isSessionReady } = useAuth();
+  console.log('[LibraryPage] Auth:', { user: !!user, isSessionReady });
   const { setShowAuthModal } = useModals();
   const { setScript, setEnhancedScript, setRestoredScript, savedVoices, setSelectedVoice } = useApp();
+  console.log('[LibraryPage] App context loaded');
 
   const [meditations, setMeditations] = useState<MeditationHistory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -398,8 +401,13 @@ const LibraryPage: React.FC = () => {
   const meditationsWithAudio = filteredMeditations.filter(m => m.audio_url);
   const meditationsWithoutAudio = filteredMeditations.filter(m => !m.audio_url);
 
+  console.log('[LibraryPage] About to return JSX');
   return (
     <AppLayout className="flex flex-col">
+      {/* DEBUG: Remove after fix */}
+      <div className="fixed top-4 left-4 z-[999] bg-green-500 text-white p-2 rounded">
+        LibraryPage Loaded - User: {user ? 'Yes' : 'No'}
+      </div>
       <div className="flex-1 w-full max-w-4xl mx-auto px-4 py-8 md:py-12">
         {/* Header */}
         <div className="text-center mb-10">
