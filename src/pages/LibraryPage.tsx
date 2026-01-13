@@ -7,7 +7,7 @@ import { useModals } from '../contexts/ModalContext';
 import { useApp } from '../contexts/AppContext';
 import AppLayout from '../layouts/AppLayout';
 import GlassCard from '../../components/GlassCard';
-import { getMeditationHistoryPaginated, getMeditationAudioSignedUrl, toggleMeditationFavorite, deleteMeditationHistory, MeditationHistory } from '../../lib/supabase';
+import { getMeditationHistoryPaginated, getMeditationAudioSignedUrl, deleteMeditationHistory, MeditationHistory } from '../../lib/supabase';
 
 // Animation variants
 const containerVariants = {
@@ -325,16 +325,6 @@ const LibraryPage: React.FC = () => {
     loadMeditations();
   }, [loadMeditations]);
 
-  // Handle toggle favorite
-  const handleToggleFavorite = useCallback(async (id: string) => {
-    const success = await toggleMeditationFavorite(id);
-    if (success) {
-      setMeditations(prev =>
-        prev.map(m => m.id === id ? { ...m, is_favorite: !m.is_favorite } : m)
-      );
-    }
-  }, []);
-
   // Handle delete
   const handleDelete = useCallback(async (id: string) => {
     if (playingId === id) {
@@ -507,7 +497,6 @@ const LibraryPage: React.FC = () => {
                             isPlaying={playingId === meditation.id}
                             onPlay={() => setPlayingId(meditation.id)}
                             onStop={() => setPlayingId(null)}
-                            onToggleFavorite={() => handleToggleFavorite(meditation.id)}
                             onDelete={() => handleDelete(meditation.id)}
                             onRestore={() => handleRestore(meditation)}
                           />
