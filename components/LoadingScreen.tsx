@@ -70,7 +70,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onComplete }) => {
 
       {/* Logo */}
       <div className="loading-logo relative z-10">
-        <img src="/logo.png" alt="Innrvo" className="h-36 md:h-48" />
+        <img src="/logo.png" alt="Innrvo" className="h-72 md:h-96" />
       </div>
 
 

@@ -45,7 +45,7 @@ const LandingPage = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mb-4 flex justify-center"
           >
-            <img src="/logo.png" alt="Innrvo" className="h-16 md:h-20 lg:h-24" />
+            <img src="/logo.png" alt="Innrvo" className="h-48 md:h-60 lg:h-72" />
           </motion.div>
 
           {/* Subtitle */}
