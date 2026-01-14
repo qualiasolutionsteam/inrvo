@@ -13,6 +13,7 @@ import { useLibrary } from './src/contexts/LibraryContext';
 import { useAudioTags } from './src/contexts/AudioTagsContext';
 import { useChatHistory } from './src/contexts/ChatHistoryContext';
 import { useOnboarding } from './src/contexts/OnboardingContext';
+import { useAudioPlayback } from './src/contexts/AudioPlaybackContext';
 import GlassCard from './components/GlassCard';
 import Starfield from './components/Starfield';
 import Background from './components/Background';
@@ -174,6 +175,9 @@ const App: React.FC = () => {
   // Onboarding context for restart tour functionality
   const { restartOnboarding } = useOnboarding();
 
+  // Audio playback context - shared ref for nature sound (allows PlayerPage to stop it on close)
+  const { natureSoundAudioRef } = useAudioPlayback();
+
   // UI-specific state (not shared across components)
   const [isLoading, setIsLoading] = useState(true);
   const [currentView, setCurrentView] = useState<View>(View.HOME);
@@ -251,11 +255,10 @@ const App: React.FC = () => {
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [musicError, setMusicError] = useState<string | null>(null);
 
-  // Nature/ambient sound state
+  // Nature/ambient sound state (natureSoundAudioRef comes from AudioPlaybackContext)
   const [selectedNatureSound, setSelectedNatureSound] = useState<NatureSound>(NATURE_SOUNDS[0]); // 'none' by default
   const [natureSoundVolume, setNatureSoundVolume] = useState(0.4); // 40% default
   const [showNatureSoundModal, setShowNatureSoundModal] = useState(false);
-  const natureSoundAudioRef = useRef<HTMLAudioElement | null>(null);
   const [previewingNatureSoundId, setPreviewingNatureSoundId] = useState<string | null>(null);
   const previewNatureSoundAudioRef = useRef<HTMLAudioElement | null>(null);
 

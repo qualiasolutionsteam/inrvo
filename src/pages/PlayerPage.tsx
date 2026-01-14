@@ -31,6 +31,7 @@ const PlayerPage: React.FC = () => {
     audioBufferRef,
     gainNodeRef,
     backgroundAudioRef,
+    natureSoundAudioRef,
   } = useAudioPlayback();
 
   const playbackStartTimeRef = useRef(0);
@@ -186,9 +187,15 @@ const PlayerPage: React.FC = () => {
     }
     setIsMusicPlaying(false);
 
+    // Stop nature sound
+    if (natureSoundAudioRef.current) {
+      natureSoundAudioRef.current.pause();
+      natureSoundAudioRef.current.currentTime = 0;
+    }
+
     // Navigate back home
     navigate('/');
-  }, [navigate, audioSourceRef, backgroundAudioRef, setIsPlaying]);
+  }, [navigate, audioSourceRef, backgroundAudioRef, natureSoundAudioRef, setIsPlaying]);
 
   // Update voice volume
   const updateVoiceVolume = useCallback((volume: number) => {

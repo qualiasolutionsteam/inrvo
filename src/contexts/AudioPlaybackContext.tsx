@@ -25,11 +25,13 @@ interface AudioPlaybackContextType {
   setTimingMap: (map: ScriptTimingMap | null) => void;
 
   // Audio refs - grouped here since they're used with playback
-  audioContextRef: React.RefObject<AudioContext | null>;
-  audioSourceRef: React.RefObject<AudioBufferSourceNode | null>;
-  audioBufferRef: React.RefObject<AudioBuffer | null>;
-  gainNodeRef: React.RefObject<GainNode | null>;
-  backgroundAudioRef: React.RefObject<HTMLAudioElement | null>;
+  // Using MutableRefObject to allow assignment from multiple components
+  audioContextRef: React.MutableRefObject<AudioContext | null>;
+  audioSourceRef: React.MutableRefObject<AudioBufferSourceNode | null>;
+  audioBufferRef: React.MutableRefObject<AudioBuffer | null>;
+  gainNodeRef: React.MutableRefObject<GainNode | null>;
+  backgroundAudioRef: React.MutableRefObject<HTMLAudioElement | null>;
+  natureSoundAudioRef: React.MutableRefObject<HTMLAudioElement | null>;
 
   // Audio settings
   backgroundVolume: number;
@@ -89,6 +91,7 @@ export const AudioPlaybackProvider: React.FC<AudioPlaybackProviderProps> = ({ ch
   const audioBufferRef = useRef<AudioBuffer | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
   const backgroundAudioRef = useRef<HTMLAudioElement | null>(null);
+  const natureSoundAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Memoize context value - only changes when state actually changes
   const value = useMemo<AudioPlaybackContextType>(() => ({
@@ -107,6 +110,7 @@ export const AudioPlaybackProvider: React.FC<AudioPlaybackProviderProps> = ({ ch
     audioBufferRef,
     gainNodeRef,
     backgroundAudioRef,
+    natureSoundAudioRef,
     backgroundVolume,
     setBackgroundVolume,
     voiceVolume,
