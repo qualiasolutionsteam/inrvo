@@ -399,7 +399,7 @@ const LibraryPage: React.FC = () => {
   const meditationsWithoutAudio = filteredMeditations.filter(m => !m.audio_url);
 
   return (
-    <AppLayout className="flex flex-col">
+    <AppLayout showBackButton backTo="/" className="flex flex-col">
       <div className="flex-1 w-full max-w-4xl mx-auto px-4 py-8 md:py-12">
         {/* Header */}
         <div className="text-center mb-10">
