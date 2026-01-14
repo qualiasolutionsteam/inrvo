@@ -252,3 +252,73 @@ SELECT * FROM cron.job;
 | Sentry | Error tracking | Configure alert rules |
 | BetterStack/Pingdom | Uptime monitoring | Add health endpoint monitor |
 | Supabase pg_cron | Data retention | Enable extension, schedule jobs |
+| Supabase Auth | Security | Enable leaked password protection |
+
+---
+
+## 7. Security Configuration
+
+### Enable Leaked Password Protection
+
+Supabase can check passwords against the HaveIBeenPwned database to prevent users from using compromised passwords.
+
+**Why this matters**: If a user's password was exposed in a data breach elsewhere, attackers can use credential stuffing to gain access.
+
+#### Setup Steps
+
+1. Go to **Supabase Dashboard** → **Authentication** → **Providers**
+2. Scroll to **Security** section
+3. Enable **Leaked Password Protection**
+4. Choose protection level:
+   - **Warn**: Show warning but allow signup (recommended for existing apps)
+   - **Block**: Prevent signup with compromised passwords (stricter)
+
+#### Alternative: Enable via SQL
+
+```sql
+-- Check current settings
+SELECT * FROM auth.config;
+
+-- Note: Password protection is configured via Dashboard, not SQL
+```
+
+#### What Happens When Enabled
+
+- On signup: Password checked against HaveIBeenPwned API
+- On password change: Same check performed
+- If compromised: User sees "This password has been compromised in a data breach"
+- No passwords are sent to external services (uses k-anonymity)
+
+#### Reference
+
+- Supabase Docs: https://supabase.com/docs/guides/auth/password-security
+- HaveIBeenPwned API: https://haveibeenpwned.com/API/v3
+
+---
+
+## Configuration Checklist
+
+Complete these steps to finish production monitoring setup:
+
+### Uptime Monitoring
+- [ ] Create BetterStack/Pingdom account
+- [ ] Add health endpoint monitor: `https://ygweconeysctxpjjnehy.supabase.co/functions/v1/health`
+- [ ] Add app monitor: `https://innrvo.com`
+- [ ] Configure alert notifications (email, Slack)
+
+### Sentry Alerts
+- [ ] Log in to Sentry dashboard
+- [ ] Create "High Error Rate" alert (>10 errors in 10 min)
+- [ ] Create "New Production Errors" alert
+- [ ] Create "Poor Web Vitals" alert
+- [ ] Test alerts by triggering intentional error
+
+### Supabase Security
+- [ ] Enable leaked password protection in Auth settings
+- [ ] Enable pg_cron extension for data retention
+- [ ] Schedule cleanup jobs (see Section 6)
+
+### Verification
+- [ ] Trigger test alert and verify notification received
+- [ ] Check health endpoint responds: `curl https://ygweconeysctxpjjnehy.supabase.co/functions/v1/health`
+- [ ] Verify Sentry receives events in production

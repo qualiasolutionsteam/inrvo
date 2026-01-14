@@ -26,8 +26,8 @@ interface HealthStatus {
   version: string;
   services: {
     database: 'up' | 'down' | 'timeout';
-    fishAudio: 'configured' | 'not_configured';
-    openRouter: 'configured' | 'not_configured';
+    elevenlabs: 'configured' | 'not_configured';
+    openrouter: 'configured' | 'not_configured';
   };
   latency?: {
     database_ms: number;
@@ -85,8 +85,8 @@ serve(async (req) => {
     }
 
     // Check if API keys are configured (not their validity, just presence)
-    const fishAudioKey = Deno.env.get('FISH_AUDIO_API_KEY');
-    const openRouterKey = Deno.env.get('OPENROUTER_API_KEY');
+    const elevenlabsKey = Deno.env.get('ELEVENLABS_API_KEY');
+    const openRouterKey = Deno.env.get('OPENROUTER_API_KEY'); // Used for Gemini via OpenRouter
 
     const healthStatus: HealthStatus = {
       status: databaseStatus === 'up' ? 'healthy' : 'degraded',
@@ -94,8 +94,8 @@ serve(async (req) => {
       version: '1.0.0',
       services: {
         database: databaseStatus,
-        fishAudio: fishAudioKey ? 'configured' : 'not_configured',
-        openRouter: openRouterKey ? 'configured' : 'not_configured',
+        elevenlabs: elevenlabsKey ? 'configured' : 'not_configured',
+        openrouter: openRouterKey ? 'configured' : 'not_configured',
       },
       latency: {
         database_ms: dbLatency,
@@ -105,7 +105,7 @@ serve(async (req) => {
     // Determine overall status
     if (databaseStatus === 'down' || databaseStatus === 'timeout') {
       healthStatus.status = 'unhealthy';
-    } else if (!fishAudioKey || !openRouterKey) {
+    } else if (!elevenlabsKey || !openRouterKey) {
       healthStatus.status = 'degraded';
     }
 
@@ -131,8 +131,8 @@ serve(async (req) => {
       version: '1.0.0',
       services: {
         database: 'down',
-        fishAudio: 'not_configured',
-        openRouter: 'not_configured',
+        elevenlabs: 'not_configured',
+        openrouter: 'not_configured',
       },
     };
 

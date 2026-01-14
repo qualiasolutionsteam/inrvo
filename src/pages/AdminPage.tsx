@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback, useMemo, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, FileText, BarChart3, Tag, Trash2, Plus, X, Check, AlertCircle, Activity, ScrollText, LayoutTemplate, Edit2, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
+import { Users, FileText, BarChart3, Tag, Trash2, Plus, X, Check, AlertCircle, Activity, ScrollText, LayoutTemplate, Edit2, ChevronDown, ChevronRight, RefreshCw, Play } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useApp } from '../contexts/AppContext';
 import AppLayout from '../layouts/AppLayout';
 import GlassCard from '../../components/GlassCard';
 import { ChronosLoader } from '@/components/ui/chronos-engine';
@@ -61,6 +62,7 @@ interface VoiceProfileWithUser extends VoiceProfile {
 
 const AdminPage: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
+  const { setScript, setRestoredScript } = useApp();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<AdminTab>('analytics');
   const [isLoading, setIsLoading] = useState(true);
@@ -350,6 +352,14 @@ const AdminPage: React.FC = () => {
       const message = err instanceof Error ? err.message : 'Failed to update template';
       setError(message);
     }
+  };
+
+  // Use template: set script and navigate to editor
+  const handleUseTemplate = (template: TemplateWithDetails) => {
+    if (!template.prompt) return;
+    setScript(template.prompt);
+    setRestoredScript(template.prompt);
+    navigate('/');
   };
 
   const toggleCategoryExpanded = (categoryId: string) => {
@@ -1289,6 +1299,15 @@ const AdminPage: React.FC = () => {
                               </p>
                             </div>
                             <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+                              {template.prompt && (
+                                <button
+                                  onClick={() => handleUseTemplate(template)}
+                                  className="text-slate-500 hover:text-emerald-400 p-1.5 sm:p-2 transition-colors"
+                                  title="Use this template in editor"
+                                >
+                                  <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                </button>
+                              )}
                               <button
                                 onClick={() => setEditingTemplate(template)}
                                 className="text-slate-500 hover:text-sky-500 p-1.5 sm:p-2 transition-colors"
