@@ -16,7 +16,6 @@ import { AudioTagsProvider } from './src/contexts/AudioTagsContext';
 import { ChatHistoryProvider } from './src/contexts/ChatHistoryContext';
 import { OnboardingProvider } from './src/contexts/OnboardingContext';
 import { StreamingGenerationProvider } from './src/contexts/StreamingGenerationContext';
-import { ThemeProvider } from './src/contexts/ThemeContext';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Web vitals types for lazy-loaded module
@@ -111,46 +110,44 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <ThemeProvider>
-        <AuthProvider>
-          <AuthModalProvider>
-            <ModalProvider>
-              <AudioProvider>
-                <StreamingGenerationProvider>
-                  <ScriptProvider>
-                    <LibraryProvider>
-                      <AudioTagsProvider>
-                        <ChatHistoryProvider>
-                          <AppProvider>
-                            <OnboardingProvider>
-                              <AppRouter />
-                              <Toaster
-                                position="top-center"
-                                richColors
-                                closeButton
-                                duration={4000}
-                                toastOptions={{
-                                  style: {
-                                    background: 'rgba(15, 23, 42, 0.95)',
-                                    border: '1px solid rgba(56, 189, 248, 0.2)',
-                                    backdropFilter: 'blur(12px)',
-                                    color: '#e2e8f0',
-                                  },
-                                }}
-                              />
-                              <Analytics />
-                            </OnboardingProvider>
-                          </AppProvider>
-                        </ChatHistoryProvider>
-                      </AudioTagsProvider>
-                    </LibraryProvider>
-                  </ScriptProvider>
-                </StreamingGenerationProvider>
-              </AudioProvider>
-            </ModalProvider>
-          </AuthModalProvider>
-        </AuthProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <AuthModalProvider>
+          <ModalProvider>
+            <AudioProvider>
+              <StreamingGenerationProvider>
+                <ScriptProvider>
+                  <LibraryProvider>
+                    <AudioTagsProvider>
+                      <ChatHistoryProvider>
+                        <AppProvider>
+                          <OnboardingProvider>
+                            <AppRouter />
+                            <Toaster
+                              position="top-center"
+                              richColors
+                              closeButton
+                              duration={4000}
+                              toastOptions={{
+                                style: {
+                                  background: 'rgba(15, 23, 42, 0.95)',
+                                  border: '1px solid rgba(56, 189, 248, 0.2)',
+                                  backdropFilter: 'blur(12px)',
+                                  color: '#e2e8f0',
+                                },
+                              }}
+                            />
+                            <Analytics />
+                          </OnboardingProvider>
+                        </AppProvider>
+                      </ChatHistoryProvider>
+                    </AudioTagsProvider>
+                  </LibraryProvider>
+                </ScriptProvider>
+              </StreamingGenerationProvider>
+            </AudioProvider>
+          </ModalProvider>
+        </AuthModalProvider>
+      </AuthProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );

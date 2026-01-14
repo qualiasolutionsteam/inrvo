@@ -11,7 +11,6 @@ import { useMeditationAgent, type ChatMessage, type AgentAction } from '../src/h
 import type { VoiceProfile } from '../types';
 import type { BackgroundTrack } from '../constants';
 import type { MeditationType } from '../src/lib/agent/knowledgeBase';
-import { useTheme } from '../src/contexts/ThemeContext';
 
 // Lazy load MeditationEditor and VoiceAgent for bundle optimization
 const MeditationEditor = lazy(() => import('../src/components/MeditationEditor'));
@@ -63,26 +62,6 @@ const PhoneIcon = () => (
   </svg>
 );
 
-const SunIcon = () => (
-  <svg className="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="5" />
-    <line x1="12" y1="1" x2="12" y2="3" />
-    <line x1="12" y1="21" x2="12" y2="23" />
-    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-    <line x1="1" y1="12" x2="3" y2="12" />
-    <line x1="21" y1="12" x2="23" y2="12" />
-    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-  </svg>
-);
-
-const MoonIcon = () => (
-  <svg className="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-  </svg>
-);
-
 // Chronos Engine import for agent avatar
 import { ChronosEngine } from '@/components/ui/chronos-engine';
 
@@ -127,20 +106,20 @@ const MessageBubble = memo<MessageBubbleProps>(({ message, isLast }) => {
             rounded-2xl px-4 py-3
             ${isUser
               ? 'bg-gradient-to-br from-blue-600 to-sky-600 text-white shadow-lg shadow-sky-500/20'
-              : 'bg-slate-100 dark:bg-white/[0.08] text-slate-800 dark:text-white/90 border border-slate-200 dark:border-white/10'
+              : 'bg-white/[0.08] text-white/90 border border-white/10'
             }
           `}
         >
           {message.isLoading ? (
-            <span className="text-amber-500 dark:text-amber-400/60 text-sm">Thinking...</span>
+            <span className="text-amber-400/60 text-sm">Thinking...</span>
           ) : (
             <div className="text-base leading-relaxed whitespace-pre-wrap">{message.content}</div>
           )}
 
           {message.quote && (
-            <div className="mt-3 pt-3 border-t border-slate-200 dark:border-white/10">
-              <p className="italic text-slate-500 dark:text-white/60 text-sm">"{message.quote.quote}"</p>
-              <p className="text-sky-600 dark:text-sky-500 text-xs mt-1.5">— {message.quote.teacher}</p>
+            <div className="mt-3 pt-3 border-t border-white/10">
+              <p className="italic text-white/60 text-sm">"{message.quote.quote}"</p>
+              <p className="text-sky-500 text-xs mt-1.5">— {message.quote.teacher}</p>
             </div>
           )}
         </div>
@@ -154,8 +133,8 @@ const MessageBubble = memo<MessageBubbleProps>(({ message, isLast }) => {
               opacity-0 group-hover:opacity-100 focus:opacity-100
               p-1.5 rounded-lg transition-all duration-200
               ${copied
-                ? 'bg-green-500/20 text-green-500 dark:text-green-400'
-                : 'bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-600 dark:hover:text-white/70'
+                ? 'bg-green-500/20 text-green-400'
+                : 'bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/70'
               }
             `}
             title={copied ? 'Copied!' : 'Copy message'}
@@ -226,8 +205,6 @@ const AgentChatComponent: React.FC<AgentChatProps> = ({
     currentMeditation,
     sendMessage,
   } = useMeditationAgent({ resumeConversationId });
-
-  const { isDark, toggleTheme } = useTheme();
 
   const [inputValue, setInputValue] = useState('');
   const [isRecording, setIsRecording] = useState(false);
@@ -530,19 +507,19 @@ const AgentChatComponent: React.FC<AgentChatProps> = ({
       {!showMeditationPanel && (
         <div
           className={`fixed left-0 right-0 bottom-0 px-4 z-50 ${hasMessages
-            ? 'bg-gradient-to-t from-white dark:from-[#020617] via-white/95 dark:via-[#020617]/95 to-transparent'
+            ? 'bg-gradient-to-t from-[#020617] via-[#020617]/95 to-transparent'
             : ''}`}
           style={{ paddingBottom: 'max(3.5rem, calc(env(safe-area-inset-bottom, 0px) + 1rem))' }}
         >
         <div className="max-w-3xl mx-auto w-full">
           <form onSubmit={handleSubmit}>
             <div
-              className={`relative flex items-center bg-slate-100 dark:bg-white/[0.03] border
+              className={`relative flex items-center bg-white/[0.03] border
                           rounded-full px-4 md:px-6 py-2.5
                           transition-all duration-300
                           ${isRecording
-                            ? 'border-sky-500/60 bg-sky-100 dark:bg-sky-500/5'
-                            : 'border-slate-300 dark:border-sky-500/30 focus-within:border-sky-500 dark:focus-within:border-sky-500/50 focus-within:bg-white dark:focus-within:bg-white/[0.05]'
+                            ? 'border-sky-500/60 bg-sky-500/5'
+                            : 'border-sky-500/30 focus-within:border-sky-500/50 focus-within:bg-white/[0.05]'
                           }`}
               style={{
                 boxShadow: isRecording
@@ -556,22 +533,11 @@ const AgentChatComponent: React.FC<AgentChatProps> = ({
                 data-onboarding="voice-toggle"
                 onClick={handleOpenVoiceAgent}
                 disabled={isProcessing || isRecording}
-                className="flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors text-sky-500/70 hover:text-sky-500 disabled:opacity-50 touch-manipulation"
+                className="flex-shrink-0 w-11 h-11 mr-1 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors text-sky-500/70 hover:text-sky-500 disabled:opacity-50 touch-manipulation"
                 title="Start voice chat"
                 aria-label="Start voice conversation"
               >
                 <PhoneIcon />
-              </button>
-
-              {/* Theme Toggle Button */}
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className="flex-shrink-0 w-9 h-9 mr-1 rounded-full flex items-center justify-center hover:bg-white/10 dark:hover:bg-white/10 transition-colors text-amber-500/70 hover:text-amber-500 touch-manipulation"
-                title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-              >
-                {isDark ? <SunIcon /> : <MoonIcon />}
               </button>
 
               <textarea
@@ -583,7 +549,7 @@ const AgentChatComponent: React.FC<AgentChatProps> = ({
                 rows={1}
                 className={`flex-1 bg-transparent text-base
                          outline-none resize-none py-2
-                         ${isRecording ? 'text-slate-500 dark:text-white/70 italic' : 'text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30'}`}
+                         ${isRecording ? 'text-white/70 italic' : 'text-white placeholder:text-white/30'}`}
                 style={{ maxHeight: '120px', fontSize: '16px' }}
                 disabled={isProcessing || isRecording}
                 readOnly={isRecording}
