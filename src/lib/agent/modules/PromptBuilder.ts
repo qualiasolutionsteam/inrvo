@@ -6,7 +6,7 @@
  */
 
 import type { MeditationType, MeditationTypeInfo } from '../knowledgeBase';
-import type { ContentGenerationParams } from '../contentTypes';
+import type { ContentGenerationParams, ContentCategory } from '../contentTypes';
 import type { ConversationMessage, UserPreferences, ExtractedUserContext } from '../types';
 import type { MeditationPreferences } from '../../preferencesService';
 import {
@@ -197,7 +197,7 @@ Guide:`;
     }
 
     // Fallback: Build params from session state
-    const category = selectedContentCategory || 'meditation';
+    const category = (selectedContentCategory || 'meditation') as ContentCategory;
     const subType = selectedContentSubType || 'guided_visualization';
     const mood = currentMood;
 

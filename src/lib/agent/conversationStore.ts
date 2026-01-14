@@ -96,7 +96,7 @@ export class ConversationStore {
 
     // Try to use sendBeacon for guaranteed delivery on unload
     // Falls back to regular save if beacon not supported
-    if (typeof navigator !== 'undefined' && navigator.sendBeacon && supabase) {
+    if (typeof navigator !== 'undefined' && 'sendBeacon' in navigator) {
       const summary = this.generateConversationSummary(this.currentConversation);
       const payload = JSON.stringify({
         id: this.currentConversation.id,

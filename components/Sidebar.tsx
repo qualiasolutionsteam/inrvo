@@ -24,7 +24,7 @@ interface SidebarProps {
   onLoadConversation: (id: string) => Promise<LoadedConversation | null>;
   onStartNewConversation: () => Promise<void>;
   onConversationSelected: (id: string | null) => void;
-  onDeleteConversation?: (id: string) => Promise<void>;
+  onDeleteConversation?: (id: string) => Promise<boolean>;
   onMeditationRestore?: (script: string) => void; // Called when conversation has a script
   onSignOut: () => void;
   onSignIn: () => void;

@@ -3,10 +3,10 @@
  * Replaces localStorage for strictly database-only persistence
  */
 
-import type { AudioTag } from '../../types';
+import type { AudioTagPreset } from './adminSupabase';
 
 const sessionCache: {
-  data: AudioTag[] | null;
+  data: AudioTagPreset[] | null;
   timestamp: number;
 } = {
   data: null,
@@ -16,11 +16,11 @@ const sessionCache: {
 const CACHE_TTL = 1000 * 60 * 60; // 1 hour
 
 export interface CachedAudioTags {
-  data: AudioTag[];
+  data: AudioTagPreset[];
   timestamp: number;
 }
 
-export function getCachedAudioTags(): AudioTag[] | null {
+export function getCachedAudioTags(): AudioTagPreset[] | null {
   if (!sessionCache.data) return null;
 
   const age = Date.now() - sessionCache.timestamp;
@@ -32,7 +32,7 @@ export function getCachedAudioTags(): AudioTag[] | null {
   return sessionCache.data;
 }
 
-export function setCachedAudioTags(data: AudioTag[]): void {
+export function setCachedAudioTags(data: AudioTagPreset[]): void {
   sessionCache.data = data;
   sessionCache.timestamp = Date.now();
 }
