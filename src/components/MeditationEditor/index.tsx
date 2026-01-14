@@ -113,7 +113,7 @@ export const MeditationEditor = memo<MeditationEditorProps>(
     const lastExternalScriptRef = useRef(script);
     const editingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const hasInitializedRef = useRef(false);
-    const EDITING_DEBOUNCE_MS = 500; // Wait 500ms after last keystroke before syncing
+    const EDITING_DEBOUNCE_MS = 300; // Wait 300ms after last keystroke before syncing
 
     // Keyboard shortcuts
     useKeyboard({

@@ -5,7 +5,8 @@
  * Uses effect-based innerHTML updates to avoid React/contentEditable conflicts.
  */
 
-import { memo, useRef, useEffect, useCallback } from 'react';
+import { memo, useRef, useEffect, useCallback, useMemo } from 'react';
+import DOMPurify from 'dompurify';
 import { useEditorCursor } from '../hooks/useEditorCursor';
 import { useAudioTags } from '../hooks/useAudioTags';
 import type { ScriptStats } from '../types';
@@ -55,7 +56,18 @@ export const ScriptTextArea = memo<ScriptTextAreaProps>(
     const cursorPositionRef = useRef<number | null>(null);
     const isUserEditingRef = useRef(false);
     const { restoreCursorPosition } = useEditorCursor(editorRef);
-    const { styledContentHtml, stats } = useAudioTags(content);
+
+    // Sanitize content for defense-in-depth (XSS prevention)
+    const sanitizedContent = useMemo(() => {
+      const config = {
+        ALLOWED_TAGS: [], // No HTML tags allowed in text content
+        ALLOWED_ATTR: [],
+        KEEP_CONTENT: true,
+      };
+      return DOMPurify.sanitize(content, config);
+    }, [content]);
+
+    const { styledContentHtml, stats } = useAudioTags(sanitizedContent);
 
     // Notify parent of stats changes
     useEffect(() => {
