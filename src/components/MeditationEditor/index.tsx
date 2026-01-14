@@ -157,8 +157,8 @@ export const MeditationEditor = memo<MeditationEditorProps>(
       };
     }, []);
 
-    // Handle content input with debounced styling sync
-    // innerHTML updates use sanitized content from useAudioTags (escapeHtml + controlled spans)
+    // Handle content input - simple state update without DOM manipulation
+    // This prevents cursor jumping on mobile by avoiding innerHTML replacement during typing
     const handleInput = useCallback(
       (e: React.FormEvent<HTMLDivElement>) => {
         try {
@@ -177,31 +177,10 @@ export const MeditationEditor = memo<MeditationEditorProps>(
           setEditedScript(text);
           lastExternalScriptRef.current = text;
 
-          // Debounce the end of editing - wait for user to stop typing
-          // before allowing styling sync (which could move cursor)
+          // Reset editing flag after delay (for external sync protection)
           editingTimeoutRef.current = setTimeout(() => {
             isUserEditingRef.current = false;
             editingTimeoutRef.current = null;
-            // Apply audio tag styling after user stops typing
-            if (editorRef.current) {
-              // Save cursor position before update
-              const selection = window.getSelection();
-              const cursorPos = selection?.rangeCount ? (() => {
-                const range = selection.getRangeAt(0);
-                const preCaretRange = range.cloneRange();
-                preCaretRange.selectNodeContents(editorRef.current!);
-                preCaretRange.setEnd(range.startContainer, range.startOffset);
-                return preCaretRange.toString().length;
-              })() : null;
-
-              // Update with styled content (sanitized by useAudioTags)
-              editorRef.current.innerHTML = styledContentHtml;
-
-              // Restore cursor position
-              if (cursorPos !== null) {
-                restoreCursorPosition(cursorPos);
-              }
-            }
           }, EDITING_DEBOUNCE_MS);
         } catch (err) {
           // Silently handle any DOM access errors on mobile
@@ -209,8 +188,23 @@ export const MeditationEditor = memo<MeditationEditorProps>(
           isUserEditingRef.current = false;
         }
       },
-      [styledContentHtml, restoreCursorPosition]
+      []
     );
+
+    // Apply styling on blur - only when user finishes editing
+    // This prevents cursor jumping by not manipulating DOM during active typing
+    // Note: styledContentHtml is sanitized by useAudioTags (escapeHtml + controlled spans)
+    const handleBlur = useCallback(() => {
+      isUserEditingRef.current = false;
+      if (editingTimeoutRef.current) {
+        clearTimeout(editingTimeoutRef.current);
+        editingTimeoutRef.current = null;
+      }
+      // Apply styled content when user finishes editing (safe - sanitized by useAudioTags)
+      if (editorRef.current) {
+        editorRef.current.innerHTML = styledContentHtml;
+      }
+    }, [styledContentHtml]);
 
     // Handle keyboard events for backspace/delete on tags
     const handleKeyDown = useCallback(
@@ -504,12 +498,13 @@ export const MeditationEditor = memo<MeditationEditorProps>(
                 </div>
               </div>
 
-              {/* Editable Area - uses effect to set innerHTML, avoiding React/contentEditable conflicts */}
+              {/* Editable Area - styling applied on blur to prevent mobile cursor jumping */}
               <div
                 ref={editorRef}
                 contentEditable={!readOnly}
                 suppressContentEditableWarning
                 onInput={handleInput}
+                onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
                 role="textbox"
                 aria-multiline="true"
