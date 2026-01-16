@@ -397,71 +397,82 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                   className="overflow-hidden"
                 >
                   <div className="py-3 px-3 sm:py-4 sm:px-6 rounded-2xl sm:rounded-3xl bg-white/[0.02] backdrop-blur-xl border border-white/[0.06]">
-                    {/* Sound Selection Buttons */}
-                    <div className="flex items-center justify-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                      {onBackgroundMusicToggle && (
-                        <motion.button
-                          whileTap={{ scale: 0.95 }}
-                          onClick={onBackgroundMusicToggle}
-                          className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-medium transition-all ${
-                            backgroundMusicEnabled
-                              ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                              : 'bg-white/[0.03] text-white/50 border border-white/[0.05]'
-                          }`}
-                        >
-                          <Music className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                          <span className="max-w-[50px] sm:max-w-[60px] truncate">
-                            {backgroundMusicEnabled ? backgroundTrackName || 'Music' : 'Music'}
-                          </span>
-                        </motion.button>
-                      )}
+                    {/* Horizontal Layout: Labels Column + Sliders Row */}
+                    <div className="flex items-center justify-center gap-4 sm:gap-6">
+                      {/* Left: Sound Labels in Column */}
+                      <div className="flex flex-col gap-3 sm:gap-4">
+                        {/* Voice Label */}
+                        {onVoiceVolumeChange && (
+                          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 min-w-[90px] sm:min-w-[100px]">
+                            <Mic className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-cyan-400 flex-shrink-0" />
+                            <span className="text-xs sm:text-sm font-medium text-cyan-400 truncate">Voice</span>
+                          </div>
+                        )}
 
-                      {onOpenNatureSoundModal && (
-                        <motion.button
-                          whileTap={{ scale: 0.95 }}
-                          onClick={onOpenNatureSoundModal}
-                          className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-medium transition-all ${
-                            natureSoundEnabled
-                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                              : 'bg-white/[0.03] text-white/50 border border-white/[0.05]'
-                          }`}
-                        >
-                          {renderNatureIcon(natureSoundIcon, "w-3 h-3 sm:w-3.5 sm:h-3.5")}
-                          <span className="max-w-[50px] sm:max-w-[60px] truncate">
-                            {natureSoundEnabled ? natureSoundName || 'Nature' : 'Nature'}
-                          </span>
-                        </motion.button>
-                      )}
-                    </div>
+                        {/* Nature Label - Only when active */}
+                        {natureSoundEnabled && onNatureSoundVolumeChange && onOpenNatureSoundModal && (
+                          <motion.button
+                            whileTap={{ scale: 0.98 }}
+                            onClick={onOpenNatureSoundModal}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 min-w-[90px] sm:min-w-[100px] transition-colors hover:bg-emerald-500/15"
+                          >
+                            {renderNatureIcon(natureSoundIcon, "w-4 h-4 sm:w-4.5 sm:h-4.5 text-emerald-400 flex-shrink-0")}
+                            <span className="text-xs sm:text-sm font-medium text-emerald-400 truncate">
+                              {natureSoundName || 'Nature'}
+                            </span>
+                          </motion.button>
+                        )}
 
-                    {/* Volume Sliders - Nature only shows when active */}
-                    <div className="flex items-end justify-center gap-8 sm:gap-10 md:gap-12">
-                      {onVoiceVolumeChange && (
+                        {/* Music Label */}
+                        {onBackgroundMusicToggle && (
+                          <motion.button
+                            whileTap={{ scale: 0.98 }}
+                            onClick={onBackgroundMusicToggle}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg min-w-[90px] sm:min-w-[100px] transition-colors ${
+                              backgroundMusicEnabled
+                                ? 'bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15'
+                                : 'bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.06]'
+                            }`}
+                          >
+                            <Music className={`w-4 h-4 sm:w-4.5 sm:h-4.5 flex-shrink-0 ${backgroundMusicEnabled ? 'text-blue-400' : 'text-white/40'}`} />
+                            <span className={`text-xs sm:text-sm font-medium truncate ${backgroundMusicEnabled ? 'text-blue-400' : 'text-white/40'}`}>
+                              {backgroundMusicEnabled ? backgroundTrackName || 'Music' : 'Music'}
+                            </span>
+                          </motion.button>
+                        )}
+                      </div>
+
+                      {/* Right: Volume Sliders in Row */}
+                      <div className="flex items-end gap-6 sm:gap-8">
+                        {/* Voice Volume Slider */}
+                        {onVoiceVolumeChange && (
+                          <CompactVolumeSlider
+                            value={voiceVolume}
+                            onChange={onVoiceVolumeChange}
+                            typeIcon={<Mic className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400" />}
+                            color="cyan"
+                          />
+                        )}
+
+                        {/* Nature Sound Slider - ONLY shown when active */}
+                        {natureSoundEnabled && onNatureSoundVolumeChange && (
+                          <CompactVolumeSlider
+                            value={natureSoundVolume}
+                            onChange={onNatureSoundVolumeChange}
+                            typeIcon={<span className="text-emerald-400">{renderNatureIcon(natureSoundIcon, "w-5 h-5 sm:w-6 sm:h-6")}</span>}
+                            color="emerald"
+                          />
+                        )}
+
+                        {/* Music Volume Slider */}
                         <CompactVolumeSlider
-                          value={voiceVolume}
-                          onChange={onVoiceVolumeChange}
-                          typeIcon={<Mic className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400" />}
-                          color="cyan"
+                          value={backgroundVolume}
+                          onChange={onBackgroundVolumeChange}
+                          typeIcon={<Music className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />}
+                          color="blue"
+                          disabled={!backgroundMusicEnabled}
                         />
-                      )}
-
-                      {/* Nature sound slider - ONLY shown when a nature sound is active */}
-                      {natureSoundEnabled && onNatureSoundVolumeChange && (
-                        <CompactVolumeSlider
-                          value={natureSoundVolume}
-                          onChange={onNatureSoundVolumeChange}
-                          typeIcon={<span className="text-emerald-400">{renderNatureIcon(natureSoundIcon, "w-5 h-5 sm:w-6 sm:h-6")}</span>}
-                          color="emerald"
-                        />
-                      )}
-
-                      <CompactVolumeSlider
-                        value={backgroundVolume}
-                        onChange={onBackgroundVolumeChange}
-                        typeIcon={<Music className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />}
-                        color="blue"
-                        disabled={!backgroundMusicEnabled}
-                      />
+                      </div>
                     </div>
                   </div>
                 </motion.div>
