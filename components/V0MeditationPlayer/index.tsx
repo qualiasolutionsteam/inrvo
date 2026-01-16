@@ -398,17 +398,14 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
               <BreathingOrb isPlaying={isBuffering ? true : isPlaying} />
             </div>
 
-            {/* Title and time */}
+            {/* Time display */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="text-center mt-6 sm:mt-8"
+              className="text-center mt-8 sm:mt-10"
             >
-              <h1 className="font-sans text-lg sm:text-xl md:text-2xl font-light tracking-wide text-white/90">
-                {isBuffering ? 'Generating...' : 'Meditation'}
-              </h1>
-              <p className="mt-1 sm:mt-2 font-mono text-xs sm:text-sm text-white/50">
+              <p className="font-mono text-xs sm:text-sm text-white/50">
                 {isBuffering ? (
                   <span className="animate-pulse">Preparing your meditation</span>
                 ) : (

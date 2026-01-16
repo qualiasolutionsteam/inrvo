@@ -68,7 +68,7 @@ const SaveMeditationDialog: React.FC<SaveMeditationDialogProps> = ({
             <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-white">Save Meditation?</h2>
+                <h2 className="text-lg font-semibold text-white">Save to My Audios?</h2>
                 <button
                   onClick={onCancel}
                   className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
@@ -80,7 +80,7 @@ const SaveMeditationDialog: React.FC<SaveMeditationDialogProps> = ({
 
               {/* Content */}
               <p className="text-slate-400 text-sm mb-4">
-                Would you like to save this meditation to your library?
+                Would you like to save this to My Audios?
               </p>
 
               {/* Title Input */}
@@ -118,7 +118,7 @@ const SaveMeditationDialog: React.FC<SaveMeditationDialogProps> = ({
                   ) : (
                     <>
                       <Save className="w-5 h-5" />
-                      Save to Library
+                      Save
                     </>
                   )}
                 </button>
