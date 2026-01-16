@@ -6,8 +6,10 @@ import { ICONS } from '../../constants';
 /**
  * V0 Meditation Player - Clean, focused playback experience
  *
- * No script text display - pure playback controls and visualization
- * Integrated with Supabase for meditation history
+ * Fully responsive design optimized for:
+ * - Mobile (320px+): Compact layout, smaller orb, minimal padding
+ * - Tablet (768px+): Medium layout with more breathing room
+ * - Desktop (1024px+): Full experience with larger visualizations
  */
 
 // Helper to render icon from icon name
@@ -19,45 +21,35 @@ const renderNatureIcon = (iconName: string | undefined, className: string = "w-4
   if (IconComponent) {
     return <IconComponent className={className} />;
   }
-  return <ICONS.Leaf className={className} />; // Fallback
+  return <ICONS.Leaf className={className} />;
 };
 
-// Module-level constants to avoid recreating on each render
 // Mobile detection for performance optimization
 const IS_MOBILE = typeof window !== 'undefined' && (
   window.matchMedia?.('(max-width: 768px)').matches ||
   /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
 );
 
-// Low-power mode detection for additional optimization
+// Low-power mode detection
 const PREFERS_REDUCED_MOTION = typeof window !== 'undefined' &&
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-// Optimized particle counts for smooth 60fps - reduced on mobile and when reduced motion preferred
-const PARTICLE_COUNT = PREFERS_REDUCED_MOTION ? 4 : (IS_MOBILE ? 6 : 16);
-const ORBIT_PARTICLE_COUNT = PREFERS_REDUCED_MOTION ? 4 : (IS_MOBILE ? 6 : 12);
+// Optimized particle counts - heavily reduced on mobile
+const PARTICLE_COUNT = PREFERS_REDUCED_MOTION ? 3 : (IS_MOBILE ? 4 : 12);
+const ORBIT_PARTICLE_COUNT = PREFERS_REDUCED_MOTION ? 3 : (IS_MOBILE ? 4 : 10);
 
 /**
- * PremiumVolumeSlider - Minimalist vertical volume control
- *
- * Features:
- * - Vertical slider with smooth drag interaction
- * - Elegant glow effects and gradient fills
- * - Touch-friendly large hit area
- * - Visual feedback with haptic-feel animations
+ * Compact Volume Slider - Mobile-optimized vertical control
  */
 interface VolumeSliderProps {
   value: number;
   onChange: (value: number) => void;
-  label: string;
-  icon: React.ReactNode;
-  /** Icon shown at top of slider to indicate what this controls (mic, nature, music) */
   typeIcon: React.ReactNode;
   color: 'cyan' | 'emerald' | 'blue';
   disabled?: boolean;
 }
 
-const PremiumVolumeSlider = memo(({ value, onChange, label, icon, typeIcon, color, disabled = false }: VolumeSliderProps) => {
+const CompactVolumeSlider = memo(({ value, onChange, typeIcon, color, disabled = false }: VolumeSliderProps) => {
   const sliderRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
 
@@ -92,9 +84,8 @@ const PremiumVolumeSlider = memo(({ value, onChange, label, icon, typeIcon, colo
     const rect = sliderRef.current.getBoundingClientRect();
     const y = e.clientY - rect.top;
     const height = rect.height;
-    // Invert because 0 is at bottom, 1 is at top
     const newValue = Math.max(0, Math.min(1, 1 - y / height));
-    onChange(Math.round(newValue * 20) / 20); // Snap to 5% increments
+    onChange(Math.round(newValue * 20) / 20);
   }, [onChange]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
@@ -116,19 +107,17 @@ const PremiumVolumeSlider = memo(({ value, onChange, label, icon, typeIcon, colo
   }, []);
 
   return (
-    <div className={`flex flex-col items-center gap-1.5 ${disabled ? 'opacity-40 pointer-events-none' : ''}`}>
-      {/* Type indicator icon (mic, nature, music) */}
-      <div className={`p-1.5 rounded-full ${scheme.iconBg}`}>
+    <div className={`flex flex-col items-center gap-1 ${disabled ? 'opacity-40 pointer-events-none' : ''}`}>
+      {/* Type indicator at top */}
+      <div className={`p-1.5 sm:p-2 rounded-full ${scheme.iconBg}`}>
         {typeIcon}
       </div>
 
-      {/* Slider track - responsive height */}
+      {/* Slider track */}
       <div
         ref={sliderRef}
-        className={`relative w-7 h-20 sm:w-8 sm:h-24 rounded-full ${scheme.track} cursor-pointer touch-none overflow-hidden`}
-        style={{
-          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)',
-        }}
+        className={`relative w-7 h-16 xs:h-18 sm:w-8 sm:h-20 md:w-9 md:h-24 rounded-full ${scheme.track} cursor-pointer touch-none overflow-hidden`}
+        style={{ boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -137,82 +126,57 @@ const PremiumVolumeSlider = memo(({ value, onChange, label, icon, typeIcon, colo
         {/* Fill bar */}
         <motion.div
           className={`absolute bottom-0 left-0 right-0 rounded-full bg-gradient-to-t ${scheme.gradient}`}
-          style={{ height: `${value * 100}%` }}
           initial={false}
           animate={{
             height: `${value * 100}%`,
-            boxShadow: `0 0 20px ${scheme.glow}, inset 0 1px 2px rgba(255,255,255,0.3)`,
+            boxShadow: `0 0 15px ${scheme.glow}`,
           }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         />
 
-        {/* Thumb indicator */}
+        {/* Thumb */}
         <motion.div
-          className="absolute left-1/2 -translate-x-1/2 w-6 h-2 rounded-full bg-white"
-          style={{
-            bottom: `calc(${value * 100}% - 4px)`,
-            boxShadow: `0 0 12px ${scheme.glow}, 0 2px 4px rgba(0,0,0,0.3)`,
-          }}
+          className="absolute left-1/2 -translate-x-1/2 w-5 h-1.5 sm:w-6 sm:h-2 rounded-full bg-white"
+          style={{ boxShadow: `0 0 8px ${scheme.glow}` }}
           initial={false}
-          animate={{
-            bottom: `calc(${value * 100}% - 4px)`,
-          }}
+          animate={{ bottom: `calc(${value * 100}% - 3px)` }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         />
       </div>
-
-      {/* Icon and label */}
-      <div className={`p-2 rounded-full ${scheme.iconBg}`}>
-        {icon}
-      </div>
-      <span className={`text-[10px] font-medium ${scheme.text} opacity-70 tracking-wide uppercase max-w-[60px] truncate`}>
-        {label}
-      </span>
     </div>
   );
 });
 
-PremiumVolumeSlider.displayName = 'PremiumVolumeSlider';
+CompactVolumeSlider.displayName = 'CompactVolumeSlider';
 
 interface MeditationPlayerProps {
-  // Playback control
   isPlaying: boolean;
-  isBuffering?: boolean;  // Show loading state during audio generation
+  isBuffering?: boolean;
   currentTime: number;
   duration: number;
   onPlayPause: () => void;
   onSeek: (time: number) => void;
   onSkip: (seconds: number) => void;
   onClose: () => void;
-
-  // Background music
   backgroundMusicEnabled?: boolean;
   backgroundVolume: number;
   onBackgroundVolumeChange: (volume: number) => void;
   onBackgroundMusicToggle?: () => void;
   backgroundTrackName?: string;
-
-  // Nature/Ambient sounds
   natureSoundEnabled?: boolean;
   natureSoundVolume?: number;
   onNatureSoundVolumeChange?: (volume: number) => void;
   natureSoundName?: string;
   natureSoundIcon?: string;
   onOpenNatureSoundModal?: () => void;
-
-  // Voice volume and playback rate
   voiceVolume?: number;
   onVoiceVolumeChange?: (volume: number) => void;
   playbackRate?: number;
   onPlaybackRateChange?: (rate: number) => void;
-
-  // Save functionality
   userId?: string;
   voiceId?: string;
   voiceName?: string;
   meditationType?: string;
-
-  // Sleep timer (optional)
   onSleepTimer?: () => void;
 }
 
@@ -238,13 +202,6 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
   onOpenNatureSoundModal,
   voiceVolume = 0.7,
   onVoiceVolumeChange,
-  playbackRate = 1.0,
-  onPlaybackRateChange,
-  userId,
-  voiceId,
-  voiceName,
-  meditationType,
-  onSleepTimer,
 }) => {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
   const [showControls, setShowControls] = useState(false);
@@ -262,8 +219,8 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
   }, [onSeek, duration]);
 
   return (
-    <div className="fixed inset-0 z-[100] w-full overflow-y-auto overflow-x-hidden bg-[#020617]">
-      {/* Animated gradient background - deep blue/cyan theme */}
+    <div className="fixed inset-0 z-[100] bg-[#020617] overflow-hidden">
+      {/* Background gradient */}
       <motion.div
         className="absolute inset-0"
         animate={{
@@ -271,7 +228,6 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
             'linear-gradient(135deg, #020617 0%, #0c1929 50%, #020617 100%)',
             'linear-gradient(135deg, #020617 0%, #0c1929 60%, #020617 100%)',
             'linear-gradient(135deg, #020617 0%, #0c1929 40%, #020617 100%)',
-            'linear-gradient(135deg, #020617 0%, #0c1929 50%, #020617 100%)',
           ],
         }}
         transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
@@ -280,273 +236,239 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
       {/* Floating particles */}
       <FloatingParticles />
 
-      {/* Content - use min-h-fit when controls expanded to prevent cropping */}
-      <div className={`relative z-10 flex flex-col items-center justify-between px-4 sm:px-6 pt-16 sm:pt-14 safe-top safe-bottom ${showControls ? 'min-h-fit pb-8 sm:pb-12' : 'min-h-[100dvh] pb-12 sm:pb-16 md:pb-20'}`}>
-        {/* Header with close button */}
-        <div className="w-full mt-2">
+      {/* Main content - scrollable container */}
+      <div className="relative z-10 h-full overflow-y-auto overscroll-contain">
+        <div className="min-h-full flex flex-col px-3 xs:px-4 sm:px-6 py-4 safe-top safe-bottom">
+
+          {/* Close button - fixed position feel */}
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={onClose}
-            className="flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white/5 text-white/60 backdrop-blur-sm transition-colors hover:bg-white/10 hover:text-white/80"
+            className="flex-shrink-0 self-start h-10 w-10 sm:h-11 sm:w-11 flex items-center justify-center rounded-full bg-white/5 text-white/60 backdrop-blur-sm transition-colors hover:bg-white/10 hover:text-white/80 mt-2"
             aria-label="Close player"
           >
             <X className="h-5 w-5" />
           </motion.button>
-        </div>
 
-        {/* Center content */}
-        <div className="flex flex-1 flex-col items-center justify-center gap-6 sm:gap-8">
-          {/* Breathing orb visualizer - show loading animation when buffering */}
-          <BreathingOrb isPlaying={isBuffering ? true : isPlaying} />
+          {/* Center section - orb + time (flexible space) */}
+          <div className="flex-1 flex flex-col items-center justify-center py-4 sm:py-6 min-h-0">
+            {/* Breathing orb - responsive sizing */}
+            <div className="flex-shrink-0">
+              <BreathingOrb isPlaying={isBuffering ? true : isPlaying} />
+            </div>
 
-          {/* Title and time */}
+            {/* Title and time */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="text-center mt-4 sm:mt-6"
+            >
+              <h1 className="font-sans text-lg sm:text-xl md:text-2xl font-light tracking-wide text-white/90">
+                {isBuffering ? 'Generating...' : 'Meditation'}
+              </h1>
+              <p className="mt-1 sm:mt-2 font-mono text-xs sm:text-sm text-white/50">
+                {isBuffering ? (
+                  <span className="animate-pulse">Preparing your meditation</span>
+                ) : (
+                  `${formatTime(currentTime)} / ${formatTime(duration)}`
+                )}
+              </p>
+            </motion.div>
+          </div>
+
+          {/* Controls section - stays at bottom */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="text-center"
+            transition={{ delay: 0.5 }}
+            className="flex-shrink-0 w-full max-w-md mx-auto space-y-3 sm:space-y-4 pb-4 sm:pb-6"
           >
-            <h1 className="font-sans text-xl sm:text-2xl font-light tracking-wide text-white/90">
-              {isBuffering ? 'Generating...' : 'Meditation'}
-            </h1>
-            <p className="mt-2 font-mono text-sm text-white/50">
-              {isBuffering ? (
-                <span className="inline-flex items-center gap-2">
-                  <span className="animate-pulse">Preparing your meditation</span>
-                </span>
-              ) : (
-                `${formatTime(currentTime)} / ${formatTime(duration)}`
+            {/* Progress bar */}
+            <div className="relative px-1">
+              <div
+                className="absolute -inset-1 rounded-full bg-sky-500/20 blur-md transition-all"
+                style={{ width: isBuffering ? '0%' : `${Math.max(progress, 1)}%` }}
+              />
+              <div
+                className={`relative h-1 sm:h-1.5 md:h-2 bg-white/10 rounded-full overflow-hidden group ${
+                  isBuffering ? 'cursor-not-allowed' : 'cursor-pointer'
+                }`}
+                onClick={isBuffering ? undefined : handleProgressClick}
+              >
+                <div
+                  className="absolute left-0 top-0 h-full bg-gradient-to-r from-sky-500/80 to-sky-500/80 rounded-full transition-all duration-100"
+                  style={{ width: `${progress}%` }}
+                />
+                <div
+                  className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-white rounded-full shadow-[0_0_10px_rgba(94,234,212,0.5)] opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ left: `calc(${progress}% - 5px)` }}
+                />
+              </div>
+            </div>
+
+            {/* Playback controls */}
+            <div className="flex items-center justify-center gap-4 sm:gap-6 md:gap-8">
+              <motion.button
+                whileTap={!isBuffering ? { scale: 0.9 } : undefined}
+                onClick={isBuffering ? undefined : () => onSkip(-15)}
+                disabled={isBuffering}
+                className={`relative flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full transition-all ${
+                  isBuffering
+                    ? 'text-white/20 cursor-not-allowed'
+                    : 'text-white/60 hover:text-white/90 hover:bg-white/5 active:bg-white/10'
+                }`}
+                aria-label="Skip back 15 seconds"
+              >
+                <RotateCcw className="h-5 w-5 sm:h-6 sm:w-6" />
+                <span className="absolute -bottom-0.5 text-[9px] sm:text-[10px] font-medium">15</span>
+              </motion.button>
+
+              <motion.button
+                whileTap={!isBuffering ? { scale: 0.92 } : undefined}
+                onClick={isBuffering ? undefined : onPlayPause}
+                disabled={isBuffering}
+                className={`flex h-14 w-14 sm:h-16 sm:w-16 md:h-18 md:w-18 items-center justify-center rounded-full text-white backdrop-blur-sm transition-all ${
+                  isBuffering
+                    ? 'bg-white/10 cursor-wait'
+                    : isPlaying
+                      ? 'bg-white/15 shadow-[0_0_25px_rgba(34,211,238,0.2)]'
+                      : 'bg-white/10 hover:bg-white/20'
+                }`}
+                aria-label={isBuffering ? 'Generating...' : isPlaying ? 'Pause' : 'Play'}
+              >
+                <AnimatePresence mode="wait">
+                  {isBuffering ? (
+                    <motion.div key="loading" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+                      <div className="h-6 w-6 sm:h-7 sm:w-7 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    </motion.div>
+                  ) : isPlaying ? (
+                    <motion.div key="pause" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+                      <Pause className="h-6 w-6 sm:h-7 sm:w-7 fill-white" />
+                    </motion.div>
+                  ) : (
+                    <motion.div key="play" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+                      <Play className="ml-0.5 sm:ml-1 h-6 w-6 sm:h-7 sm:w-7 fill-white" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.button>
+
+              <motion.button
+                whileTap={!isBuffering ? { scale: 0.9 } : undefined}
+                onClick={isBuffering ? undefined : () => onSkip(15)}
+                disabled={isBuffering}
+                className={`relative flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full transition-all ${
+                  isBuffering
+                    ? 'text-white/20 cursor-not-allowed'
+                    : 'text-white/60 hover:text-white/90 hover:bg-white/5 active:bg-white/10'
+                }`}
+                aria-label="Skip forward 15 seconds"
+              >
+                <RotateCw className="h-5 w-5 sm:h-6 sm:w-6" />
+                <span className="absolute -bottom-0.5 text-[9px] sm:text-[10px] font-medium">15</span>
+              </motion.button>
+            </div>
+
+            {/* Expand controls toggle */}
+            <div className="flex items-center justify-center pt-1 sm:pt-2">
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setShowControls(!showControls)}
+                className="flex items-center justify-center p-2 opacity-60 hover:opacity-100 transition-opacity"
+                aria-label={showControls ? 'Hide sound controls' : 'Show sound controls'}
+              >
+                <motion.div animate={{ rotate: showControls ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                  <ChevronUp className="h-5 w-5 sm:h-6 sm:w-6 text-cyan-400" />
+                </motion.div>
+              </motion.button>
+            </div>
+
+            {/* Volume Controls Panel */}
+            <AnimatePresence>
+              {showControls && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                  className="overflow-hidden"
+                >
+                  <div className="py-3 px-3 sm:py-4 sm:px-6 rounded-2xl sm:rounded-3xl bg-white/[0.02] backdrop-blur-xl border border-white/[0.06]">
+                    {/* Sound Selection Buttons */}
+                    <div className="flex items-center justify-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                      {onBackgroundMusicToggle && (
+                        <motion.button
+                          whileTap={{ scale: 0.95 }}
+                          onClick={onBackgroundMusicToggle}
+                          className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-medium transition-all ${
+                            backgroundMusicEnabled
+                              ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                              : 'bg-white/[0.03] text-white/50 border border-white/[0.05]'
+                          }`}
+                        >
+                          <Music className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                          <span className="max-w-[50px] sm:max-w-[60px] truncate">
+                            {backgroundMusicEnabled ? backgroundTrackName || 'Music' : 'Music'}
+                          </span>
+                        </motion.button>
+                      )}
+
+                      {onOpenNatureSoundModal && (
+                        <motion.button
+                          whileTap={{ scale: 0.95 }}
+                          onClick={onOpenNatureSoundModal}
+                          className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-medium transition-all ${
+                            natureSoundEnabled
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              : 'bg-white/[0.03] text-white/50 border border-white/[0.05]'
+                          }`}
+                        >
+                          {renderNatureIcon(natureSoundIcon, "w-3 h-3 sm:w-3.5 sm:h-3.5")}
+                          <span className="max-w-[50px] sm:max-w-[60px] truncate">
+                            {natureSoundEnabled ? natureSoundName || 'Nature' : 'Nature'}
+                          </span>
+                        </motion.button>
+                      )}
+                    </div>
+
+                    {/* Volume Sliders */}
+                    <div className="flex items-end justify-center gap-6 sm:gap-8 md:gap-10">
+                      {onVoiceVolumeChange && (
+                        <CompactVolumeSlider
+                          value={voiceVolume}
+                          onChange={onVoiceVolumeChange}
+                          typeIcon={<Mic className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />}
+                          color="cyan"
+                        />
+                      )}
+
+                      {onNatureSoundVolumeChange && (
+                        <CompactVolumeSlider
+                          value={natureSoundVolume}
+                          onChange={onNatureSoundVolumeChange}
+                          typeIcon={<span className="text-emerald-400">{renderNatureIcon(natureSoundIcon, "w-4 h-4 sm:w-5 sm:h-5")}</span>}
+                          color="emerald"
+                          disabled={!natureSoundEnabled}
+                        />
+                      )}
+
+                      <CompactVolumeSlider
+                        value={backgroundVolume}
+                        onChange={onBackgroundVolumeChange}
+                        typeIcon={<Music className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />}
+                        color="blue"
+                        disabled={!backgroundMusicEnabled}
+                      />
+                    </div>
+                  </div>
+                </motion.div>
               )}
-            </p>
+            </AnimatePresence>
           </motion.div>
         </div>
-
-        {/* Controls */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="w-full max-w-xl space-y-5 sm:space-y-6 mb-4 sm:mb-6 md:mb-8 mt-6 sm:mt-8"
-        >
-          {/* Progress bar */}
-          <div className="relative px-1">
-            <div
-              className="absolute -inset-1 rounded-full bg-sky-500/20 blur-md transition-all"
-              style={{ width: isBuffering ? '0%' : `${Math.max(progress, 1)}%` }}
-            />
-            <div
-              className={`relative h-1.5 sm:h-2 bg-white/10 rounded-full overflow-hidden group ${
-                isBuffering ? 'cursor-not-allowed' : 'cursor-pointer'
-              }`}
-              onClick={isBuffering ? undefined : handleProgressClick}
-            >
-              <div
-                className="absolute left-0 top-0 h-full bg-gradient-to-r from-sky-500/80 to-sky-500/80 rounded-full transition-all duration-100"
-                style={{ width: `${progress}%` }}
-              />
-              {/* Thumb indicator */}
-              <div
-                className="absolute top-1/2 -translate-y-1/2 w-3 h-3 sm:w-3.5 sm:h-3.5 bg-white rounded-full shadow-[0_0_10px_rgba(94,234,212,0.5)] opacity-0 group-hover:opacity-100 transition-opacity"
-                style={{ left: `calc(${progress}% - 6px)` }}
-              />
-            </div>
-          </div>
-
-          {/* Main playback controls */}
-          <div className="flex items-center justify-center gap-6 sm:gap-8">
-            <motion.button
-              whileHover={!isBuffering ? { scale: 1.1 } : undefined}
-              whileTap={!isBuffering ? { scale: 0.9 } : undefined}
-              onClick={isBuffering ? undefined : () => onSkip(-15)}
-              disabled={isBuffering}
-              className={`relative flex h-12 w-12 sm:h-12 sm:w-12 items-center justify-center transition-all duration-200 rounded-full ${
-                isBuffering
-                  ? 'text-white/20 cursor-not-allowed'
-                  : 'text-white/60 hover:text-white/90 hover:bg-white/5 active:bg-white/10'
-              }`}
-              aria-label="Skip back 15 seconds"
-            >
-              <RotateCcw className="h-6 w-6" />
-              <span className="absolute -bottom-1 text-[10px] font-medium">15</span>
-            </motion.button>
-
-            <motion.button
-              whileHover={!isBuffering ? { scale: 1.05 } : undefined}
-              whileTap={!isBuffering ? { scale: 0.92 } : undefined}
-              onClick={isBuffering ? undefined : onPlayPause}
-              disabled={isBuffering}
-              className={`flex h-16 w-16 sm:h-18 sm:w-18 items-center justify-center rounded-full text-white backdrop-blur-sm transition-all duration-200 ${
-                isBuffering
-                  ? 'bg-white/10 cursor-wait'
-                  : isPlaying
-                    ? 'bg-white/15 shadow-[0_0_30px_rgba(34,211,238,0.2)]'
-                    : 'bg-white/10 hover:bg-white/20 hover:shadow-[0_0_25px_rgba(34,211,238,0.15)]'
-              }`}
-              aria-label={isBuffering ? 'Generating audio...' : isPlaying ? 'Pause' : 'Play'}
-            >
-              <AnimatePresence mode="wait">
-                {isBuffering ? (
-                  <motion.div key="loading" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.15 }}>
-                    <div className="h-7 w-7 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  </motion.div>
-                ) : isPlaying ? (
-                  <motion.div key="pause" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.15 }}>
-                    <Pause className="h-7 w-7 fill-white" />
-                  </motion.div>
-                ) : (
-                  <motion.div key="play" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.15 }}>
-                    <Play className="ml-1 h-7 w-7 fill-white" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.button>
-
-            <motion.button
-              whileHover={!isBuffering ? { scale: 1.1 } : undefined}
-              whileTap={!isBuffering ? { scale: 0.9 } : undefined}
-              onClick={isBuffering ? undefined : () => onSkip(15)}
-              disabled={isBuffering}
-              className={`relative flex h-12 w-12 sm:h-12 sm:w-12 items-center justify-center transition-all duration-200 rounded-full ${
-                isBuffering
-                  ? 'text-white/20 cursor-not-allowed'
-                  : 'text-white/60 hover:text-white/90 hover:bg-white/5 active:bg-white/10'
-              }`}
-              aria-label="Skip forward 15 seconds"
-            >
-              <RotateCw className="h-6 w-6" />
-              <span className="absolute -bottom-1 text-[10px] font-medium">15</span>
-            </motion.button>
-          </div>
-
-          {/* Expand controls arrow */}
-          <div className="flex items-center justify-center mt-4">
-            <motion.button
-              whileHover={{ scale: 1.15 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setShowControls(!showControls)}
-              className="flex items-center justify-center p-2 transition-opacity hover:opacity-100 opacity-60"
-              aria-label={showControls ? 'Hide sound controls' : 'Show sound controls'}
-              style={{
-                background: 'linear-gradient(135deg, #22d3ee 0%, #3b82f6 50%, #22d3ee 100%)',
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-              }}
-            >
-              <motion.div
-                animate={{ rotate: showControls ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ChevronUp className="h-6 w-6" style={{ stroke: 'url(#player-arrow-gradient)' }} />
-              </motion.div>
-              <svg width="0" height="0" className="absolute">
-                <defs>
-                  <linearGradient id="player-arrow-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#22d3ee" />
-                    <stop offset="50%" stopColor="#3b82f6" />
-                    <stop offset="100%" stopColor="#22d3ee" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </motion.button>
-          </div>
-
-          {/* Premium Volume Controls Panel */}
-          <AnimatePresence>
-            {showControls && (
-              <motion.div
-                initial={{ opacity: 0, height: 0, scale: 0.95 }}
-                animate={{ opacity: 1, height: 'auto', scale: 1 }}
-                exit={{ opacity: 0, height: 0, scale: 0.95 }}
-                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                className="overflow-hidden"
-              >
-                <div className="py-4 px-4 sm:py-6 sm:px-8 rounded-3xl bg-white/[0.02] backdrop-blur-2xl border border-white/[0.06] shadow-[0_8px_40px_rgba(0,0,0,0.4)]">
-                  {/* Sound Selection Buttons */}
-                  <div className="flex items-center justify-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-                    {onBackgroundMusicToggle && (
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={onBackgroundMusicToggle}
-                        className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 ${
-                          backgroundMusicEnabled
-                            ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.2)]'
-                            : 'bg-white/[0.03] text-white/50 border border-white/[0.05] hover:bg-white/[0.05] hover:text-white/70'
-                        }`}
-                      >
-                        <Music className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        <span className="max-w-[60px] sm:max-w-[70px] truncate">
-                          {backgroundMusicEnabled ? backgroundTrackName || 'Music' : 'Music'}
-                        </span>
-                      </motion.button>
-                    )}
-
-                    {onOpenNatureSoundModal && (
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={onOpenNatureSoundModal}
-                        className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 ${
-                          natureSoundEnabled
-                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_20px_rgba(52,211,153,0.2)]'
-                            : 'bg-white/[0.03] text-white/50 border border-white/[0.05] hover:bg-white/[0.05] hover:text-white/70'
-                        }`}
-                      >
-                        {renderNatureIcon(natureSoundIcon, "w-3.5 h-3.5 sm:w-4 sm:h-4")}
-                        <span className="max-w-[60px] sm:max-w-[70px] truncate">
-                          {natureSoundEnabled ? natureSoundName || 'Nature' : 'Nature'}
-                        </span>
-                      </motion.button>
-                    )}
-                  </div>
-
-                  {/* Vertical Volume Sliders - responsive gap */}
-                  <div className="flex items-end justify-center gap-5 sm:gap-8">
-                    {/* Voice Volume - Always shown */}
-                    {onVoiceVolumeChange && (
-                      <PremiumVolumeSlider
-                        value={voiceVolume}
-                        onChange={onVoiceVolumeChange}
-                        label="Voice"
-                        typeIcon={<Mic className="w-3.5 h-3.5 text-cyan-400" />}
-                        icon={<Mic className="w-4 h-4 text-cyan-400" />}
-                        color="cyan"
-                      />
-                    )}
-
-                    {/* Nature Sound Volume */}
-                    {onNatureSoundVolumeChange && (
-                      <PremiumVolumeSlider
-                        value={natureSoundVolume}
-                        onChange={onNatureSoundVolumeChange}
-                        label={natureSoundEnabled ? (natureSoundName || 'Nature') : 'Nature'}
-                        typeIcon={<span className="text-emerald-400">{renderNatureIcon(natureSoundIcon, "w-3.5 h-3.5")}</span>}
-                        icon={<span className="text-emerald-400">{renderNatureIcon(natureSoundIcon, "w-4 h-4")}</span>}
-                        color="emerald"
-                        disabled={!natureSoundEnabled}
-                      />
-                    )}
-
-                    {/* Background Music Volume */}
-                    <PremiumVolumeSlider
-                      value={backgroundVolume}
-                      onChange={onBackgroundVolumeChange}
-                      label={backgroundMusicEnabled ? (backgroundTrackName || 'Music') : 'Music'}
-                      typeIcon={<Music className="w-3.5 h-3.5 text-blue-400" />}
-                      icon={<Music className="w-4 h-4 text-blue-400" />}
-                      color="blue"
-                      disabled={!backgroundMusicEnabled}
-                    />
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-        </motion.div>
       </div>
     </div>
   );
@@ -554,52 +476,37 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
 
 V0MeditationPlayer.displayName = 'V0MeditationPlayer';
 
-// Orb size configuration for responsive design
-const ORB_CONFIG = {
-  // Responsive orb sizes
-  orbSize: 'w-[160px] h-[160px] sm:w-[180px] sm:h-[180px] md:w-[200px] md:h-[200px] lg:w-[220px] lg:h-[220px]',
-};
-
 /**
- * BreathingOrb - 4-layer breathing visualization
- *
- * Layers (outer to inner):
- * 4. Ambient Glow Field - soft surrounding blur
- * 3. Particle Orbit - circling energy particles
- * 2. Main Orb - primary breathing element
- * 1. Inner Core - bright center with radiating rays
+ * BreathingOrb - Responsive breathing visualization
+ * Scales down significantly on mobile for better layout
  */
 const BreathingOrb = memo(({ isPlaying }: { isPlaying: boolean }) => {
-  // Generate orbit particles (reduced on mobile for performance)
   const orbitParticles = useMemo(() =>
     [...Array(ORBIT_PARTICLE_COUNT)].map((_, i) => ({
       id: i,
       angle: (i / ORBIT_PARTICLE_COUNT) * 360,
-      orbitRadius: 85 + (i % 2) * 15, // Alternating orbit distances
+      orbitRadius: 70 + (i % 2) * 12,
       size: 2 + Math.random() * 2,
       duration: 25 + Math.random() * 15,
-      delay: (i / ORBIT_PARTICLE_COUNT) * -40,
-      colorOffset: i * 25, // For gradient color variation
     })),
     []
   );
 
-  // Generate ray angles for inner core
-  const coreRays = useMemo(() => [...Array(12)].map((_, i) => i * 30), []);
+  const coreRays = useMemo(() => [...Array(8)].map((_, i) => i * 45), []);
 
   return (
     <div className="relative flex items-center justify-center">
-      {/* Layer 4: Ambient Glow Field */}
+      {/* Layer 4: Ambient Glow - smaller on mobile */}
       <motion.div
-        className="absolute w-[240px] h-[240px] sm:w-[280px] sm:h-[280px] md:w-[320px] md:h-[320px] lg:w-[350px] lg:h-[350px] rounded-full"
+        className="absolute w-[180px] h-[180px] xs:w-[200px] xs:h-[200px] sm:w-[260px] sm:h-[260px] md:w-[320px] md:h-[320px] rounded-full"
         style={{
-          background: 'radial-gradient(circle, rgba(34, 211, 238, 0.22) 0%, rgba(59, 130, 246, 0.14) 35%, rgba(14, 165, 233, 0.08) 60%, transparent 80%)',
-          filter: 'blur(40px)',
+          background: 'radial-gradient(circle, rgba(34, 211, 238, 0.2) 0%, rgba(59, 130, 246, 0.12) 40%, transparent 70%)',
+          filter: 'blur(30px)',
         }}
         animate={isPlaying ? {
-          scale: [1, 1.18, 1.18, 1],
-          opacity: [0.4, 0.7, 0.7, 0.4],
-        } : { scale: 1, opacity: 0.25 }}
+          scale: [1, 1.15, 1.15, 1],
+          opacity: [0.35, 0.6, 0.6, 0.35],
+        } : { scale: 1, opacity: 0.2 }}
         transition={{
           duration: 19,
           times: [0, 0.21, 0.58, 1],
@@ -608,8 +515,8 @@ const BreathingOrb = memo(({ isPlaying }: { isPlaying: boolean }) => {
         }}
       />
 
-      {/* Layer 3: Particle Orbit System */}
-      <div className="absolute w-[180px] h-[180px] sm:w-[200px] sm:h-[200px] md:w-[220px] md:h-[220px]">
+      {/* Layer 3: Particle Orbit - scaled for mobile */}
+      <div className="absolute w-[140px] h-[140px] xs:w-[160px] xs:h-[160px] sm:w-[180px] sm:h-[180px] md:w-[200px] md:h-[200px]">
         {orbitParticles.map((particle) => (
           <motion.div
             key={particle.id}
@@ -619,150 +526,123 @@ const BreathingOrb = memo(({ isPlaying }: { isPlaying: boolean }) => {
               height: particle.size,
               marginLeft: -particle.size / 2,
               marginTop: -particle.size / 2,
-              background: `radial-gradient(circle, rgba(34, 211, 238, 0.9) 0%, rgba(59, 130, 246, 0.7) 100%)`,
+              background: 'radial-gradient(circle, rgba(34, 211, 238, 0.9) 0%, rgba(59, 130, 246, 0.7) 100%)',
               borderRadius: '50%',
-              boxShadow: `0 0 ${particle.size * 3}px rgba(34, 211, 238, 0.6)`,
+              boxShadow: `0 0 ${particle.size * 2}px rgba(34, 211, 238, 0.5)`,
             }}
             animate={isPlaying ? {
               x: [
                 Math.cos(particle.angle * Math.PI / 180) * particle.orbitRadius,
-                Math.cos((particle.angle + 90) * Math.PI / 180) * particle.orbitRadius,
                 Math.cos((particle.angle + 180) * Math.PI / 180) * particle.orbitRadius,
-                Math.cos((particle.angle + 270) * Math.PI / 180) * particle.orbitRadius,
                 Math.cos(particle.angle * Math.PI / 180) * particle.orbitRadius,
               ],
               y: [
                 Math.sin(particle.angle * Math.PI / 180) * particle.orbitRadius,
-                Math.sin((particle.angle + 90) * Math.PI / 180) * particle.orbitRadius,
                 Math.sin((particle.angle + 180) * Math.PI / 180) * particle.orbitRadius,
-                Math.sin((particle.angle + 270) * Math.PI / 180) * particle.orbitRadius,
                 Math.sin(particle.angle * Math.PI / 180) * particle.orbitRadius,
               ],
-              opacity: [0.6, 0.9, 0.6, 0.9, 0.6],
+              opacity: [0.5, 0.8, 0.5],
             } : {
               x: Math.cos(particle.angle * Math.PI / 180) * particle.orbitRadius,
               y: Math.sin(particle.angle * Math.PI / 180) * particle.orbitRadius,
-              opacity: 0.3,
+              opacity: 0.25,
             }}
-            transition={{
-              duration: particle.duration,
-              repeat: Infinity,
-              ease: 'linear',
-            }}
+            transition={{ duration: particle.duration, repeat: Infinity, ease: 'linear' }}
           />
         ))}
       </div>
 
-      {/* Layer 2: Main Pulsing Orb */}
+      {/* Layer 2: Main Orb - responsive sizes */}
       <motion.div
-        className={`relative ${ORB_CONFIG.orbSize} rounded-full flex items-center justify-center`}
+        className="relative w-[120px] h-[120px] xs:w-[140px] xs:h-[140px] sm:w-[160px] sm:h-[160px] md:w-[180px] md:h-[180px] lg:w-[200px] lg:h-[200px] rounded-full flex items-center justify-center"
         style={{
-          background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.28) 0%, rgba(59, 130, 246, 0.22) 50%, rgba(14, 165, 233, 0.28) 100%)',
-          boxShadow: 'inset 0 0 50px rgba(59, 130, 246, 0.15), inset 0 0 100px rgba(34, 211, 238, 0.1)',
+          background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.25) 0%, rgba(59, 130, 246, 0.2) 50%, rgba(14, 165, 233, 0.25) 100%)',
+          boxShadow: 'inset 0 0 40px rgba(59, 130, 246, 0.15)',
         }}
         animate={isPlaying ? {
-          scale: [1, 1.18, 1.18, 1],
+          scale: [1, 1.15, 1.15, 1],
           filter: [
-            'drop-shadow(0 0 35px rgba(34, 211, 238, 0.45)) drop-shadow(0 0 70px rgba(59, 130, 246, 0.25))',
-            'drop-shadow(0 0 70px rgba(34, 211, 238, 0.7)) drop-shadow(0 0 120px rgba(59, 130, 246, 0.4))',
-            'drop-shadow(0 0 70px rgba(34, 211, 238, 0.7)) drop-shadow(0 0 120px rgba(59, 130, 246, 0.4))',
-            'drop-shadow(0 0 35px rgba(34, 211, 238, 0.45)) drop-shadow(0 0 70px rgba(59, 130, 246, 0.25))',
+            'drop-shadow(0 0 30px rgba(34, 211, 238, 0.4))',
+            'drop-shadow(0 0 50px rgba(34, 211, 238, 0.6))',
+            'drop-shadow(0 0 50px rgba(34, 211, 238, 0.6))',
+            'drop-shadow(0 0 30px rgba(34, 211, 238, 0.4))',
           ],
         } : {
           scale: 1,
-          filter: 'drop-shadow(0 0 25px rgba(34, 211, 238, 0.3)) drop-shadow(0 0 50px rgba(59, 130, 246, 0.15))',
+          filter: 'drop-shadow(0 0 20px rgba(34, 211, 238, 0.3))',
         }}
         transition={{
-          duration: 19, // 4-7-8 breathing: 4s inhale, 7s hold, 8s exhale
+          duration: 19,
           times: [0, 0.21, 0.58, 1],
           repeat: Infinity,
           ease: 'easeInOut',
         }}
       >
-        {/* Inner gradient layer */}
+        {/* Inner gradient */}
         <motion.div
-          className="absolute inset-4 sm:inset-5 md:inset-6 rounded-full"
+          className="absolute inset-3 xs:inset-4 sm:inset-5 rounded-full"
           style={{
-            background: 'radial-gradient(circle, rgba(34, 211, 238, 0.35) 0%, rgba(59, 130, 246, 0.2) 50%, transparent 100%)',
-            filter: 'blur(8px)',
+            background: 'radial-gradient(circle, rgba(34, 211, 238, 0.3) 0%, rgba(59, 130, 246, 0.15) 60%, transparent 100%)',
+            filter: 'blur(6px)',
           }}
-          animate={isPlaying ? {
-            opacity: [0.5, 0.9, 0.9, 0.5],
-          } : { opacity: 0.35 }}
-          transition={{
-            duration: 19,
-            times: [0, 0.21, 0.58, 1],
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
+          animate={isPlaying ? { opacity: [0.4, 0.8, 0.8, 0.4] } : { opacity: 0.3 }}
+          transition={{ duration: 19, times: [0, 0.21, 0.58, 1], repeat: Infinity, ease: 'easeInOut' }}
         />
 
-        {/* Secondary inner ring */}
+        {/* Inner ring */}
         <div
-          className="absolute inset-8 sm:inset-10 md:inset-12 rounded-full"
+          className="absolute inset-6 xs:inset-7 sm:inset-8 md:inset-10 rounded-full"
           style={{
-            background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.25) 0%, rgba(59, 130, 246, 0.2) 100%)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.2) 0%, rgba(59, 130, 246, 0.15) 100%)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
           }}
         />
       </motion.div>
 
-      {/* Layer 1: Inner Energy Core with Radiating Rays */}
+      {/* Layer 1: Inner Core */}
       <motion.div
-        className="absolute w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full z-10"
+        className="absolute w-10 h-10 xs:w-11 xs:h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full z-10"
         style={{
-          background: 'radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(34, 211, 238, 0.85) 35%, rgba(59, 130, 246, 0.5) 65%, transparent 100%)',
-          boxShadow: '0 0 30px rgba(255, 255, 255, 0.6), 0 0 60px rgba(34, 211, 238, 0.5), 0 0 90px rgba(59, 130, 246, 0.3)',
+          background: 'radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(34, 211, 238, 0.8) 40%, rgba(59, 130, 246, 0.4) 70%, transparent 100%)',
+          boxShadow: '0 0 25px rgba(255, 255, 255, 0.5), 0 0 50px rgba(34, 211, 238, 0.4)',
         }}
         animate={isPlaying ? {
-          scale: [1, 1.12, 1],
-          opacity: [0.85, 1, 0.85],
-        } : { scale: 1, opacity: 0.65 }}
+          scale: [1, 1.1, 1],
+          opacity: [0.8, 1, 0.8],
+        } : { scale: 1, opacity: 0.6 }}
         transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
       >
-        {/* Radiating rays */}
+        {/* Rays */}
         {coreRays.map((angle) => (
           <motion.div
             key={`ray-${angle}`}
             className="absolute left-1/2 top-1/2 origin-bottom"
             style={{
-              width: 2,
-              height: 28,
-              marginLeft: -1,
-              marginTop: -28,
-              background: 'linear-gradient(to top, rgba(255, 255, 255, 0.7), rgba(34, 211, 238, 0.3), transparent)',
+              width: 1.5,
+              height: 20,
+              marginLeft: -0.75,
+              marginTop: -20,
+              background: 'linear-gradient(to top, rgba(255, 255, 255, 0.6), rgba(34, 211, 238, 0.2), transparent)',
               transform: `rotate(${angle}deg)`,
               borderRadius: '1px',
             }}
             animate={isPlaying ? {
-              scaleY: [1, 1.4, 1],
-              opacity: [0.4, 0.85, 0.4],
-            } : { scaleY: 1, opacity: 0.25 }}
-            transition={{
-              duration: 2.5,
-              delay: (angle / 360) * 2.5,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
+              scaleY: [1, 1.3, 1],
+              opacity: [0.3, 0.7, 0.3],
+            } : { scaleY: 1, opacity: 0.2 }}
+            transition={{ duration: 2.5, delay: (angle / 360) * 2.5, repeat: Infinity, ease: 'easeInOut' }}
           />
         ))}
       </motion.div>
 
-      {/* Center bright dot */}
+      {/* Center dot */}
       <motion.div
-        className="absolute w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full z-20"
+        className="absolute w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full z-20"
         style={{
           background: 'radial-gradient(circle, white 0%, rgba(34, 211, 238, 0.9) 100%)',
-          boxShadow: '0 0 15px rgba(255, 255, 255, 0.9), 0 0 30px rgba(34, 211, 238, 0.7)',
+          boxShadow: '0 0 12px rgba(255, 255, 255, 0.8), 0 0 25px rgba(34, 211, 238, 0.6)',
         }}
-        animate={isPlaying ? {
-          scale: [1, 1.2, 1],
-          boxShadow: [
-            '0 0 15px rgba(255, 255, 255, 0.9), 0 0 30px rgba(34, 211, 238, 0.7)',
-            '0 0 25px rgba(255, 255, 255, 1), 0 0 50px rgba(34, 211, 238, 0.9)',
-            '0 0 15px rgba(255, 255, 255, 0.9), 0 0 30px rgba(34, 211, 238, 0.7)',
-          ],
-        } : {}}
+        animate={isPlaying ? { scale: [1, 1.2, 1] } : {}}
         transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
       />
     </div>
@@ -772,28 +652,17 @@ const BreathingOrb = memo(({ isPlaying }: { isPlaying: boolean }) => {
 BreathingOrb.displayName = 'BreathingOrb';
 
 /**
- * Floating Particles - Enhanced ambient particle effect with Innrvo colors
- * Uses PARTICLE_COUNT (20) for immersive atmosphere
+ * FloatingParticles - Ambient background effect
  */
 const FloatingParticles = memo(() => {
   const particles = useMemo(() => [...Array(PARTICLE_COUNT)].map((_, i) => ({
     id: i,
     x: Math.random() * 100,
     y: Math.random() * 100,
-    size: Math.random() * 2.5 + 1,
-    duration: Math.random() * 25 + 18,
-    delay: Math.random() * 12,
-    // Color variation: cyan, blue, or white
-    color: i % 3 === 0
-      ? 'rgba(34, 211, 238, 0.4)' // cyan
-      : i % 3 === 1
-        ? 'rgba(59, 130, 246, 0.35)' // blue
-        : 'rgba(255, 255, 255, 0.25)', // white
-    glow: i % 3 === 0
-      ? '0 0 6px rgba(34, 211, 238, 0.5)'
-      : i % 3 === 1
-        ? '0 0 6px rgba(59, 130, 246, 0.4)'
-        : '0 0 4px rgba(255, 255, 255, 0.3)',
+    size: Math.random() * 2 + 1,
+    duration: Math.random() * 20 + 15,
+    delay: Math.random() * 10,
+    color: i % 3 === 0 ? 'rgba(34, 211, 238, 0.35)' : i % 3 === 1 ? 'rgba(59, 130, 246, 0.3)' : 'rgba(255, 255, 255, 0.2)',
   })), []);
 
   return (
@@ -808,13 +677,10 @@ const FloatingParticles = memo(() => {
             width: particle.size,
             height: particle.size,
             background: particle.color,
-            boxShadow: particle.glow,
           }}
           animate={{
-            y: [0, -35, 0],
-            x: [0, (particle.id % 2 === 0 ? 8 : -8), 0],
-            opacity: [0.15, 0.5, 0.15],
-            scale: [1, 1.2, 1],
+            y: [0, -25, 0],
+            opacity: [0.1, 0.4, 0.1],
           }}
           transition={{
             duration: particle.duration,
