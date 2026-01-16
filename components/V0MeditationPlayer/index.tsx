@@ -1,6 +1,6 @@
-import React, { useCallback, memo, useState, useMemo } from 'react';
+import React, { useCallback, memo, useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Play, Pause, RotateCcw, RotateCw, ChevronUp, Volume2 } from 'lucide-react';
+import { X, Play, Pause, RotateCcw, RotateCw, ChevronUp, Volume2, Music } from 'lucide-react';
 import { ICONS } from '../../constants';
 
 /**
@@ -36,6 +36,141 @@ const PREFERS_REDUCED_MOTION = typeof window !== 'undefined' &&
 // Optimized particle counts for smooth 60fps - reduced on mobile and when reduced motion preferred
 const PARTICLE_COUNT = PREFERS_REDUCED_MOTION ? 4 : (IS_MOBILE ? 6 : 16);
 const ORBIT_PARTICLE_COUNT = PREFERS_REDUCED_MOTION ? 4 : (IS_MOBILE ? 6 : 12);
+
+/**
+ * PremiumVolumeSlider - Minimalist vertical volume control
+ *
+ * Features:
+ * - Vertical slider with smooth drag interaction
+ * - Elegant glow effects and gradient fills
+ * - Touch-friendly large hit area
+ * - Visual feedback with haptic-feel animations
+ */
+interface VolumeSliderProps {
+  value: number;
+  onChange: (value: number) => void;
+  label: string;
+  icon: React.ReactNode;
+  color: 'cyan' | 'emerald' | 'blue';
+  disabled?: boolean;
+}
+
+const PremiumVolumeSlider = memo(({ value, onChange, label, icon, color, disabled = false }: VolumeSliderProps) => {
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+
+  const colorSchemes = {
+    cyan: {
+      gradient: 'from-cyan-400 to-sky-500',
+      glow: 'rgba(34, 211, 238, 0.5)',
+      track: 'bg-cyan-500/20',
+      text: 'text-cyan-400',
+      iconBg: 'bg-cyan-500/10',
+    },
+    emerald: {
+      gradient: 'from-emerald-400 to-teal-500',
+      glow: 'rgba(52, 211, 153, 0.5)',
+      track: 'bg-emerald-500/20',
+      text: 'text-emerald-400',
+      iconBg: 'bg-emerald-500/10',
+    },
+    blue: {
+      gradient: 'from-blue-400 to-indigo-500',
+      glow: 'rgba(96, 165, 250, 0.5)',
+      track: 'bg-blue-500/20',
+      text: 'text-blue-400',
+      iconBg: 'bg-blue-500/10',
+    },
+  };
+
+  const scheme = colorSchemes[color];
+
+  const updateValueFromPointer = useCallback((e: React.PointerEvent | PointerEvent) => {
+    if (!sliderRef.current) return;
+    const rect = sliderRef.current.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const height = rect.height;
+    // Invert because 0 is at bottom, 1 is at top
+    const newValue = Math.max(0, Math.min(1, 1 - y / height));
+    onChange(Math.round(newValue * 20) / 20); // Snap to 5% increments
+  }, [onChange]);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (disabled) return;
+    e.preventDefault();
+    isDragging.current = true;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    updateValueFromPointer(e);
+  }, [disabled, updateValueFromPointer]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isDragging.current || disabled) return;
+    updateValueFromPointer(e);
+  }, [disabled, updateValueFromPointer]);
+
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    isDragging.current = false;
+    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+  }, []);
+
+  return (
+    <div className={`flex flex-col items-center gap-2 ${disabled ? 'opacity-40 pointer-events-none' : ''}`}>
+      {/* Percentage label */}
+      <span className={`text-xs font-mono ${scheme.text} opacity-80`}>
+        {Math.round(value * 100)}%
+      </span>
+
+      {/* Slider track */}
+      <div
+        ref={sliderRef}
+        className={`relative w-8 h-28 rounded-full ${scheme.track} cursor-pointer touch-none overflow-hidden`}
+        style={{
+          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)',
+        }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+      >
+        {/* Fill bar */}
+        <motion.div
+          className={`absolute bottom-0 left-0 right-0 rounded-full bg-gradient-to-t ${scheme.gradient}`}
+          style={{ height: `${value * 100}%` }}
+          initial={false}
+          animate={{
+            height: `${value * 100}%`,
+            boxShadow: `0 0 20px ${scheme.glow}, inset 0 1px 2px rgba(255,255,255,0.3)`,
+          }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        />
+
+        {/* Thumb indicator */}
+        <motion.div
+          className="absolute left-1/2 -translate-x-1/2 w-6 h-2 rounded-full bg-white"
+          style={{
+            bottom: `calc(${value * 100}% - 4px)`,
+            boxShadow: `0 0 12px ${scheme.glow}, 0 2px 4px rgba(0,0,0,0.3)`,
+          }}
+          initial={false}
+          animate={{
+            bottom: `calc(${value * 100}% - 4px)`,
+          }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        />
+      </div>
+
+      {/* Icon and label */}
+      <div className={`p-2 rounded-full ${scheme.iconBg}`}>
+        {icon}
+      </div>
+      <span className={`text-[10px] font-medium ${scheme.text} opacity-70 tracking-wide uppercase max-w-[60px] truncate`}>
+        {label}
+      </span>
+    </div>
+  );
+});
+
+PremiumVolumeSlider.displayName = 'PremiumVolumeSlider';
 
 interface MeditationPlayerProps {
   // Playback control
@@ -316,7 +451,7 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
             </motion.button>
           </div>
 
-          {/* Expanded controls panel - Glassmorphism */}
+          {/* Premium Volume Controls Panel */}
           <AnimatePresence>
             {showControls && (
               <motion.div
@@ -326,145 +461,81 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                 className="overflow-hidden"
               >
-                <div className="pt-4 pb-4 px-4 sm:px-5 space-y-4 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
-                  {/* Sound Buttons Row */}
-                  <div className="flex items-center justify-center gap-3">
-                    {/* Background Music Button */}
+                <div className="py-6 px-6 sm:px-8 rounded-3xl bg-white/[0.02] backdrop-blur-2xl border border-white/[0.06] shadow-[0_8px_40px_rgba(0,0,0,0.4)]">
+                  {/* Sound Selection Buttons */}
+                  <div className="flex items-center justify-center gap-4 mb-6">
                     {onBackgroundMusicToggle && (
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={onBackgroundMusicToggle}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors ${
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                           backgroundMusicEnabled
-                            ? 'bg-sky-500/20 text-sky-500 hover:bg-sky-500/30'
-                            : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80'
+                            ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.2)]'
+                            : 'bg-white/[0.03] text-white/50 border border-white/[0.05] hover:bg-white/[0.05] hover:text-white/70'
                         }`}
                       >
-                        <span>🎵</span>
-                        <span className="max-w-[80px] truncate">
-                          {backgroundMusicEnabled ? backgroundTrackName : 'Music'}
+                        <Music className="w-4 h-4" />
+                        <span className="max-w-[70px] truncate">
+                          {backgroundMusicEnabled ? backgroundTrackName || 'Music' : 'Music'}
                         </span>
-                      </button>
+                      </motion.button>
                     )}
 
-                    {/* Nature Sound Button */}
                     {onOpenNatureSoundModal && (
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={onOpenNatureSoundModal}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors ${
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                           natureSoundEnabled
-                            ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                            : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80'
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_20px_rgba(52,211,153,0.2)]'
+                            : 'bg-white/[0.03] text-white/50 border border-white/[0.05] hover:bg-white/[0.05] hover:text-white/70'
                         }`}
                       >
-                        <span className="text-emerald-400">{renderNatureIcon(natureSoundIcon, "w-4 h-4")}</span>
-                        <span className="max-w-[80px] truncate">
-                          {natureSoundEnabled ? natureSoundName : 'Nature'}
+                        {renderNatureIcon(natureSoundIcon, "w-4 h-4")}
+                        <span className="max-w-[70px] truncate">
+                          {natureSoundEnabled ? natureSoundName || 'Nature' : 'Nature'}
                         </span>
-                      </button>
+                      </motion.button>
                     )}
                   </div>
 
-                  {/* Voice Volume */}
-                  {onVoiceVolumeChange && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-sky-500/80 flex items-center gap-2">
-                          <Volume2 className="h-4 w-4" />
-                          Voice Volume
-                        </span>
-                        <span className="text-sky-400 font-mono">{Math.round(voiceVolume * 100)}%</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-sky-500/40">0%</span>
-                        <div className="relative flex-1 h-4 flex items-center">
-                          <div className="absolute inset-x-0 h-1.5 rounded-full bg-gradient-to-r from-sky-500/20 to-sky-500/30 pointer-events-none" />
-                          <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.05"
-                            value={voiceVolume}
-                            onChange={(e) => onVoiceVolumeChange(parseFloat(e.target.value))}
-                            className="relative z-10 w-full h-1.5 bg-transparent rounded-full appearance-none cursor-pointer
-                              [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                              [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-sky-500 [&::-webkit-slider-thumb]:to-sky-500
-                              [&::-webkit-slider-thumb]:shadow-[0_0_12px_rgba(59,130,246,0.6),0_0_4px_rgba(59,130,246,0.8)]
-                              [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
-                              [&::-moz-range-thumb]:bg-sky-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:shadow-[0_0_12px_rgba(59,130,246,0.6)]"
-                          />
-                        </div>
-                        <span className="text-xs text-sky-500/40">100%</span>
-                      </div>
-                    </div>
-                  )}
+                  {/* Vertical Volume Sliders */}
+                  <div className="flex items-end justify-center gap-8 sm:gap-12">
+                    {/* Voice Volume - Always shown */}
+                    {onVoiceVolumeChange && (
+                      <PremiumVolumeSlider
+                        value={voiceVolume}
+                        onChange={onVoiceVolumeChange}
+                        label="Voice"
+                        icon={<Volume2 className="w-4 h-4 text-cyan-400" />}
+                        color="cyan"
+                      />
+                    )}
 
-                  {/* Nature Sound Volume (if enabled) */}
-                  {natureSoundEnabled && onNatureSoundVolumeChange && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-emerald-400/80 flex items-center gap-2">
-                          <span className="text-emerald-400">{renderNatureIcon(natureSoundIcon, "w-4 h-4")}</span>
-                          {natureSoundName || 'Nature Sound'}
-                        </span>
-                        <span className="text-emerald-300 font-mono">{Math.round(natureSoundVolume * 100)}%</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-emerald-400/40">0%</span>
-                        <div className="relative flex-1 h-4 flex items-center">
-                          <div className="absolute inset-x-0 h-1.5 rounded-full bg-gradient-to-r from-emerald-500/20 to-sky-500/25 pointer-events-none" />
-                          <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.05"
-                            value={natureSoundVolume}
-                            onChange={(e) => onNatureSoundVolumeChange(parseFloat(e.target.value))}
-                            className="relative z-10 w-full h-1.5 bg-transparent rounded-full appearance-none cursor-pointer
-                              [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                              [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-emerald-400 [&::-webkit-slider-thumb]:to-sky-500
-                              [&::-webkit-slider-thumb]:shadow-[0_0_12px_rgba(52,211,153,0.6),0_0_4px_rgba(52,211,153,0.8)]
-                              [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
-                              [&::-moz-range-thumb]:bg-emerald-400 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:shadow-[0_0_12px_rgba(52,211,153,0.6)]"
-                          />
-                        </div>
-                        <span className="text-xs text-emerald-400/40">100%</span>
-                      </div>
-                    </div>
-                  )}
+                    {/* Nature Sound Volume - Only when enabled */}
+                    {onNatureSoundVolumeChange && (
+                      <PremiumVolumeSlider
+                        value={natureSoundVolume}
+                        onChange={onNatureSoundVolumeChange}
+                        label={natureSoundEnabled ? (natureSoundName || 'Nature') : 'Nature'}
+                        icon={<span className="text-emerald-400">{renderNatureIcon(natureSoundIcon, "w-4 h-4")}</span>}
+                        color="emerald"
+                        disabled={!natureSoundEnabled}
+                      />
+                    )}
 
-                  {/* Background Music Volume (if enabled) */}
-                  {backgroundMusicEnabled && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-sky-500/80 flex items-center gap-2">
-                          <span>🎵</span>
-                          Music Volume
-                        </span>
-                        <span className="text-sky-400 font-mono">{Math.round(backgroundVolume * 100)}%</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-sky-500/40">0%</span>
-                        <div className="relative flex-1 h-4 flex items-center">
-                          <div className="absolute inset-x-0 h-1.5 rounded-full bg-gradient-to-r from-sky-500/20 to-sky-500/30 pointer-events-none" />
-                          <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.05"
-                            value={backgroundVolume}
-                            onChange={(e) => onBackgroundVolumeChange(parseFloat(e.target.value))}
-                            className="relative z-10 w-full h-1.5 bg-transparent rounded-full appearance-none cursor-pointer
-                              [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                              [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-sky-500 [&::-webkit-slider-thumb]:to-blue-600
-                              [&::-webkit-slider-thumb]:shadow-[0_0_12px_rgba(59,130,246,0.6),0_0_4px_rgba(59,130,246,0.8)]
-                              [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
-                              [&::-moz-range-thumb]:bg-sky-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:shadow-[0_0_12px_rgba(59,130,246,0.6)]"
-                          />
-                        </div>
-                        <span className="text-xs text-sky-500/40">100%</span>
-                      </div>
-                    </div>
-                  )}
+                    {/* Background Music Volume - Only when enabled */}
+                    <PremiumVolumeSlider
+                      value={backgroundVolume}
+                      onChange={onBackgroundVolumeChange}
+                      label={backgroundMusicEnabled ? (backgroundTrackName || 'Music') : 'Music'}
+                      icon={<Music className="w-4 h-4 text-blue-400" />}
+                      color="blue"
+                      disabled={!backgroundMusicEnabled}
+                    />
+                  </div>
                 </div>
               </motion.div>
             )}
