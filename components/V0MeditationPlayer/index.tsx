@@ -391,8 +391,8 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
             <X className="h-5 w-5" />
           </motion.button>
 
-          {/* Center section - orb + time (pushed toward top) */}
-          <div className="flex-1 flex flex-col items-center justify-start pt-2 sm:pt-4 min-h-0">
+          {/* Center section - orb + time (centered in available space) */}
+          <div className="flex-1 flex flex-col items-center justify-center min-h-0">
             {/* Breathing orb - responsive sizing */}
             <div className="flex-shrink-0">
               <BreathingOrb isPlaying={isBuffering ? true : isPlaying} />
@@ -403,7 +403,7 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="text-center mt-4 sm:mt-6"
+              className="text-center mt-6 sm:mt-8"
             >
               <h1 className="font-sans text-lg sm:text-xl md:text-2xl font-light tracking-wide text-white/90">
                 {isBuffering ? 'Generating...' : 'Meditation'}
@@ -603,36 +603,57 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
 V0MeditationPlayer.displayName = 'V0MeditationPlayer';
 
 /**
- * BreathingOrb - Responsive breathing visualization
- * Scales down significantly on mobile for better layout
+ * BreathingOrb - Mesmerizing breathing visualization
+ * Larger, centered, with ethereal glow effects
  */
 const BreathingOrb = memo(({ isPlaying }: { isPlaying: boolean }) => {
   const orbitParticles = useMemo(() =>
     [...Array(ORBIT_PARTICLE_COUNT)].map((_, i) => ({
       id: i,
       angle: (i / ORBIT_PARTICLE_COUNT) * 360,
-      orbitRadius: 70 + (i % 2) * 12,
-      size: 2 + Math.random() * 2,
+      orbitRadius: 90 + (i % 2) * 15,
+      size: 2 + Math.random() * 2.5,
       duration: 25 + Math.random() * 15,
     })),
     []
   );
 
-  const coreRays = useMemo(() => [...Array(8)].map((_, i) => i * 45), []);
-
   return (
     <div className="relative flex items-center justify-center">
-      {/* Layer 4: Ambient Glow - smaller on mobile */}
+      {/* Layer 5: Outer ethereal ring - pulses slowly */}
       <motion.div
-        className="absolute w-[180px] h-[180px] xs:w-[200px] xs:h-[200px] sm:w-[260px] sm:h-[260px] md:w-[320px] md:h-[320px] rounded-full"
+        className="absolute w-[260px] h-[260px] xs:w-[300px] xs:h-[300px] sm:w-[380px] sm:h-[380px] md:w-[440px] md:h-[440px] rounded-full"
         style={{
-          background: 'radial-gradient(circle, rgba(34, 211, 238, 0.2) 0%, rgba(59, 130, 246, 0.12) 40%, transparent 70%)',
-          filter: 'blur(30px)',
+          border: '1px solid rgba(34, 211, 238, 0.1)',
+          background: 'transparent',
         }}
         animate={isPlaying ? {
-          scale: [1, 1.15, 1.15, 1],
-          opacity: [0.35, 0.6, 0.6, 0.35],
-        } : { scale: 1, opacity: 0.2 }}
+          scale: [1, 1.05, 1],
+          opacity: [0.3, 0.6, 0.3],
+          borderColor: [
+            'rgba(34, 211, 238, 0.1)',
+            'rgba(34, 211, 238, 0.25)',
+            'rgba(34, 211, 238, 0.1)',
+          ],
+        } : { scale: 1, opacity: 0.15 }}
+        transition={{
+          duration: 8,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        }}
+      />
+
+      {/* Layer 4: Ambient Glow - larger and more ethereal */}
+      <motion.div
+        className="absolute w-[240px] h-[240px] xs:w-[280px] xs:h-[280px] sm:w-[340px] sm:h-[340px] md:w-[400px] md:h-[400px] rounded-full"
+        style={{
+          background: 'radial-gradient(circle, rgba(34, 211, 238, 0.15) 0%, rgba(59, 130, 246, 0.08) 50%, transparent 70%)',
+          filter: 'blur(40px)',
+        }}
+        animate={isPlaying ? {
+          scale: [1, 1.12, 1.12, 1],
+          opacity: [0.4, 0.7, 0.7, 0.4],
+        } : { scale: 1, opacity: 0.25 }}
         transition={{
           duration: 19,
           times: [0, 0.21, 0.58, 1],
@@ -641,8 +662,8 @@ const BreathingOrb = memo(({ isPlaying }: { isPlaying: boolean }) => {
         }}
       />
 
-      {/* Layer 3: Particle Orbit - scaled for mobile */}
-      <div className="absolute w-[140px] h-[140px] xs:w-[160px] xs:h-[160px] sm:w-[180px] sm:h-[180px] md:w-[200px] md:h-[200px]">
+      {/* Layer 3: Particle Orbit - larger orbit */}
+      <div className="absolute w-[200px] h-[200px] xs:w-[220px] xs:h-[220px] sm:w-[260px] sm:h-[260px] md:w-[300px] md:h-[300px]">
         {orbitParticles.map((particle) => (
           <motion.div
             key={particle.id}
@@ -652,9 +673,9 @@ const BreathingOrb = memo(({ isPlaying }: { isPlaying: boolean }) => {
               height: particle.size,
               marginLeft: -particle.size / 2,
               marginTop: -particle.size / 2,
-              background: 'radial-gradient(circle, rgba(34, 211, 238, 0.9) 0%, rgba(59, 130, 246, 0.7) 100%)',
+              background: 'radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(34, 211, 238, 0.7) 100%)',
               borderRadius: '50%',
-              boxShadow: `0 0 ${particle.size * 2}px rgba(34, 211, 238, 0.5)`,
+              boxShadow: `0 0 ${particle.size * 3}px rgba(34, 211, 238, 0.5)`,
             }}
             animate={isPlaying ? {
               x: [
@@ -667,35 +688,36 @@ const BreathingOrb = memo(({ isPlaying }: { isPlaying: boolean }) => {
                 Math.sin((particle.angle + 180) * Math.PI / 180) * particle.orbitRadius,
                 Math.sin(particle.angle * Math.PI / 180) * particle.orbitRadius,
               ],
-              opacity: [0.5, 0.8, 0.5],
+              opacity: [0.4, 0.9, 0.4],
             } : {
               x: Math.cos(particle.angle * Math.PI / 180) * particle.orbitRadius,
               y: Math.sin(particle.angle * Math.PI / 180) * particle.orbitRadius,
-              opacity: 0.25,
+              opacity: 0.2,
             }}
             transition={{ duration: particle.duration, repeat: Infinity, ease: 'linear' }}
           />
         ))}
       </div>
 
-      {/* Layer 2: Main Orb - responsive sizes */}
+      {/* Layer 2: Main Orb - larger with glass morphism effect */}
       <motion.div
-        className="relative w-[120px] h-[120px] xs:w-[140px] xs:h-[140px] sm:w-[160px] sm:h-[160px] md:w-[180px] md:h-[180px] lg:w-[200px] lg:h-[200px] rounded-full flex items-center justify-center"
+        className="relative w-[160px] h-[160px] xs:w-[180px] xs:h-[180px] sm:w-[220px] sm:h-[220px] md:w-[260px] md:h-[260px] rounded-full flex items-center justify-center"
         style={{
-          background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.25) 0%, rgba(59, 130, 246, 0.2) 50%, rgba(14, 165, 233, 0.25) 100%)',
-          boxShadow: 'inset 0 0 40px rgba(59, 130, 246, 0.15)',
+          background: 'radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.1) 0%, rgba(34, 211, 238, 0.15) 30%, rgba(59, 130, 246, 0.1) 60%, rgba(14, 165, 233, 0.08) 100%)',
+          boxShadow: 'inset 0 0 60px rgba(34, 211, 238, 0.1), inset 0 0 100px rgba(59, 130, 246, 0.05)',
+          border: '1px solid rgba(255, 255, 255, 0.05)',
         }}
         animate={isPlaying ? {
-          scale: [1, 1.15, 1.15, 1],
+          scale: [1, 1.12, 1.12, 1],
           filter: [
-            'drop-shadow(0 0 30px rgba(34, 211, 238, 0.4))',
-            'drop-shadow(0 0 50px rgba(34, 211, 238, 0.6))',
-            'drop-shadow(0 0 50px rgba(34, 211, 238, 0.6))',
-            'drop-shadow(0 0 30px rgba(34, 211, 238, 0.4))',
+            'drop-shadow(0 0 40px rgba(34, 211, 238, 0.3))',
+            'drop-shadow(0 0 70px rgba(34, 211, 238, 0.5))',
+            'drop-shadow(0 0 70px rgba(34, 211, 238, 0.5))',
+            'drop-shadow(0 0 40px rgba(34, 211, 238, 0.3))',
           ],
         } : {
           scale: 1,
-          filter: 'drop-shadow(0 0 20px rgba(34, 211, 238, 0.3))',
+          filter: 'drop-shadow(0 0 25px rgba(34, 211, 238, 0.2))',
         }}
         transition={{
           duration: 19,
@@ -704,72 +726,57 @@ const BreathingOrb = memo(({ isPlaying }: { isPlaying: boolean }) => {
           ease: 'easeInOut',
         }}
       >
-        {/* Inner gradient */}
+        {/* Inner glow layer */}
         <motion.div
-          className="absolute inset-3 xs:inset-4 sm:inset-5 rounded-full"
+          className="absolute inset-4 xs:inset-5 sm:inset-6 md:inset-8 rounded-full"
           style={{
-            background: 'radial-gradient(circle, rgba(34, 211, 238, 0.3) 0%, rgba(59, 130, 246, 0.15) 60%, transparent 100%)',
-            filter: 'blur(6px)',
+            background: 'radial-gradient(circle, rgba(34, 211, 238, 0.25) 0%, rgba(59, 130, 246, 0.1) 60%, transparent 100%)',
+            filter: 'blur(8px)',
           }}
-          animate={isPlaying ? { opacity: [0.4, 0.8, 0.8, 0.4] } : { opacity: 0.3 }}
+          animate={isPlaying ? { opacity: [0.5, 0.9, 0.9, 0.5] } : { opacity: 0.35 }}
           transition={{ duration: 19, times: [0, 0.21, 0.58, 1], repeat: Infinity, ease: 'easeInOut' }}
         />
 
         {/* Inner ring */}
         <div
-          className="absolute inset-6 xs:inset-7 sm:inset-8 md:inset-10 rounded-full"
+          className="absolute inset-8 xs:inset-10 sm:inset-12 md:inset-14 rounded-full"
           style={{
-            background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.2) 0%, rgba(59, 130, 246, 0.15) 100%)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            background: 'radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.08) 0%, rgba(34, 211, 238, 0.1) 50%, rgba(59, 130, 246, 0.05) 100%)',
+            border: '1px solid rgba(255, 255, 255, 0.06)',
           }}
         />
       </motion.div>
 
-      {/* Layer 1: Inner Core */}
+      {/* Layer 1: Inner Core - luminous center */}
       <motion.div
-        className="absolute w-10 h-10 xs:w-11 xs:h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full z-10"
+        className="absolute w-12 h-12 xs:w-14 xs:h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full z-10"
         style={{
-          background: 'radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(34, 211, 238, 0.8) 40%, rgba(59, 130, 246, 0.4) 70%, transparent 100%)',
-          boxShadow: '0 0 25px rgba(255, 255, 255, 0.5), 0 0 50px rgba(34, 211, 238, 0.4)',
+          background: 'radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(34, 211, 238, 0.7) 40%, rgba(59, 130, 246, 0.3) 70%, transparent 100%)',
+          boxShadow: '0 0 30px rgba(255, 255, 255, 0.6), 0 0 60px rgba(34, 211, 238, 0.4), 0 0 100px rgba(34, 211, 238, 0.2)',
         }}
         animate={isPlaying ? {
-          scale: [1, 1.1, 1],
-          opacity: [0.8, 1, 0.8],
-        } : { scale: 1, opacity: 0.6 }}
+          scale: [1, 1.08, 1],
+          opacity: [0.85, 1, 0.85],
+        } : { scale: 1, opacity: 0.65 }}
         transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-      >
-        {/* Rays */}
-        {coreRays.map((angle) => (
-          <motion.div
-            key={`ray-${angle}`}
-            className="absolute left-1/2 top-1/2 origin-bottom"
-            style={{
-              width: 1.5,
-              height: 20,
-              marginLeft: -0.75,
-              marginTop: -20,
-              background: 'linear-gradient(to top, rgba(255, 255, 255, 0.6), rgba(34, 211, 238, 0.2), transparent)',
-              transform: `rotate(${angle}deg)`,
-              borderRadius: '1px',
-            }}
-            animate={isPlaying ? {
-              scaleY: [1, 1.3, 1],
-              opacity: [0.3, 0.7, 0.3],
-            } : { scaleY: 1, opacity: 0.2 }}
-            transition={{ duration: 2.5, delay: (angle / 360) * 2.5, repeat: Infinity, ease: 'easeInOut' }}
-          />
-        ))}
-      </motion.div>
+      />
 
-      {/* Center dot */}
+      {/* Center bright dot */}
       <motion.div
-        className="absolute w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full z-20"
+        className="absolute w-3 h-3 sm:w-4 sm:h-4 rounded-full z-20"
         style={{
-          background: 'radial-gradient(circle, white 0%, rgba(34, 211, 238, 0.9) 100%)',
-          boxShadow: '0 0 12px rgba(255, 255, 255, 0.8), 0 0 25px rgba(34, 211, 238, 0.6)',
+          background: 'radial-gradient(circle, white 0%, rgba(34, 211, 238, 0.95) 100%)',
+          boxShadow: '0 0 15px rgba(255, 255, 255, 0.9), 0 0 30px rgba(34, 211, 238, 0.7)',
         }}
-        animate={isPlaying ? { scale: [1, 1.2, 1] } : {}}
-        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+        animate={isPlaying ? {
+          scale: [1, 1.15, 1],
+          boxShadow: [
+            '0 0 15px rgba(255, 255, 255, 0.9), 0 0 30px rgba(34, 211, 238, 0.7)',
+            '0 0 25px rgba(255, 255, 255, 1), 0 0 50px rgba(34, 211, 238, 0.9)',
+            '0 0 15px rgba(255, 255, 255, 0.9), 0 0 30px rgba(34, 211, 238, 0.7)',
+          ],
+        } : {}}
+        transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
       />
     </div>
   );
