@@ -396,6 +396,11 @@ const PlayerPage: React.FC = () => {
             await backgroundAudioRef.current.play();
             setIsMusicPlaying(true);
           } catch (playError) {
+            // AbortError means a new load interrupted this play - not a real error
+            if (playError instanceof Error && playError.name === 'AbortError') {
+              console.debug('Music play() interrupted by new load - this is expected');
+              return;
+            }
             console.error('Music playback failed:', playError);
             throw playError;
           }
@@ -482,6 +487,11 @@ const PlayerPage: React.FC = () => {
             await natureSoundAudioRef.current.play();
             setIsNatureSoundPlaying(true);
           } catch (playError) {
+            // AbortError means a new load interrupted this play - not a real error
+            if (playError instanceof Error && playError.name === 'AbortError') {
+              console.debug('Nature sound play() interrupted by new load - this is expected');
+              return;
+            }
             console.error('Nature sound playback failed:', playError);
             throw playError;
           }
