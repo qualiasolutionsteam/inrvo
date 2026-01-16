@@ -113,10 +113,10 @@ const CompactVolumeSlider = memo(({ value, onChange, typeIcon, color, disabled =
         {typeIcon}
       </div>
 
-      {/* Slider track */}
+      {/* Slider track - taller for easier control */}
       <div
         ref={sliderRef}
-        className={`relative w-7 h-16 xs:h-18 sm:w-8 sm:h-20 md:w-9 md:h-24 rounded-full ${scheme.track} cursor-pointer touch-none overflow-hidden`}
+        className={`relative w-8 h-24 xs:h-28 sm:w-9 sm:h-32 md:w-10 md:h-36 rounded-full ${scheme.track} cursor-pointer touch-none overflow-hidden`}
         style={{ boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -136,10 +136,10 @@ const CompactVolumeSlider = memo(({ value, onChange, typeIcon, color, disabled =
 
         {/* Thumb */}
         <motion.div
-          className="absolute left-1/2 -translate-x-1/2 w-5 h-1.5 sm:w-6 sm:h-2 rounded-full bg-white"
-          style={{ boxShadow: `0 0 8px ${scheme.glow}` }}
+          className="absolute left-1/2 -translate-x-1/2 w-6 h-2 sm:w-7 sm:h-2.5 rounded-full bg-white"
+          style={{ boxShadow: `0 0 10px ${scheme.glow}` }}
           initial={false}
-          animate={{ bottom: `calc(${value * 100}% - 3px)` }}
+          animate={{ bottom: `calc(${value * 100}% - 4px)` }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         />
       </div>
@@ -252,8 +252,8 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
             <X className="h-5 w-5" />
           </motion.button>
 
-          {/* Center section - orb + time (flexible space) */}
-          <div className="flex-1 flex flex-col items-center justify-center py-4 sm:py-6 min-h-0">
+          {/* Center section - orb + time (pushed toward top) */}
+          <div className="flex-1 flex flex-col items-center justify-start pt-2 sm:pt-4 min-h-0">
             {/* Breathing orb - responsive sizing */}
             <div className="flex-shrink-0">
               <BreathingOrb isPlaying={isBuffering ? true : isPlaying} />
@@ -279,12 +279,12 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
             </motion.div>
           </div>
 
-          {/* Controls section - stays at bottom */}
+          {/* Controls section - pushed up */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="flex-shrink-0 w-full max-w-md mx-auto space-y-3 sm:space-y-4 pb-4 sm:pb-6"
+            className="flex-shrink-0 w-full max-w-md mx-auto space-y-3 sm:space-y-4 pb-2 sm:pb-4"
           >
             {/* Progress bar */}
             <div className="relative px-1">
@@ -434,31 +434,31 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                       )}
                     </div>
 
-                    {/* Volume Sliders */}
-                    <div className="flex items-end justify-center gap-6 sm:gap-8 md:gap-10">
+                    {/* Volume Sliders - Nature only shows when active */}
+                    <div className="flex items-end justify-center gap-8 sm:gap-10 md:gap-12">
                       {onVoiceVolumeChange && (
                         <CompactVolumeSlider
                           value={voiceVolume}
                           onChange={onVoiceVolumeChange}
-                          typeIcon={<Mic className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />}
+                          typeIcon={<Mic className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400" />}
                           color="cyan"
                         />
                       )}
 
-                      {onNatureSoundVolumeChange && (
+                      {/* Nature sound slider - ONLY shown when a nature sound is active */}
+                      {natureSoundEnabled && onNatureSoundVolumeChange && (
                         <CompactVolumeSlider
                           value={natureSoundVolume}
                           onChange={onNatureSoundVolumeChange}
-                          typeIcon={<span className="text-emerald-400">{renderNatureIcon(natureSoundIcon, "w-4 h-4 sm:w-5 sm:h-5")}</span>}
+                          typeIcon={<span className="text-emerald-400">{renderNatureIcon(natureSoundIcon, "w-5 h-5 sm:w-6 sm:h-6")}</span>}
                           color="emerald"
-                          disabled={!natureSoundEnabled}
                         />
                       )}
 
                       <CompactVolumeSlider
                         value={backgroundVolume}
                         onChange={onBackgroundVolumeChange}
-                        typeIcon={<Music className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />}
+                        typeIcon={<Music className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />}
                         color="blue"
                         disabled={!backgroundMusicEnabled}
                       />
