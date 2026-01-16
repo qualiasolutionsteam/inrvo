@@ -13,9 +13,11 @@ import {
 /**
  * Gemini Chat Edge Function
  *
- * Handles conversational AI for the meditation agent.
- * Unlike gemini-script which forces meditation generation,
- * this endpoint respects the agent's system prompt for natural conversation.
+ * Handles conversational AI for the meditation agent with RAG personalization.
+ * Features:
+ * - User context awareness (name, preferences, history)
+ * - Conversation memory retrieval
+ * - Personalized responses based on past interactions
  */
 
 interface GeminiChatRequest {
@@ -23,6 +25,27 @@ interface GeminiChatRequest {
   systemPrompt?: string;  // System instructions sent separately to Gemini
   maxTokens?: number;
   temperature?: number;
+  includeContext?: boolean; // Whether to fetch user context for personalization
+}
+
+interface UserContext {
+  display_name: string | null;
+  first_name: string | null;
+  preferences: Record<string, unknown> | null;
+  recent_memories: Array<{
+    type: string;
+    content: string;
+    importance: number;
+  }> | null;
+  meditation_count: number;
+  favorite_content_types: string[] | null;
+  recentMeditations?: Array<{
+    prompt: string;
+    content_category: string;
+    content_sub_type: string;
+    meditation_type: string;
+    created_at: string;
+  }>;
 }
 
 interface GeminiChatResponse {
@@ -53,6 +76,102 @@ function escapeXml(unsafe: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;');
+}
+
+/**
+ * Fetch user context for personalization
+ */
+async function getUserContext(
+  supabase: ReturnType<typeof createClient>,
+  userId: string
+): Promise<UserContext | null> {
+  try {
+    // Get user context from RPC function
+    const { data: contextData, error: contextError } = await supabase.rpc('get_user_context', {
+      p_user_id: userId,
+    });
+
+    if (contextError) {
+      console.error('Error fetching user context:', contextError);
+      return null;
+    }
+
+    const context = contextData?.[0] || null;
+    if (!context) return null;
+
+    // Get recent meditations for additional context
+    const { data: recentMeditations } = await supabase
+      .from('meditation_history')
+      .select('prompt, content_category, content_sub_type, meditation_type, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    return {
+      ...context,
+      recentMeditations: recentMeditations || [],
+    };
+  } catch (error) {
+    console.error('Error in getUserContext:', error);
+    return null;
+  }
+}
+
+/**
+ * Build personalization context to inject into the system prompt
+ */
+function buildPersonalizationContext(context: UserContext | null): string {
+  if (!context) return '';
+
+  const parts: string[] = [];
+
+  // User's name
+  const name = context.display_name || context.first_name;
+  if (name) {
+    parts.push(`The user's name is ${name}. Address them by name occasionally to create a personal connection.`);
+  }
+
+  // Meditation experience
+  if (context.meditation_count > 0) {
+    const experienceLevel = context.meditation_count > 50 ? 'experienced' :
+                           context.meditation_count > 10 ? 'regular' : 'newer';
+    parts.push(`This is a ${experienceLevel} practitioner who has completed ${context.meditation_count} meditation sessions.`);
+  }
+
+  // Favorite content types
+  if (context.favorite_content_types && context.favorite_content_types.length > 0) {
+    parts.push(`They often enjoy: ${context.favorite_content_types.join(', ')}.`);
+  }
+
+  // Recent memories (preferences, facts, goals)
+  if (context.recent_memories && context.recent_memories.length > 0) {
+    const memoryContext = context.recent_memories
+      .filter(m => m.importance >= 5)
+      .slice(0, 5)
+      .map(m => `- ${m.type}: ${m.content}`)
+      .join('\n');
+    if (memoryContext) {
+      parts.push(`Things to remember about this user:\n${memoryContext}`);
+    }
+  }
+
+  // Recent meditation sessions
+  if (context.recentMeditations && context.recentMeditations.length > 0) {
+    const recentTypes = [...new Set(context.recentMeditations.map(m => m.content_category || m.meditation_type).filter(Boolean))];
+    if (recentTypes.length > 0) {
+      parts.push(`Recently, they've been exploring: ${recentTypes.join(', ')}.`);
+    }
+  }
+
+  if (parts.length === 0) return '';
+
+  return `
+<user_context>
+${parts.join('\n\n')}
+</user_context>
+
+Use this context to personalize your responses. Be warm, remember what they've shared, and make them feel understood.
+`;
 }
 
 serve(async (req) => {
@@ -109,7 +228,21 @@ serve(async (req) => {
       systemPrompt,
       maxTokens = 500,  // Shorter responses for chat
       temperature = 0.8,  // Slightly more creative for natural conversation
+      includeContext = true,  // Default to including personalization context
     }: GeminiChatRequest = await req.json();
+
+    // Fetch user context for personalization (if enabled)
+    let userContext: UserContext | null = null;
+    if (includeContext) {
+      userContext = await getUserContext(supabase, userId);
+      if (userContext) {
+        log.info('User context loaded', {
+          hasName: !!(userContext.display_name || userContext.first_name),
+          meditationCount: userContext.meditation_count,
+          memoryCount: userContext.recent_memories?.length || 0,
+        });
+      }
+    }
 
     // Sanitize the prompt (but don't strip the system instructions)
     const promptSanitization = sanitizePromptInput(rawPrompt || '', INPUT_LIMITS.thought * 3);
@@ -148,6 +281,8 @@ serve(async (req) => {
       promptLength: prompt.length,
       maxTokens,
       temperature,
+      hasPersonalization: !!userContext,
+      userName: userContext?.display_name || userContext?.first_name || null,
     });
 
     // Call OpenRouter API with circuit breaker and timeout
@@ -162,9 +297,13 @@ serve(async (req) => {
           // Build messages array for OpenAI-compatible format
           const messages: Array<{ role: string; content: string }> = [];
 
-          // Add system prompt if provided
-          if (systemPrompt) {
-            messages.push({ role: 'system', content: systemPrompt });
+          // Add system prompt with personalization context
+          const personalizationContext = buildPersonalizationContext(userContext);
+          if (systemPrompt || personalizationContext) {
+            const fullSystemPrompt = personalizationContext
+              ? `${systemPrompt || ''}\n\n${personalizationContext}`
+              : systemPrompt;
+            messages.push({ role: 'system', content: fullSystemPrompt! });
           }
 
           // Add user message with XML-style boundary to prevent prompt injection

@@ -82,7 +82,7 @@ const PlayerPage: React.FC = () => {
     if (!audioContextRef.current || !audioBufferRef.current) return;
 
     if (isPlaying) {
-      // Pause
+      // Pause voice
       if (audioSourceRef.current) {
         try {
           audioSourceRef.current.stop();
@@ -95,6 +95,16 @@ const PlayerPage: React.FC = () => {
       trackAudio.playbackStopped(currentTime * 1000, duration * 1000);
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+      }
+
+      // Also pause background music
+      if (backgroundAudioRef.current && isMusicPlaying) {
+        backgroundAudioRef.current.pause();
+      }
+
+      // Also pause nature sound
+      if (natureSoundAudioRef.current && isNatureSoundPlaying) {
+        natureSoundAudioRef.current.pause();
       }
     } else {
       // Resume
@@ -119,6 +129,20 @@ const PlayerPage: React.FC = () => {
       setIsPlaying(true);
       trackAudio.playbackStarted();
 
+      // Resume background music if it was playing
+      if (backgroundAudioRef.current && isMusicPlaying) {
+        backgroundAudioRef.current.play().catch(() => {
+          // Ignore autoplay failures
+        });
+      }
+
+      // Resume nature sound if it was playing
+      if (natureSoundAudioRef.current && isNatureSoundPlaying) {
+        natureSoundAudioRef.current.play().catch(() => {
+          // Ignore autoplay failures
+        });
+      }
+
       source.onended = () => {
         if (pauseOffsetRef.current + 0.1 >= duration) {
           setIsPlaying(false);
@@ -128,7 +152,7 @@ const PlayerPage: React.FC = () => {
         }
       };
     }
-  }, [isPlaying, currentTime, duration, playbackRate, audioContextRef, audioSourceRef, audioBufferRef, gainNodeRef, setIsPlaying, setCurrentTime]);
+  }, [isPlaying, currentTime, duration, playbackRate, audioContextRef, audioSourceRef, audioBufferRef, gainNodeRef, setIsPlaying, setCurrentTime, backgroundAudioRef, isMusicPlaying, natureSoundAudioRef, isNatureSoundPlaying]);
 
   // Handle seek
   const handleSeek = useCallback((time: number) => {

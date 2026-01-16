@@ -96,9 +96,7 @@ function isRetryableError(error: unknown, status?: number): boolean {
   // Rate limit errors (429) are retryable
   if (status === 429) return true;
 
-  // Auth errors (401) are retryable ONCE to handle expired tokens
-  if (status === 401) return true;
-
+  // Auth errors (401) are handled specially in the main flow (token refresh)
   // Other auth errors (403) and client errors (4xx) are NOT retryable
   return false;
 }
@@ -197,15 +195,27 @@ async function getAuthToken(): Promise<string | null> {
 /**
  * Call an Edge Function with optional authentication, request tracing, and retry logic
  * Supports both authenticated and anonymous requests
+ * @param functionName - The Edge Function to call
+ * @param body - Request body
+ * @param options - Optional settings
+ * @param options.requireAuth - If true, throw immediately when no auth token is available
  */
 async function callEdgeFunction<T>(
   functionName: string,
   body: Record<string, unknown>,
-  options?: { isFormData?: boolean; timeout?: number; retry?: RetryOptions }
+  options?: { isFormData?: boolean; timeout?: number; retry?: RetryOptions; requireAuth?: boolean }
 ): Promise<T> {
   const token = await getAuthToken();
   const requestId = generateRequestId();
   const retryOpts = { ...DEFAULT_RETRY_OPTIONS, ...options?.retry };
+
+  // Fail early for functions that require auth when no token is available
+  if (options?.requireAuth && !token) {
+    const authError = new Error('Your session has expired. Please sign in again to continue.') as EdgeFunctionError;
+    authError.requestId = requestId;
+    authError.status = 401;
+    throw authError;
+  }
 
   const url = `${SUPABASE_URL}/functions/v1/${functionName}`;
 
@@ -272,6 +282,12 @@ async function callEdgeFunction<T>(
             const delay = calculateBackoffDelay(attempt, retryOpts.baseDelayMs, retryOpts.maxDelayMs);
             await sleep(delay);
             continue;
+          } else {
+            // No token available after refresh - session has expired
+            const authError = new Error('Your session has expired. Please sign in again to continue.') as EdgeFunctionError;
+            authError.requestId = requestId;
+            authError.status = 401;
+            throw authError;
           }
         }
 
@@ -377,6 +393,7 @@ export async function generateSpeech(
     elevenLabsVoiceId,
   }, {
     timeout: 120000, // 120s - long meditations take time
+    requireAuth: true, // TTS requires authentication to prevent API cost abuse
     retry: {
       maxRetries: 1, // Single retry for TTS
       baseDelayMs: 2000,
@@ -470,6 +487,7 @@ export async function elevenLabsCloneVoice(
     removeBackgroundNoise,
   }, {
     timeout: 90000, // 90 seconds for voice cloning
+    requireAuth: true, // Voice cloning requires authentication to prevent API cost abuse
     retry: {
       maxRetries: 2,    // 2 retries for expensive operations
       baseDelayMs: 1000, // 1 second base delay
@@ -519,6 +537,8 @@ export async function geminiGenerateScript(
     durationMinutes: durationMinutes || 5,
     contentCategory,
     targetAgeGroup,
+  }, {
+    requireAuth: true, // AI endpoints require authentication to prevent API cost abuse
   });
 
   return response.script;
@@ -535,6 +555,8 @@ export async function geminiExtendScript(
     thought: '', // Not used for extend operation
     existingScript,
     operation: 'extend',
+  }, {
+    requireAuth: true, // AI endpoints require authentication to prevent API cost abuse
   });
 
   return response.script;
@@ -552,6 +574,8 @@ export async function geminiHarmonizeScript(
     thought: '', // Not used for harmonize operation
     existingScript: script,
     operation: 'harmonize',
+  }, {
+    requireAuth: true, // AI endpoints require authentication to prevent API cost abuse
   });
 
   return response.script;
@@ -579,6 +603,7 @@ export async function geminiChat(
     maxTokens?: number;
     temperature?: number;
     systemPrompt?: string;  // System instructions sent as proper Gemini parameter
+    includeContext?: boolean;  // Whether to include user context for personalization (default: true)
   }
 ): Promise<string> {
   const response = await callEdgeFunction<GeminiChatResponse>('gemini-chat', {
@@ -586,6 +611,9 @@ export async function geminiChat(
     systemPrompt: options?.systemPrompt,
     maxTokens: options?.maxTokens ?? 500,
     temperature: options?.temperature ?? 0.8,
+    includeContext: options?.includeContext ?? true,
+  }, {
+    requireAuth: true, // AI endpoints require authentication to prevent API cost abuse
   });
 
   return response.message;
@@ -603,5 +631,83 @@ export async function isEdgeFunctionAvailable(): Promise<boolean> {
   // Edge functions are available if Supabase is configured
   // They now support anonymous access with IP-based rate limiting
   return !!supabase && !!SUPABASE_URL;
+}
+
+// ============================================================================
+// RAG Service Functions (Personalization)
+// ============================================================================
+
+interface RAGResponse {
+  requestId: string;
+  error?: string;
+}
+
+interface UserContextResponse extends RAGResponse {
+  context: {
+    display_name: string | null;
+    first_name: string | null;
+    preferences: Record<string, unknown> | null;
+    recent_memories: Array<{
+      type: string;
+      content: string;
+      importance: number;
+    }> | null;
+    meditation_count: number;
+    favorite_content_types: string[] | null;
+    recentMeditations: Array<{
+      prompt: string;
+      content_category: string;
+      content_sub_type: string;
+      meditation_type: string;
+      created_at: string;
+    }>;
+  };
+}
+
+interface StoreMemoryResponse extends RAGResponse {
+  memoryId: string;
+}
+
+/**
+ * Get user context for personalization
+ * Retrieves user profile, preferences, and recent memories
+ */
+export async function getUserContext(): Promise<UserContextResponse['context'] | null> {
+  try {
+    const response = await callEdgeFunction<UserContextResponse>('rag-service', {
+      operation: 'get_context',
+    });
+    return response.context;
+  } catch (error) {
+    console.error('Error fetching user context:', error);
+    return null;
+  }
+}
+
+/**
+ * Store a memory about the user for future personalization
+ * Fire-and-forget: doesn't block the UI
+ */
+export function storeUserMemory(
+  memoryType: 'preference' | 'fact' | 'goal' | 'emotion' | 'feedback',
+  content: string,
+  options?: {
+    context?: string;
+    importance?: number;
+    expiresDays?: number;
+  }
+): void {
+  // Fire-and-forget - don't await
+  callEdgeFunction<StoreMemoryResponse>('rag-service', {
+    operation: 'store_memory',
+    memoryType,
+    content,
+    context: options?.context,
+    importance: options?.importance ?? 5,
+    expiresDays: options?.expiresDays,
+  }).catch(error => {
+    // Log but don't throw - this is fire-and-forget
+    console.warn('Failed to store user memory:', error);
+  });
 }
 

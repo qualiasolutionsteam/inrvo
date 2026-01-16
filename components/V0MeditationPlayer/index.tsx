@@ -1,6 +1,6 @@
 import React, { useCallback, memo, useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Play, Pause, RotateCcw, RotateCw, ChevronUp, Volume2, Music } from 'lucide-react';
+import { X, Play, Pause, RotateCcw, RotateCw, ChevronUp, Volume2, VolumeX, Volume1, Music } from 'lucide-react';
 import { ICONS } from '../../constants';
 
 /**
@@ -113,12 +113,15 @@ const PremiumVolumeSlider = memo(({ value, onChange, label, icon, color, disable
     (e.target as HTMLElement).releasePointerCapture(e.pointerId);
   }, []);
 
+  // Get volume icon based on level
+  const VolumeIcon = value === 0 ? VolumeX : value < 0.5 ? Volume1 : Volume2;
+
   return (
     <div className={`flex flex-col items-center gap-2 ${disabled ? 'opacity-40 pointer-events-none' : ''}`}>
-      {/* Percentage label */}
-      <span className={`text-xs font-mono ${scheme.text} opacity-80`}>
-        {Math.round(value * 100)}%
-      </span>
+      {/* Volume level icon */}
+      <div className={`p-1.5 rounded-full ${scheme.iconBg}`}>
+        <VolumeIcon className={`w-3.5 h-3.5 ${scheme.text}`} />
+      </div>
 
       {/* Slider track */}
       <div
@@ -327,7 +330,7 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="w-full max-w-xl space-y-5 sm:space-y-6 mb-4 sm:mb-6 md:mb-8"
+          className="w-full max-w-xl space-y-5 sm:space-y-6 mb-4 sm:mb-6 md:mb-8 mt-6 sm:mt-8"
         >
           {/* Progress bar */}
           <div className="relative px-1">
