@@ -93,7 +93,7 @@ export default function ErrorPage() {
         </h1>
 
         <p className="text-slate-400 text-base leading-relaxed mb-8">
-          {errorMessage || "We're experiencing some technical difficulties. Please try again in a moment."}
+          {errorMessage || "Innrvo is experiencing some technical difficulties. Please try again in a moment."}
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">

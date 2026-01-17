@@ -2089,7 +2089,7 @@ const App: React.FC = () => {
 
       // Check if voice needs to be re-cloned (legacy Fish Audio/Chatterbox voice)
       if (needsReclone) {
-        throw new Error('This voice needs to be re-cloned. Please go to Voice Settings and re-clone your voice with ElevenLabs.');
+        throw new Error('This voice needs to be re-cloned. Please go to Voice Settings and re-clone your voice.');
       }
 
       if (!audioBuffer) {
@@ -2276,7 +2276,7 @@ const App: React.FC = () => {
 
       // Check if voice needs to be re-cloned (legacy Fish Audio/Chatterbox voice)
       if (needsReclone) {
-        throw new Error('This voice needs to be re-cloned. Please go to Voice Settings and re-clone your voice with ElevenLabs.');
+        throw new Error('This voice needs to be re-cloned. Please go to Voice Settings and re-clone your voice.');
       }
 
       if (!base64 || base64.trim() === '') {
@@ -2514,7 +2514,7 @@ const App: React.FC = () => {
 
                             // Check if voice needs to be re-cloned (legacy Fish Audio/Chatterbox voice)
                             if (needsReclone) {
-                              throw new Error('This voice needs to be re-cloned. Please go to Voice Settings and re-clone your voice with ElevenLabs.');
+                              throw new Error('This voice needs to be re-cloned. Please go to Voice Settings and re-clone your voice.');
                             }
 
                             if (!audioBuffer) {

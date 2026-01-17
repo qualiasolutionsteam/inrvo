@@ -210,7 +210,7 @@ const VoiceCard: React.FC<VoiceCardProps> = memo(({
         {/* Provider & Language */}
         <div className="flex items-center gap-2 mb-4 text-xs text-slate-500">
           <span className="px-2 py-0.5 rounded-full bg-white/5 text-slate-400">
-            {voice.provider === 'elevenlabs' ? 'ElevenLabs' : voice.provider || 'AI Voice'}
+            {voice.provider === 'elevenlabs' ? 'Cloned Voice' : voice.provider || 'AI Voice'}
           </span>
           {voice.language && (
             <span className="px-2 py-0.5 rounded-full bg-white/5 text-slate-400">

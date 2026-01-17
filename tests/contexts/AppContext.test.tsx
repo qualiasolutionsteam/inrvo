@@ -79,6 +79,16 @@ vi.mock('../../constants', () => ({
       category: 'nature',
     },
   ],
+  NATURE_SOUNDS: [
+    {
+      id: 'none',
+      name: 'No Sound',
+      description: 'Nature sounds disabled',
+      icon: 'VolumeOff',
+      category: 'noise',
+      audioUrl: '',
+    },
+  ],
 }));
 
 // Mock voice profile cache - return null so tests hit the DB mock
