@@ -12,6 +12,21 @@ import type { VoiceProfile } from '../types';
 import type { BackgroundTrack } from '../constants';
 import type { MeditationType } from '../src/lib/agent/knowledgeBase';
 
+// Rotating placeholders for variety
+const PLACEHOLDERS = [
+  "How are you feeling?",
+  "What's on your mind?",
+  "What do you need right now?",
+  "How can I help today?",
+  "What would feel good?",
+];
+
+// Get a placeholder based on the current session (changes daily)
+const getSessionPlaceholder = (): string => {
+  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+  return PLACEHOLDERS[dayOfYear % PLACEHOLDERS.length];
+};
+
 // Lazy load MeditationEditor and VoiceAgent for bundle optimization
 const MeditationEditor = lazy(() => import('../src/components/MeditationEditor'));
 const VoiceAgent = lazy(() => import('./VoiceAgent'));
@@ -205,6 +220,9 @@ const AgentChatComponent: React.FC<AgentChatProps> = ({
     currentMeditation,
     sendMessage,
   } = useMeditationAgent({ resumeConversationId });
+
+  // Get placeholder - rotates daily for variety
+  const placeholder = useMemo(() => getSessionPlaceholder(), []);
 
   const [inputValue, setInputValue] = useState('');
   const [isRecording, setIsRecording] = useState(false);
@@ -545,7 +563,7 @@ const AgentChatComponent: React.FC<AgentChatProps> = ({
                 value={isRecording ? transcribedText : inputValue}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
-                placeholder={isRecording ? "Listening..." : (hasMessages ? "Share more..." : "How are you feeling?")}
+                placeholder={isRecording ? "Listening..." : (hasMessages ? "Share more..." : placeholder)}
                 rows={1}
                 className={`flex-1 bg-transparent text-base
                          outline-none resize-none py-2
