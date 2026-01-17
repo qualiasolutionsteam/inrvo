@@ -523,19 +523,17 @@ const App: React.FC = () => {
       searchParams.delete('template');
       setSearchParams(searchParams, { replace: true });
 
-      // If user has a voice selected, show the script preview for generation
-      // If no voice, they'll need to select one first (handleGenerateAndPlay handles this)
-      if (selectedVoice) {
-        // Use the template prompt directly as the editable script
-        setEditableScript(script);
-        setOriginalPrompt(script);
-        setShowScriptPreview(true);
-      } else {
-        // No voice selected - prompt to clone/select voice
+      // Always show the template in the meditation editor
+      // The editor has built-in voice selection if no voice is selected
+      setEditableScript(script);
+      setOriginalPrompt(script);
+      setShowScriptPreview(true);
+
+      // Show a helpful toast if no voice selected
+      if (!selectedVoice) {
         toast.info('Select a voice to generate your meditation', {
-          description: 'Clone or choose a voice to bring your template to life',
+          description: 'Choose or clone a voice in the editor below',
         });
-        setShowCloneModal(true);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
