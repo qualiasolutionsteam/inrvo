@@ -1,9 +1,27 @@
 /**
  * User tracking and analytics utilities
  * Integrates with Sentry for production monitoring
+ *
+ * Sentry is lazy-loaded to improve initial bundle size.
+ * Functions check if Sentry is available and gracefully no-op if not.
  */
 
-import * as Sentry from '@sentry/react';
+// ============================================================================
+// Lazy Sentry helpers - avoid synchronous import
+// ============================================================================
+
+/**
+ * Get Sentry module if it's already loaded (lazy)
+ * Returns null if Sentry hasn't been initialized yet
+ */
+async function getSentry() {
+  if (!import.meta.env.PROD) return null;
+  try {
+    return await import('@sentry/react');
+  } catch {
+    return null;
+  }
+}
 
 // ============================================================================
 // User Context
@@ -15,9 +33,13 @@ import * as Sentry from '@sentry/react';
  */
 export function setUserContext(user: { id: string; email?: string }) {
   if (import.meta.env.PROD) {
-    Sentry.setUser({
-      id: user.id,
-      email: user.email,
+    getSentry().then((Sentry) => {
+      if (Sentry) {
+        Sentry.setUser({
+          id: user.id,
+          email: user.email,
+        });
+      }
     });
   }
 }
@@ -27,7 +49,11 @@ export function setUserContext(user: { id: string; email?: string }) {
  */
 export function clearUserContext() {
   if (import.meta.env.PROD) {
-    Sentry.setUser(null);
+    getSentry().then((Sentry) => {
+      if (Sentry) {
+        Sentry.setUser(null);
+      }
+    });
   }
 }
 
@@ -60,11 +86,15 @@ export function trackAction(options: TrackActionOptions) {
 
   // Add breadcrumb in production
   if (import.meta.env.PROD) {
-    Sentry.addBreadcrumb({
-      category: `user.${category}`,
-      message: label ? `${action}: ${label}` : action,
-      level,
-      data,
+    getSentry().then((Sentry) => {
+      if (Sentry) {
+        Sentry.addBreadcrumb({
+          category: `user.${category}`,
+          message: label ? `${action}: ${label}` : action,
+          level,
+          data,
+        });
+      }
     });
   }
 }

@@ -27,13 +27,55 @@ interface EdgeFunctionError extends Error {
 let cachedAuthToken: string | null = null;
 let tokenExpiresAt: number = 0;
 
+// Safety buffer: refresh token 30 seconds before actual expiry
+const TOKEN_EXPIRY_BUFFER_MS = 30 * 1000;
+
+/**
+ * Extract expiry time from JWT token
+ * Returns timestamp in milliseconds, or 0 if parsing fails
+ */
+function getJwtExpiry(token: string): number {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return 0;
+
+    // Decode base64url payload (handle URL-safe characters)
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64));
+
+    if (typeof payload.exp === 'number') {
+      // JWT exp is in seconds, convert to milliseconds
+      return payload.exp * 1000;
+    }
+    return 0;
+  } catch {
+    if (DEBUG) console.warn('[edgeFunctions] Failed to parse JWT expiry');
+    return 0;
+  }
+}
+
+/**
+ * Update cached token with proper expiry from JWT claims
+ */
+function updateCachedToken(token: string): void {
+  cachedAuthToken = token;
+
+  // Extract actual expiry from JWT, or fallback to 55 minutes from now
+  const jwtExpiry = getJwtExpiry(token);
+  if (jwtExpiry > 0) {
+    tokenExpiresAt = jwtExpiry - TOKEN_EXPIRY_BUFFER_MS;
+    if (DEBUG) console.log('[edgeFunctions] Token expires at:', new Date(jwtExpiry).toISOString());
+  } else {
+    // Fallback: assume 1 hour expiry, refresh 5 minutes early
+    tokenExpiresAt = Date.now() + (55 * 60 * 1000);
+  }
+}
+
 // Initialize auth listener to keep token cached
 if (supabase) {
-  supabase.auth.onAuthStateChange((event, session) => {
+  supabase.auth.onAuthStateChange((_event, session) => {
     if (session?.access_token) {
-      cachedAuthToken = session.access_token;
-      // JWT tokens typically expire in 1 hour, refresh 5 min before
-      tokenExpiresAt = Date.now() + (55 * 60 * 1000);
+      updateCachedToken(session.access_token);
     } else {
       cachedAuthToken = null;
       tokenExpiresAt = 0;
@@ -43,8 +85,7 @@ if (supabase) {
   // Also get initial session
   supabase.auth.getSession().then(({ data: { session } }) => {
     if (session?.access_token) {
-      cachedAuthToken = session.access_token;
-      tokenExpiresAt = Date.now() + (55 * 60 * 1000);
+      updateCachedToken(session.access_token);
     }
   });
 }
@@ -178,8 +219,7 @@ async function getAuthToken(): Promise<string | null> {
       const { data: refreshData } = await supabase.auth.refreshSession();
 
       if (refreshData?.session?.access_token) {
-        cachedAuthToken = refreshData.session.access_token;
-        tokenExpiresAt = Date.now() + (55 * 60 * 1000);
+        updateCachedToken(refreshData.session.access_token);
         if (DEBUG) console.log('[edgeFunctions] Got token from refreshSession');
         return refreshData.session.access_token;
       }
@@ -286,8 +326,7 @@ async function callEdgeFunction<T>(
               }
               if (refreshData?.session?.access_token) {
                 refreshedToken = refreshData.session.access_token;
-                cachedAuthToken = refreshedToken;
-                tokenExpiresAt = Date.now() + (55 * 60 * 1000);
+                updateCachedToken(refreshedToken);
                 if (DEBUG) console.log('[edgeFunctions] Got fresh token from refreshSession');
               }
             } catch (e) {

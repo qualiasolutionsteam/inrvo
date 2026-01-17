@@ -1,5 +1,4 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import * as Sentry from '@sentry/react';
 
 interface Props {
   children: ReactNode;
@@ -38,13 +37,18 @@ class ErrorBoundary extends Component<Props, State> {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
 
     // Don't send chunk errors to Sentry (they're user cache issues, not bugs)
-    if (!this.state.isChunkError) {
-      const eventId = Sentry.captureException(error, {
-        extra: {
-          componentStack: errorInfo.componentStack,
-        },
+    // Lazy-load Sentry to avoid including it in the initial bundle
+    if (!this.state.isChunkError && import.meta.env.PROD) {
+      import('@sentry/react').then((Sentry) => {
+        const eventId = Sentry.captureException(error, {
+          extra: {
+            componentStack: errorInfo.componentStack,
+          },
+        });
+        this.setState({ eventId });
+      }).catch(() => {
+        // Sentry not available, skip reporting
       });
-      this.setState({ eventId });
     }
   }
 

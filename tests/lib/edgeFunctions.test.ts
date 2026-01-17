@@ -7,6 +7,7 @@ vi.mock('../../lib/supabase', () => ({
       onAuthStateChange: vi.fn(),
       getSession: vi.fn().mockResolvedValue({ data: { session: { access_token: 'test-token' } } }),
       getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'test-user' } } }),
+      refreshSession: vi.fn().mockResolvedValue({ data: { session: null }, error: { message: 'No session' } }),
     },
   },
 }));
@@ -291,18 +292,18 @@ describe('edgeFunctions', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
-    it('should retry ONCE on 401 auth error to handle expired tokens', async () => {
-      // 401 errors are retried once to handle expired tokens
-      // After retry fails, should throw
+    it('should throw session expired error on 401 when token refresh fails', async () => {
+      // 401 errors trigger token refresh attempt
+      // When refresh fails, should throw user-friendly session expired message
       fetchMock.mockResolvedValue({
         ok: false,
         status: 401,
         json: () => Promise.resolve({ error: 'Unauthorized' }),
       });
 
-      await expect(geminiChat('Test')).rejects.toThrow('Unauthorized');
-      // Default is 3 retries + 1 initial = 4 calls for 401 (retried to handle token refresh)
-      expect(fetchMock).toHaveBeenCalledTimes(4);
+      await expect(geminiChat('Test')).rejects.toThrow('Your session has expired');
+      // Only 1 call - refresh fails immediately so no retry
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
     it('should NOT retry on 403 forbidden', async () => {

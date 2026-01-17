@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import { trackAuth, setUserContext, clearUserContext } from '../src/lib/tracking';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
@@ -22,6 +22,31 @@ interface RetryOptions {
   baseDelayMs?: number;
   maxDelayMs?: number;
   retryableErrors?: string[];
+}
+
+/**
+ * Helper to extract error message from unknown error type
+ */
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String((error as { message: unknown }).message);
+  }
+  return 'Unknown error';
+}
+
+/**
+ * User preferences stored in the database
+ */
+export interface UserPreferences {
+  theme?: 'light' | 'dark' | 'system';
+  defaultVoiceId?: string;
+  backgroundVolume?: number;
+  voiceVolume?: number;
+  playbackRate?: number;
+  autoPlay?: boolean;
+  [key: string]: unknown; // Allow additional properties
 }
 
 const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
@@ -53,9 +78,11 @@ const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
 /**
  * Check if an error is retryable (network/connection issues)
  */
-function isRetryableError(error: any, retryableErrors: string[]): boolean {
+function isRetryableError(error: unknown, retryableErrors: string[]): boolean {
   if (!error) return false;
-  const errorString = String(error.message || error.code || error);
+  // Handle Error objects and objects with message/code properties
+  const errorObj = error as { message?: string; code?: string };
+  const errorString = String(errorObj.message || errorObj.code || error);
   return retryableErrors.some(e => errorString.includes(e));
 }
 
@@ -74,7 +101,7 @@ export async function withRetry<T>(
   options?: RetryOptions
 ): Promise<T> {
   const opts = { ...DEFAULT_RETRY_OPTIONS, ...options };
-  let lastError: any;
+  let lastError: unknown;
 
   for (let attempt = 0; attempt <= opts.maxRetries; attempt++) {
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -92,7 +119,7 @@ export async function withRetry<T>(
       const result = await Promise.race([operation(), timeoutPromise]);
       if (timeoutId) clearTimeout(timeoutId);
       return result;
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (timeoutId) clearTimeout(timeoutId);
       lastError = error;
 
@@ -115,7 +142,7 @@ export async function withRetry<T>(
       console.warn(
         `Database operation failed (attempt ${attempt + 1}/${opts.maxRetries + 1}), ` +
         `retrying in ${Math.round(delay)}ms:`,
-        error.message || error
+        getErrorMessage(error)
       );
 
       await sleep(delay);
@@ -300,8 +327,8 @@ export const signUp = async (email: string, password: string, firstName?: string
     }
 
     return data;
-  } catch (error: any) {
-    trackAuth.signInFailed(error.message || 'Unknown signup error');
+  } catch (error: unknown) {
+    trackAuth.signInFailed(getErrorMessage(error));
     throw error;
   }
 };
@@ -335,8 +362,8 @@ export const signIn = async (email: string, password: string) => {
     }
 
     return data;
-  } catch (error: any) {
-    trackAuth.signInFailed(error.message || 'Unknown sign-in error');
+  } catch (error: unknown) {
+    trackAuth.signInFailed(getErrorMessage(error));
     throw error;
   }
 };
@@ -527,7 +554,7 @@ export const getUserPreferences = async (userId?: string): Promise<any> => {
 /**
  * Update user preferences in database
  */
-export const updateUserPreferences = async (preferences: any, userId?: string): Promise<void> => {
+export const updateUserPreferences = async (preferences: UserPreferences, userId?: string): Promise<void> => {
   if (!supabase) return;
 
   const targetUserId = userId || (await getCurrentUser())?.id;
@@ -576,10 +603,10 @@ export const createVoiceProfile = async (
   const user = await getCurrentUser();
   if (!user || !supabase) throw new Error('User not authenticated or Supabase not configured');
 
-  const profileData: any = {
+  const profileData: Record<string, string | null> = {
     user_id: user.id,
     name,
-    description,
+    description: description ?? null,
     language,
     provider: providerVoiceId ? 'chatterbox' : 'Gemini',
     status: 'READY',
@@ -606,14 +633,15 @@ export const createVoiceProfile = async (
 
     if (error) throw error;
     return data;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Handle duplicate key constraint specifically
-    if (error.code === '23505') {
-      if (error.message?.includes('voice_profiles_user_id_name_key')) {
+    const dbError = error as { code?: string; message?: string };
+    if (dbError.code === '23505') {
+      if (dbError.message?.includes('voice_profiles_user_id_name_key')) {
         throw new Error(`A voice profile named "${name}" already exists. Please choose a different name.`);
       }
       // Handle any other unique constraint violations
-      if (error.message?.includes('duplicate key')) {
+      if (dbError.message?.includes('duplicate key')) {
         throw new Error(`A voice profile with this name already exists. Please choose a different name.`);
       }
     }
@@ -885,11 +913,12 @@ export const createVoiceClone = async (
       throw new Error(error.message || 'Failed to save voice clone. Please check if the voice_clones table exists.');
     }
     return data;
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error in createVoiceClone:', err);
     // Ensure duplicate key errors are properly propagated
-    if (err.code === '23505' && err.message?.includes('duplicate key')) {
-      if (err.message?.includes('unique_user_voice_name') || err.message?.includes('voice_clones')) {
+    const dbError = err as { code?: string; message?: string };
+    if (dbError.code === '23505' && dbError.message?.includes('duplicate key')) {
+      if (dbError.message?.includes('unique_user_voice_name') || dbError.message?.includes('voice_clones')) {
         throw new Error(`A voice clone named "${name}" already exists. Please choose a different name.`);
       }
     }
@@ -1143,36 +1172,39 @@ export const getMeditationHistoryPaginated = async (
 
   console.log('[getMeditationHistoryPaginated] Fetching for user:', user.id);
 
-  return withRetry(async () => {
-    const from = page * pageSize;
-    const to = from + pageSize - 1;
+  // Deduplicate concurrent requests for the same page
+  return deduplicatedQuery(`meditation_history:${user.id}:${page}:${pageSize}`, () =>
+    withRetry(async () => {
+      const from = page * pageSize;
+      const to = from + pageSize - 1;
 
-    console.log('[getMeditationHistoryPaginated] Executing query...');
-    // Use 'estimated' count for better performance on large tables
-    // 'exact' scans the entire table which is slow for 100k+ rows
-    const { data, error, count } = await supabase
-      .from('meditation_history')
-      .select(MEDITATION_HISTORY_FIELDS, { count: 'estimated' })
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .range(from, to);
+      console.log('[getMeditationHistoryPaginated] Executing query...');
+      // Use 'estimated' count for better performance on large tables
+      // 'exact' scans the entire table which is slow for 100k+ rows
+      const { data, error, count } = await supabase
+        .from('meditation_history')
+        .select(MEDITATION_HISTORY_FIELDS, { count: 'estimated' })
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
-    if (error) {
-      console.error('[getMeditationHistoryPaginated] Query error:', error);
-      throw error;
-    }
+      if (error) {
+        console.error('[getMeditationHistoryPaginated] Query error:', error);
+        throw error;
+      }
 
-    const totalCount = count || 0;
-    const hasMore = (page + 1) * pageSize < totalCount;
+      const totalCount = count || 0;
+      const hasMore = (page + 1) * pageSize < totalCount;
 
-    console.log('[getMeditationHistoryPaginated] Success! Items:', data?.length, 'Total:', totalCount);
+      console.log('[getMeditationHistoryPaginated] Success! Items:', data?.length, 'Total:', totalCount);
 
-    return {
-      data: data || [],
-      hasMore,
-      totalCount,
-    };
-  });
+      return {
+        data: data || [],
+        hasMore,
+        totalCount,
+      };
+    })
+  );
 };
 
 export const deleteMeditationHistory = async (id: string): Promise<boolean> => {
@@ -1218,7 +1250,7 @@ export const toggleMeditationFavorite = async (id: string): Promise<boolean> => 
 
   try {
     // Use atomic RPC function for single-query toggle
-    const { data, error } = await supabase.rpc('toggle_meditation_favorite', {
+    const { error } = await supabase.rpc('toggle_meditation_favorite', {
       p_meditation_id: id
     });
 
@@ -1362,9 +1394,9 @@ export const toggleFavoriteAudioTag = async (tagId: string): Promise<string[]> =
 };
 
 // Auth state listener
-export const onAuthStateChange = (callback: (user: any) => void) => {
+export const onAuthStateChange = (callback: (user: { id: string; email?: string } | null) => void) => {
   if (!supabase) return { data: { subscription: null } };
-  return supabase.auth.onAuthStateChange((event, session) => {
+  return supabase.auth.onAuthStateChange((_event, session) => {
     callback(session?.user || null);
   });
 };
