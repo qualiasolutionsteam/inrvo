@@ -43,7 +43,7 @@ const LandingPage = () => {
           whileTap={{ scale: 0.98 }}
           className="relative px-6 py-2 rounded-full bg-gradient-to-r from-sky-500 to-sky-500 text-white font-medium text-sm tracking-wide overflow-hidden shadow-lg shadow-sky-500/25 transition-all duration-300"
         >
-          Get Started
+          Sign Up
         </motion.button>
       </motion.nav>
 
