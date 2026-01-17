@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Trash2, Music, Clock, Mic, RotateCcw } from 'lucide-react';
+import { Play, Trash2, Music, Clock, Mic, RotateCcw, Pencil, Check, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useModals } from '../contexts/ModalContext';
 import { useApp } from '../contexts/AppContext';
 import AppLayout from '../layouts/AppLayout';
 import GlassCard from '../../components/GlassCard';
-import { getMeditationHistoryPaginated, deleteMeditationHistory, MeditationHistory } from '../../lib/supabase';
+import { getMeditationHistoryPaginated, deleteMeditationHistory, updateMeditationTitle, MeditationHistory } from '../../lib/supabase';
 
 // Animation variants
 const containerVariants = {
@@ -34,6 +34,7 @@ interface MeditationCardProps {
   onNavigateToPlayer: () => void;
   onDelete: () => void;
   onRestore: () => void;
+  onRename: (id: string, newTitle: string) => Promise<void>;
 }
 
 const MeditationCard: React.FC<MeditationCardProps> = memo(({
@@ -41,7 +42,13 @@ const MeditationCard: React.FC<MeditationCardProps> = memo(({
   onNavigateToPlayer,
   onDelete,
   onRestore,
+  onRename,
 }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
   const scriptPreview = meditation.title || meditation.enhanced_script || meditation.prompt || 'Untitled meditation';
   const formattedDate = new Date(meditation.created_at).toLocaleDateString('en-US', {
     month: 'short',
@@ -65,12 +72,46 @@ const MeditationCard: React.FC<MeditationCardProps> = memo(({
     }
   };
 
+  // Start editing
+  const handleStartEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditTitle(meditation.title || scriptPreview.slice(0, 100));
+    setIsEditing(true);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  // Save title
+  const handleSave = async () => {
+    if (!editTitle.trim() || isSaving) return;
+    setIsSaving(true);
+    await onRename(meditation.id, editTitle.trim());
+    setIsEditing(false);
+    setIsSaving(false);
+  };
+
+  // Cancel editing
+  const handleCancel = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setIsEditing(false);
+    setEditTitle('');
+  };
+
+  // Handle key events
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSave();
+    } else if (e.key === 'Escape') {
+      handleCancel();
+    }
+  };
+
   return (
     <motion.div variants={cardVariants}>
       <GlassCard
         className="!p-4 border transition-all duration-300 hover:shadow-[0_8px_32px_rgba(0,0,0,0.25)] border-white/5 hover:border-white/15 cursor-pointer"
         hover={false}
-        onClick={hasAudio ? onNavigateToPlayer : undefined}
+        onClick={hasAudio && !isEditing ? onNavigateToPlayer : undefined}
       >
         <div className="flex items-start gap-4">
           {/* Play Button */}
@@ -88,9 +129,49 @@ const MeditationCard: React.FC<MeditationCardProps> = memo(({
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <p className="text-white text-sm font-medium line-clamp-2 mb-2">
-              {scriptPreview}
-            </p>
+            {isEditing ? (
+              <div className="flex items-center gap-2 mb-2" onClick={(e) => e.stopPropagation()}>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onBlur={handleSave}
+                  className="flex-1 bg-white/10 text-white text-sm font-medium px-2 py-1 rounded-lg border border-white/20 focus:border-emerald-500/50 focus:outline-none"
+                  placeholder="Enter title..."
+                  disabled={isSaving}
+                />
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleSave(); }}
+                  disabled={isSaving}
+                  className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
+                  title="Save"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={handleCancel}
+                  className="p-1.5 rounded-lg bg-slate-500/20 text-slate-400 hover:bg-slate-500/30 transition-colors"
+                  title="Cancel"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-start gap-2 mb-2 group/title">
+                <p className="text-white text-sm font-medium line-clamp-2 flex-1">
+                  {scriptPreview}
+                </p>
+                <button
+                  onClick={handleStartEdit}
+                  className="p-1 rounded opacity-0 group-hover/title:opacity-100 text-slate-500 hover:text-white hover:bg-white/10 transition-all shrink-0"
+                  title="Edit title"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
 
             {/* Metadata */}
             <div className="flex items-center gap-3 text-xs text-slate-500 flex-wrap">
@@ -282,6 +363,16 @@ const LibraryPage: React.FC = () => {
     navigate('/');
   }, [setScript, setEnhancedScript, setRestoredScript, savedVoices, setSelectedVoice, navigate]);
 
+  // Handle rename
+  const handleRename = useCallback(async (id: string, newTitle: string) => {
+    const success = await updateMeditationTitle(id, newTitle);
+    if (success) {
+      setMeditations(prev => prev.map(m =>
+        m.id === id ? { ...m, title: newTitle } : m
+      ));
+    }
+  }, []);
+
   // Load more
   const handleLoadMore = () => {
     if (!loadingMore && hasMore) {
@@ -416,6 +507,7 @@ const LibraryPage: React.FC = () => {
                             onNavigateToPlayer={() => navigate(`/play/${meditation.id}`)}
                             onDelete={() => handleDelete(meditation.id)}
                             onRestore={() => handleRestore(meditation)}
+                            onRename={handleRename}
                           />
                         ))}
                       </AnimatePresence>
