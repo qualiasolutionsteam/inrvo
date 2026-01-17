@@ -1308,6 +1308,12 @@ export const ICONS = {
     </svg>
   ),
 
+  Cloud: ({ className = "w-6 h-6" }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M4.5 13.5a6.5 6.5 0 1112.58-3.32A4.5 4.5 0 1118.5 18H5a3.5 3.5 0 01-.5-4.5z" />
+    </svg>
+  ),
+
   CloudRain: ({ className = "w-6 h-6" }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={className}>
       <defs>

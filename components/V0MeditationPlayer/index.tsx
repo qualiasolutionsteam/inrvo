@@ -24,6 +24,11 @@ const renderNatureIcon = (iconName: string | undefined, className: string = "w-4
   return <ICONS.Leaf className={className} />;
 };
 
+// Cloud icon for nature sounds toggle button
+const CloudIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <ICONS.Cloud className={className} />
+);
+
 // Mobile detection for performance optimization
 const IS_MOBILE = typeof window !== 'undefined' && (
   window.matchMedia?.('(max-width: 768px)').matches ||
@@ -434,7 +439,7 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
 
             {/* Playback controls with sound toggles */}
             <div className="flex items-center justify-center gap-3 sm:gap-4">
-              {/* Nature Sound Circle - Left side */}
+              {/* Nature Sound Circle - Left side (Cloud icon) */}
               {onOpenNatureSoundModal && (
                 <motion.button
                   whileTap={{ scale: 0.9 }}
@@ -446,7 +451,7 @@ const V0MeditationPlayer: React.FC<MeditationPlayerProps> = memo(({
                   }`}
                   aria-label="Nature sounds"
                 >
-                  {renderNatureIcon(natureSoundIcon, "h-4 w-4 sm:h-5 sm:w-5")}
+                  <CloudIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                 </motion.button>
               )}
 
