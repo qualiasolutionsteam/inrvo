@@ -1,8 +1,8 @@
 # Supabase Configuration
 # https://supabase.com/docs/guides/cli/config
 
-[project]
-id = "ygweconeysctxpjjnehy"
+# Project ID is passed via --project-ref flag
+# [project] section is deprecated in newer CLI versions
 
 # =============================================================================
 # Edge Functions Configuration
