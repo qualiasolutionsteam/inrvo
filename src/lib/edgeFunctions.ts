@@ -270,12 +270,30 @@ async function callEdgeFunction<T>(
 
         // Special handling for 401 - Force token refresh before retry
         if (response.status === 401 && attempt < retryOpts.maxRetries) {
-          if (DEBUG) console.log(`[edgeFunctions] 401 Unauthorized for ${functionName}, refreshing token and retrying...`);
+          if (DEBUG) console.log(`[edgeFunctions] 401 Unauthorized for ${functionName}, forcing token refresh and retrying...`);
 
-          // Clear cache and force refresh
+          // Clear cache and force a real token refresh (not just getSession which returns cached token)
           cachedAuthToken = null;
           tokenExpiresAt = 0;
-          const refreshedToken = await getAuthToken();
+
+          // Use refreshSession() directly - getSession() returns cached (possibly expired) token
+          let refreshedToken: string | null = null;
+          if (supabase) {
+            try {
+              const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+              if (refreshError) {
+                if (DEBUG) console.log('[edgeFunctions] refreshSession error:', refreshError.message);
+              }
+              if (refreshData?.session?.access_token) {
+                refreshedToken = refreshData.session.access_token;
+                cachedAuthToken = refreshedToken;
+                tokenExpiresAt = Date.now() + (55 * 60 * 1000);
+                if (DEBUG) console.log('[edgeFunctions] Got fresh token from refreshSession');
+              }
+            } catch (e) {
+              if (DEBUG) console.log('[edgeFunctions] refreshSession threw:', e);
+            }
+          }
 
           if (refreshedToken) {
             headers['Authorization'] = `Bearer ${refreshedToken}`;
