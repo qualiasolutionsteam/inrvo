@@ -47,6 +47,7 @@ import { voiceService } from './src/lib/voiceService';
 // See: voiceService.ts also imports edgeFunctions dynamically
 import { convertToWAV } from './src/lib/audioConverter';
 import { creditService } from './src/lib/credits';
+import { ensureAudioContextResumed } from './src/lib/iosAudioUtils';
 
 /**
  * Convert base64 audio to Blob
@@ -409,68 +410,74 @@ const App: React.FC = () => {
         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       }
 
-      // Create gain node for voice volume control
-      if (!gainNodeRef.current) {
-        gainNodeRef.current = audioContextRef.current.createGain();
-        gainNodeRef.current.connect(audioContextRef.current.destination);
-      }
-      gainNodeRef.current.gain.value = voiceVolume;
+      // iOS: Use async IIFE to properly await AudioContext resume before playback
+      (async () => {
+        // iOS Safari/Chrome: Must resume AudioContext before playback
+        await ensureAudioContextResumed(audioContextRef.current);
 
-      // Start playback with playback rate
-      const source = audioContextRef.current.createBufferSource();
-      source.buffer = audioBuffer;
-      source.playbackRate.value = playbackRate;
-      playbackRateRef.current = playbackRate;
-      source.connect(gainNodeRef.current);
-      source.start();
-      audioSourceRef.current = source;
-      playbackStartTimeRef.current = audioContextRef.current.currentTime;
-
-      // Update state
-      setIsPlaying(true);
-      setIsGenerating(false);
-      setGenerationStage('idle');
-
-      // Build timing map
-      const map = buildTimingMap(meditationScript, audioDuration);
-      setTimingMap(map);
-
-      // Start background music
-      if (backgroundTrack) {
-        startBackgroundMusic(backgroundTrack);
-      }
-
-      // Deduct credits if cloned voice
-      if (voice.isCloned && user?.id) {
-        creditService.deductCredits(
-          creditService.calculateTTSCost(meditationScript),
-          'TTS_GENERATE',
-          voice.id,
-          user.id
-        ).catch(err => console.warn('Failed to deduct credits:', err));
-      }
-
-      // Store pending meditation for save-on-exit flow (user decides if they want to save)
-      setPendingMeditation({
-        prompt: meditationScript.substring(0, 100),
-        script: meditationScript,
-        voiceId: voice.id,
-        voiceName: voice.name,
-        backgroundTrackId: backgroundTrack?.id,
-        backgroundTrackName: backgroundTrack?.name,
-        natureSoundId: selectedNatureSound?.id !== 'none' ? selectedNatureSound?.id : undefined,
-        natureSoundName: selectedNatureSound?.id !== 'none' ? selectedNatureSound?.name : undefined,
-        durationSeconds: Math.round(audioDuration),
-        audioTags: audioTags.length > 0 ? audioTags : undefined,
-        base64Audio: base64,
-      });
-
-      source.onended = () => {
-        setIsPlaying(false);
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
+        // Create gain node for voice volume control
+        if (!gainNodeRef.current) {
+          gainNodeRef.current = audioContextRef.current!.createGain();
+          gainNodeRef.current.connect(audioContextRef.current!.destination);
         }
-      };
+        gainNodeRef.current.gain.value = voiceVolume;
+
+        // Start playback with playback rate
+        const source = audioContextRef.current!.createBufferSource();
+        source.buffer = audioBuffer;
+        source.playbackRate.value = playbackRate;
+        playbackRateRef.current = playbackRate;
+        source.connect(gainNodeRef.current);
+        source.start();
+        audioSourceRef.current = source;
+        playbackStartTimeRef.current = audioContextRef.current!.currentTime;
+
+        // Update state
+        setIsPlaying(true);
+        setIsGenerating(false);
+        setGenerationStage('idle');
+
+        // Build timing map
+        const map = buildTimingMap(meditationScript, audioDuration);
+        setTimingMap(map);
+
+        // Start background music
+        if (backgroundTrack) {
+          startBackgroundMusic(backgroundTrack);
+        }
+
+        // Deduct credits if cloned voice
+        if (voice.isCloned && user?.id) {
+          creditService.deductCredits(
+            creditService.calculateTTSCost(meditationScript),
+            'TTS_GENERATE',
+            voice.id,
+            user.id
+          ).catch(err => console.warn('Failed to deduct credits:', err));
+        }
+
+        // Store pending meditation for save-on-exit flow (user decides if they want to save)
+        setPendingMeditation({
+          prompt: meditationScript.substring(0, 100),
+          script: meditationScript,
+          voiceId: voice.id,
+          voiceName: voice.name,
+          backgroundTrackId: backgroundTrack?.id,
+          backgroundTrackName: backgroundTrack?.name,
+          natureSoundId: selectedNatureSound?.id !== 'none' ? selectedNatureSound?.id : undefined,
+          natureSoundName: selectedNatureSound?.id !== 'none' ? selectedNatureSound?.name : undefined,
+          durationSeconds: Math.round(audioDuration),
+          audioTags: audioTags.length > 0 ? audioTags : undefined,
+          base64Audio: base64,
+        });
+
+        source.onended = () => {
+          setIsPlaying(false);
+          if (animationFrameRef.current) {
+            cancelAnimationFrame(animationFrameRef.current);
+          }
+        };
+      })();
 
       // Reset generation state after playback starts
       resetGeneration();
@@ -1689,13 +1696,11 @@ const App: React.FC = () => {
   }, [isPlaying, duration]);
 
   // Resume playback for inline player
-  const handleInlinePlay = useCallback(() => {
+  const handleInlinePlay = useCallback(async () => {
     if (!audioContextRef.current || !audioBufferRef.current || isPlaying) return;
 
-    // Resume audio context if suspended
-    if (audioContextRef.current.state === 'suspended') {
-      audioContextRef.current.resume();
-    }
+    // iOS Safari/Chrome: Must await resume before playback
+    await ensureAudioContextResumed(audioContextRef.current);
 
     // Ensure gain node exists for volume control
     if (!gainNodeRef.current) {
@@ -1738,7 +1743,7 @@ const App: React.FC = () => {
   }, [isPlaying, handleInlinePause, handleInlinePlay]);
 
   // Seek for inline player
-  const handleInlineSeek = useCallback((time: number) => {
+  const handleInlineSeek = useCallback(async (time: number) => {
     const wasPlaying = isPlaying;
     const clampedTime = Math.max(0, Math.min(time, duration));
 
@@ -1764,6 +1769,9 @@ const App: React.FC = () => {
 
     // Resume if was playing
     if (wasPlaying && audioContextRef.current && audioBufferRef.current) {
+      // iOS Safari/Chrome: Must await resume before playback
+      await ensureAudioContextResumed(audioContextRef.current);
+
       // Ensure gain node exists
       if (!gainNodeRef.current) {
         gainNodeRef.current = audioContextRef.current.createGain();
@@ -2125,6 +2133,9 @@ const App: React.FC = () => {
       setCurrentWordIndex(0);
       pauseOffsetRef.current = 0;
 
+      // iOS Safari/Chrome: Must await resume before playback
+      await ensureAudioContextResumed(audioContextRef.current);
+
       // Create gain node for voice volume control
       if (!gainNodeRef.current) {
         gainNodeRef.current = audioContextRef.current.createGain();
@@ -2300,6 +2311,9 @@ const App: React.FC = () => {
           // Ignore errors when stopping
         }
       }
+
+      // iOS Safari/Chrome: Must await resume before playback
+      await ensureAudioContextResumed(audioContextRef.current);
 
       // Create gain node for voice volume control
       if (!gainNodeRef.current) {

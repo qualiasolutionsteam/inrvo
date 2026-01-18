@@ -6,6 +6,7 @@ import { trackAudio } from '../lib/tracking';
 import { getMeditationById, getMeditationAudioSignedUrl, MeditationHistory, saveMeditationHistory } from '../../lib/supabase';
 import { BACKGROUND_TRACKS, NATURE_SOUNDS } from '../../constants';
 import SaveMeditationDialog from '../../components/SaveMeditationDialog';
+import { ensureAudioContextResumed } from '../lib/iosAudioUtils';
 
 const MeditationPlayer = lazy(() => import('../../components/V0MeditationPlayer'));
 
@@ -86,7 +87,7 @@ const PlayerPage: React.FC = () => {
   }, [isPlaying, updatePlaybackTime]);
 
   // Handle play/pause toggle
-  const handleTogglePlayback = useCallback(() => {
+  const handleTogglePlayback = useCallback(async () => {
     if (!audioContextRef.current || !audioBufferRef.current) return;
 
     if (isPlaying) {
@@ -115,10 +116,8 @@ const PlayerPage: React.FC = () => {
         natureSoundAudioRef.current.pause();
       }
     } else {
-      // Resume
-      if (audioContextRef.current.state === 'suspended') {
-        audioContextRef.current.resume();
-      }
+      // iOS Safari/Chrome: Must await resume before playback
+      await ensureAudioContextResumed(audioContextRef.current);
 
       const source = audioContextRef.current.createBufferSource();
       source.buffer = audioBufferRef.current;
@@ -163,7 +162,7 @@ const PlayerPage: React.FC = () => {
   }, [isPlaying, currentTime, duration, playbackRate, audioContextRef, audioSourceRef, audioBufferRef, gainNodeRef, setIsPlaying, setCurrentTime, backgroundAudioRef, isMusicPlaying, natureSoundAudioRef, isNatureSoundPlaying]);
 
   // Handle seek
-  const handleSeek = useCallback((time: number) => {
+  const handleSeek = useCallback(async (time: number) => {
     if (!audioContextRef.current || !audioBufferRef.current) return;
 
     const clampedTime = Math.max(0, Math.min(duration, time));
@@ -181,6 +180,9 @@ const PlayerPage: React.FC = () => {
     setCurrentTime(clampedTime);
 
     if (isPlaying) {
+      // iOS Safari/Chrome: Must await resume before playback
+      await ensureAudioContextResumed(audioContextRef.current);
+
       // Create new source at new position
       const source = audioContextRef.current.createBufferSource();
       source.buffer = audioBufferRef.current;
@@ -611,14 +613,18 @@ const PlayerPage: React.FC = () => {
   }, [audioBufferRef, id, isLoadingMeditation, navigate]);
 
   // Handle visibility change (iOS suspends audio when tab/app backgrounded)
+  // Track if voice was playing when page was hidden
+  const wasPlayingBeforeHiddenRef = useRef(false);
+
   useEffect(() => {
-    const handleVisibilityChange = () => {
+    const handleVisibilityChange = async () => {
       if (document.hidden) {
-        // Page hidden - pause might happen automatically on iOS
+        // Page hidden - store playback state for restoration
+        wasPlayingBeforeHiddenRef.current = isPlaying;
       } else {
         // Page visible again - resume AudioContext if needed
         if (audioContextRef.current?.state === 'suspended') {
-          audioContextRef.current.resume();
+          await audioContextRef.current.resume();
         }
 
         // Resume background music if it was playing
@@ -627,12 +633,49 @@ const PlayerPage: React.FC = () => {
             console.warn('Could not resume music after visibility change:', err);
           });
         }
+
+        // iOS: Restart voice playback if it was playing before backgrounding
+        // AudioBufferSourceNode may have been invalidated by iOS
+        if (wasPlayingBeforeHiddenRef.current && audioContextRef.current && audioBufferRef.current && !isPlaying) {
+          try {
+            await ensureAudioContextResumed(audioContextRef.current);
+
+            // Recreate the audio source
+            const source = audioContextRef.current.createBufferSource();
+            source.buffer = audioBufferRef.current;
+            source.playbackRate.value = playbackRate;
+            playbackRateRef.current = playbackRate;
+
+            if (gainNodeRef.current) {
+              source.connect(gainNodeRef.current);
+            } else {
+              source.connect(audioContextRef.current.destination);
+            }
+
+            source.start(0, pauseOffsetRef.current);
+            audioSourceRef.current = source;
+            playbackStartTimeRef.current = audioContextRef.current.currentTime;
+            setIsPlaying(true);
+
+            source.onended = () => {
+              if (pauseOffsetRef.current + 0.1 >= duration) {
+                setIsPlaying(false);
+                pauseOffsetRef.current = 0;
+                setCurrentTime(0);
+              }
+            };
+          } catch (err) {
+            console.warn('Could not resume voice playback after visibility change:', err);
+          }
+        }
+
+        wasPlayingBeforeHiddenRef.current = false;
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [isMusicPlaying, audioContextRef, backgroundAudioRef]);
+  }, [isMusicPlaying, isPlaying, playbackRate, duration, audioContextRef, backgroundAudioRef, audioBufferRef, audioSourceRef, gainNodeRef, setIsPlaying, setCurrentTime]);
 
   // Silent audio element to keep AudioContext alive on iOS
   const silentAudioRef = useRef<HTMLAudioElement | null>(null);

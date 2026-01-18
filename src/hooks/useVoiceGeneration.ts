@@ -5,6 +5,7 @@ import { geminiService } from '../../geminiService';
 import { voiceService } from '../lib/voiceService';
 import { creditService } from '../lib/credits';
 import { buildTimingMap } from '../lib/textSync';
+import { ensureAudioContextResumed } from '../lib/iosAudioUtils';
 
 type GenerationStage = 'idle' | 'script' | 'voice' | 'ready';
 
@@ -167,6 +168,10 @@ export function useVoiceGeneration(
       if (!audioContextRef.current) {
         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       }
+
+      // iOS Safari/Chrome: Resume AudioContext immediately while still in user gesture context
+      // This ensures the context is in 'running' state before async TTS operations
+      await ensureAudioContextResumed(audioContextRef.current);
 
       // Generate speech with the edited script
       const result = await voiceService.generateSpeech(
