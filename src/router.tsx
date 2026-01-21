@@ -140,6 +140,7 @@ const HowItWorksPage = lazyWithRetry(() => import('./pages/HowItWorksPage'));
 const AboutPage = lazyWithRetry(() => import('./pages/AboutPage'));
 const TermsPage = lazyWithRetry(() => import('./pages/TermsPage'));
 const PrivacyPage = lazyWithRetry(() => import('./pages/PrivacyPage'));
+const VoiceEthicsPage = lazyWithRetry(() => import('./pages/VoiceEthicsPage'));
 const PricingPage = lazyWithRetry(() => import('./pages/PricingPage'));
 const AdminPage = lazyWithRetry(() => import('./pages/AdminPage'));
 const MarketingPage = lazyWithRetry(() => import('./pages/marketing/MarketingPage'));
@@ -275,6 +276,10 @@ export const router = createBrowserRouter([
       {
         path: 'privacy',
         element: <PrivacyPage />,
+      },
+      {
+        path: 'voice-ethics',
+        element: <VoiceEthicsPage />,
       },
       {
         path: 'pricing',
