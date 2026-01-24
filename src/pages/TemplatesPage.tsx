@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '../layouts/AppLayout';
-import { useApp } from '../contexts/AppContext';
+import { useScript } from '../contexts/ScriptContext';
 import GlassCard from '../../components/GlassCard';
 import { ICONS, TemplateCategory } from '../../constants';
 import { useTemplatesByCategory } from '../hooks/useTemplates';
@@ -74,7 +74,7 @@ const getCategoryIcon = (icon: TemplateCategory['icon'], className: string) => {
 
 const TemplatesPage: React.FC = () => {
   const navigate = useNavigate();
-  const { setScript, setRestoredScript } = useApp();
+  const { setScript, setRestoredScript } = useScript();
   const { categories: dbCategories, isLoading } = useTemplatesByCategory();
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
