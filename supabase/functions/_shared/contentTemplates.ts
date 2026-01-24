@@ -123,7 +123,7 @@ ${structure}
 
 REQUIREMENTS:
 - Reference their specific situation in first 50 words
-- Use FIRST PERSON "I" throughout
+- CRITICAL: Write ENTIRELY in FIRST PERSON ("I feel", "I breathe", "I notice", "I am"). NEVER use "you" or "your". The listener speaks AS themselves.
 - Rich sensory details, present tense
 - Include: [pause], [long pause], [deep breath], [exhale slowly]
 - Fresh language (avoid "journey", "sacred")
@@ -151,7 +151,7 @@ ${structure}
 ${audioLine}
 
 STYLE: High-energy "I AM" statements
-FORMAT: FIRST PERSON - Every statement starts with "I am", "I have", "I create"
+FORMAT: CRITICAL - Write ENTIRELY in FIRST PERSON. Every statement starts with "I am", "I have", "I create", "I choose". NEVER use "you" or "your".
 
 REQUIREMENTS:
 - Short, punchy statements (5-10 words each)
@@ -171,7 +171,7 @@ ${structure}
 ${audioLine}
 
 STYLE: Fading, hypnotic affirmations for sleep onset
-FORMAT: FIRST PERSON - soft, dreamy tone
+FORMAT: CRITICAL - Write ENTIRELY in FIRST PERSON ("I drift", "I release", "I am safe"). NEVER use "you" or "your". Soft, dreamy tone.
 
 REQUIREMENTS:
 - Progressive slowing of pace throughout
@@ -212,7 +212,7 @@ ${structure}
 ${audioLine}
 
 STYLE: Narrative-led affirmations with context
-FORMAT: FIRST PERSON throughout
+FORMAT: CRITICAL - Write ENTIRELY in FIRST PERSON ("I feel", "I know", "I embrace"). NEVER use "you" or "your".
 
 STRUCTURE:
 - Affirmation → Brief expansion → Feeling anchor → Next
