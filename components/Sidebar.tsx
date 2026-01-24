@@ -492,7 +492,7 @@ export const Sidebar = memo(({
               ) : null}
 
               {/* Footer links */}
-              <div className="flex items-center justify-center gap-4 pt-1 text-[10px] text-slate-500">
+              <div className="flex items-center justify-center gap-3 pt-1 text-[10px] text-slate-500 flex-wrap">
                 <button onClick={() => handleNavigation('/about')} className="hover:text-slate-300 transition-colors">
                   About
                 </button>
@@ -503,6 +503,10 @@ export const Sidebar = memo(({
                 <span className="text-slate-700">·</span>
                 <button onClick={() => handleNavigation('/privacy')} className="hover:text-slate-300 transition-colors">
                   Privacy
+                </button>
+                <span className="text-slate-700">·</span>
+                <button onClick={() => handleNavigation('/voice-ethics')} className="hover:text-slate-300 transition-colors">
+                  Voice Ethics
                 </button>
               </div>
               <p className="text-[9px] text-slate-600 text-center pt-0.5">© {new Date().getFullYear()} Innrvo</p>
