@@ -521,6 +521,17 @@ const AgentChatComponent: React.FC<AgentChatProps> = ({
         </div>
       )}
 
+      {/* Hero Text - Only when no messages */}
+      {!showMeditationPanel && !hasMessages && (
+        <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-30">
+          <h1 className="text-3xl md:text-5xl font-extralight tracking-tight text-center px-6">
+            <span className="bg-gradient-to-r from-sky-400 via-white to-sky-400 bg-clip-text text-transparent">
+              Speak it into existence.
+            </span>
+          </h1>
+        </div>
+      )}
+
       {/* Input Area - Always fixed at bottom with safe-area support */}
       {!showMeditationPanel && (
         <div
