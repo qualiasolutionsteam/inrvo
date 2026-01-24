@@ -96,12 +96,12 @@ const LandingPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="text-slate-400 text-base md:text-lg max-w-md mx-auto leading-relaxed mb-12"
+            className="text-slate-400 text-sm md:text-base max-w-md mx-auto leading-relaxed mb-12"
           >
             Create personalized meditations in your own voice.
           </motion.p>
 
-          {/* CTA Button - premium glass style */}
+          {/* CTA Button - premium minimal */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -109,14 +109,11 @@ const LandingPage = () => {
           >
             <motion.button
               onClick={() => openAuthModal('signup')}
-              whileHover={{ scale: 1.03 }}
+              whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="group relative px-8 py-4 rounded-full bg-gradient-to-r from-sky-500 to-cyan-400 text-white font-medium tracking-wide overflow-hidden transition-all duration-500"
+              className="px-6 py-2.5 rounded-full bg-white/[0.08] border border-white/[0.12] text-white/90 text-sm font-medium tracking-wide backdrop-blur-sm hover:bg-white/[0.12] hover:border-white/[0.18] transition-all duration-300"
             >
-              <span className="relative z-10">Start Your Journey</span>
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-sky-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-              />
+              Start Your Journey
             </motion.button>
           </motion.div>
         </motion.div>
