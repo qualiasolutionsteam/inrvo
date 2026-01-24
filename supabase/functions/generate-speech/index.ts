@@ -9,6 +9,7 @@ import { withCircuitBreaker, CIRCUIT_CONFIGS, CircuitBreakerError } from "../_sh
 import { getModelId, getVoiceSettings, USE_V3_MODEL, ELEVENLABS_MODELS } from "../_shared/elevenlabsConfig.ts";
 import { prepareMeditationText } from "../_shared/textPreprocessing.ts";
 import { sanitizeScriptContent, INPUT_LIMITS } from "../_shared/sanitization.ts";
+import { chunkText, needsChunking, type TextChunk } from "../_shared/textChunking.ts";
 
 /**
  * Generate Speech - Unified TTS endpoint using ElevenLabs
@@ -312,6 +313,141 @@ async function runElevenLabsTTS(
 }
 
 // ============================================================================
+// Chunked TTS for Long Text (>5000 characters)
+// ============================================================================
+
+/**
+ * Generate TTS for a single chunk with context for continuity
+ */
+async function generateChunkAudio(
+  chunk: TextChunk,
+  elevenLabsVoiceId: string,
+  options: GenerateSpeechRequest['voiceSettings'],
+  apiKey: string,
+  log: ReturnType<typeof createLogger>
+): Promise<ArrayBuffer> {
+  const modelId = getModelId();
+  const { text: preparedText } = prepareMeditationText(chunk.text);
+
+  const voiceSettings = USE_V3_MODEL
+    ? getVoiceSettings(ELEVENLABS_MODELS.V3, {
+        stability: options?.stability,
+        similarity_boost: options?.similarityBoost,
+      })
+    : getVoiceSettings(ELEVENLABS_MODELS.V2, {
+        stability: options?.stability,
+        similarity_boost: options?.similarityBoost,
+        style: options?.style,
+        use_speaker_boost: options?.useSpeakerBoost,
+      });
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TTS_TIMEOUT_MS);
+
+  try {
+    const requestBody: Record<string, unknown> = {
+      text: preparedText,
+      model_id: modelId,
+      voice_settings: voiceSettings,
+    };
+
+    // Add context for continuity between chunks
+    if (chunk.previousText) {
+      requestBody.previous_text = chunk.previousText;
+    }
+    if (chunk.nextText) {
+      requestBody.next_text = chunk.nextText;
+    }
+
+    log.info(`Generating chunk ${chunk.index + 1}`, {
+      textLength: preparedText.length,
+      hasPreviousContext: !!chunk.previousText,
+      hasNextContext: !!chunk.nextText,
+    });
+
+    const response = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${elevenLabsVoiceId}?output_format=mp3_44100_128`,
+      {
+        method: 'POST',
+        headers: {
+          'xi-api-key': apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      log.error(`ElevenLabs chunk ${chunk.index + 1} error`, { status: response.status, error: errorText });
+      throw new Error(`ElevenLabs API error: ${response.status} - ${errorText}`);
+    }
+
+    return await response.arrayBuffer();
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * Generate TTS for long text by chunking and concatenating
+ * Uses previous_text/next_text for smooth transitions between chunks
+ */
+async function runChunkedElevenLabsTTS(
+  text: string,
+  elevenLabsVoiceId: string,
+  options: GenerateSpeechRequest['voiceSettings'],
+  apiKey: string,
+  log: ReturnType<typeof createLogger>
+): Promise<{ base64: string; format: string }> {
+  const chunks = chunkText(text);
+
+  log.info('Starting chunked TTS generation', {
+    totalLength: text.length,
+    chunkCount: chunks.length,
+    chunkSizes: chunks.map(c => c.text.length),
+  });
+
+  // Generate audio for each chunk sequentially (to maintain order and use context properly)
+  const audioBuffers: ArrayBuffer[] = [];
+
+  for (const chunk of chunks) {
+    const audioBuffer = await generateChunkAudio(
+      chunk,
+      elevenLabsVoiceId,
+      options,
+      apiKey,
+      log
+    );
+    audioBuffers.push(audioBuffer);
+    log.info(`Chunk ${chunk.index + 1}/${chunks.length} complete`, {
+      audioSize: audioBuffer.byteLength,
+    });
+  }
+
+  // Concatenate all audio buffers
+  const totalSize = audioBuffers.reduce((sum, buf) => sum + buf.byteLength, 0);
+  const combined = new Uint8Array(totalSize);
+  let offset = 0;
+
+  for (const buffer of audioBuffers) {
+    combined.set(new Uint8Array(buffer), offset);
+    offset += buffer.byteLength;
+  }
+
+  log.info('Chunked TTS complete', {
+    totalAudioSize: totalSize,
+    chunkCount: chunks.length,
+  });
+
+  return {
+    base64: arrayBufferToBase64(combined.buffer),
+    format: 'audio/mpeg',
+  };
+}
+
+// ============================================================================
 // Main Handler
 // ============================================================================
 
@@ -485,13 +621,22 @@ serve(async (req) => {
     }
 
     // Non-streaming mode: return base64 JSON (legacy behavior)
+    // Use chunked TTS for long texts (>5000 chars) to avoid ElevenLabs limit
+    const usesChunking = needsChunking(text);
+
+    if (usesChunking) {
+      log.info('Text exceeds limit, using chunked TTS', { textLength: text.length });
+    }
+
     const result = await withCircuitBreaker(
       'elevenlabs',
       CIRCUIT_CONFIGS['elevenlabs'],
-      () => runElevenLabsTTS(text, targetVoiceId!, voiceSettings, ELEVENLABS_API_KEY!, log)
+      () => usesChunking
+        ? runChunkedElevenLabsTTS(text, targetVoiceId!, voiceSettings, ELEVENLABS_API_KEY!, log)
+        : runElevenLabsTTS(text, targetVoiceId!, voiceSettings, ELEVENLABS_API_KEY!, log)
     );
 
-    log.info('TTS generation successful', { audioSize: result.base64.length });
+    log.info('TTS generation successful', { audioSize: result.base64.length, chunked: usesChunking });
 
     // Skip compression for audio responses (MP3 is already compressed)
     return await createCompressedResponse(
