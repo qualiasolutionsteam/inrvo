@@ -74,9 +74,21 @@ const LandingPage = () => {
             <motion.img
               src="/logo.png"
               alt="Innrvo"
-              className="h-96 md:h-[28rem] lg:h-[32rem] w-auto object-contain drop-shadow-[0_0_60px_rgba(6,182,212,0.4)]"
+              className="h-96 md:h-[28rem] lg:h-[32rem] w-auto object-contain"
+              style={{
+                filter: "drop-shadow(0 0 60px rgba(6,182,212,0.4))"
+              }}
+              animate={{
+                filter: [
+                  "drop-shadow(0 0 40px rgba(6,182,212,0.3))",
+                  "drop-shadow(0 0 80px rgba(6,182,212,0.5))",
+                  "drop-shadow(0 0 40px rgba(6,182,212,0.3))"
+                ]
+              }}
+              transition={{
+                filter: { duration: 3, repeat: Infinity, ease: "easeInOut" }
+              }}
               whileHover={{ scale: 1.02 }}
-              transition={{ type: "spring", stiffness: 300 }}
             />
           </motion.div>
 
