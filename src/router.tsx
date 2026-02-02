@@ -145,6 +145,7 @@ const PricingPage = lazyWithRetry(() => import('./pages/PricingPage'));
 const AdminPage = lazyWithRetry(() => import('./pages/AdminPage'));
 const MarketingPage = lazyWithRetry(() => import('./pages/marketing/MarketingPage'));
 const BlogPage = lazyWithRetry(() => import('./pages/BlogPage'));
+const BlogViewPage = lazyWithRetry(() => import('./pages/BlogViewPage'));
 const ResetPasswordPage = lazyWithRetry(() => import('./pages/ResetPasswordPage'));
 const EmailVerifiedPage = lazyWithRetry(() => import('./pages/EmailVerifiedPage'));
 const ErrorPage = lazyWithRetry(() => import('./pages/ErrorPage'));
@@ -298,6 +299,14 @@ export const router = createBrowserRouter([
       },
       {
         path: 'blog',
+        element: <BlogViewPage />,
+      },
+      {
+        path: 'blog/:slug',
+        element: <BlogViewPage />,
+      },
+      {
+        path: 'blog-admin',
         element: <BlogPage />,
       },
       {

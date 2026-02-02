@@ -384,6 +384,11 @@ export const Sidebar = memo(({
                 label="Your Voices"
                 onClick={() => handleNavigation('/your-voices')}
               />
+              <MenuItem
+                icon={Icons.Blog}
+                label="Blog"
+                onClick={() => handleNavigation('/blog')}
+              />
               {isAdmin && (
                 <>
                   <div className="mx-1 my-2 h-px bg-gradient-to-r from-transparent via-sky-500/20 to-transparent" />
@@ -395,8 +400,8 @@ export const Sidebar = memo(({
                   />
                   <MenuItem
                     icon={Icons.Blog}
-                    label="Blog"
-                    onClick={() => handleNavigation('/blog')}
+                    label="Blog Manager"
+                    onClick={() => handleNavigation('/blog-admin')}
                     variant="admin"
                   />
                 </>
