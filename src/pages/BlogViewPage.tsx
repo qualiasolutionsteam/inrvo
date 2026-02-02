@@ -342,7 +342,7 @@ const BlogViewPage: React.FC = () => {
         <div className="relative z-10">
           {/* Header */}
           <div className="sticky top-0 z-40 bg-[#020617]/80 backdrop-blur-xl border-b border-white/5">
-            <div className="max-w-5xl mx-auto px-4 py-4">
+            <div className="px-4 sm:px-6 lg:px-10 xl:px-16 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {selectedPost && (
@@ -380,7 +380,7 @@ const BlogViewPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="max-w-5xl mx-auto px-4 py-6">
+          <div className="px-4 sm:px-6 lg:px-10 xl:px-16 py-6">
             <AnimatePresence mode="wait">
               {selectedPost ? (
                 /* Single Post View */
@@ -389,7 +389,7 @@ const BlogViewPage: React.FC = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  className="max-w-3xl mx-auto"
+                  className="w-full"
                 >
                   {/* Post header */}
                   <header className="mb-8 md:mb-12">
@@ -490,7 +490,7 @@ const BlogViewPage: React.FC = () => {
                     <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
                       Wellness Insights
                     </h1>
-                    <p className="text-slate-400 max-w-2xl mx-auto">
+                    <p className="text-slate-400 lg:max-w-3xl xl:max-w-4xl mx-auto">
                       Expert guidance on meditation, mindfulness, and mental wellness to support your journey to inner peace.
                     </p>
                   </div>
@@ -560,7 +560,7 @@ const BlogViewPage: React.FC = () => {
                       </p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                       {filteredPosts.map((post, index) => {
                         const styles = CATEGORY_STYLES[post.category] || CATEGORY_STYLES.wellness;
                         return (
