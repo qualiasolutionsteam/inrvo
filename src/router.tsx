@@ -144,6 +144,7 @@ const VoiceEthicsPage = lazyWithRetry(() => import('./pages/VoiceEthicsPage'));
 const PricingPage = lazyWithRetry(() => import('./pages/PricingPage'));
 const AdminPage = lazyWithRetry(() => import('./pages/AdminPage'));
 const MarketingPage = lazyWithRetry(() => import('./pages/marketing/MarketingPage'));
+const BlogPage = lazyWithRetry(() => import('./pages/BlogPage'));
 const ResetPasswordPage = lazyWithRetry(() => import('./pages/ResetPasswordPage'));
 const EmailVerifiedPage = lazyWithRetry(() => import('./pages/EmailVerifiedPage'));
 const ErrorPage = lazyWithRetry(() => import('./pages/ErrorPage'));
@@ -165,6 +166,7 @@ const routeImports: Record<string, () => Promise<unknown>> = {
   '/about': () => import('./pages/AboutPage'),
   '/pricing': () => import('./pages/PricingPage'),
   '/marketing': () => import('./pages/marketing/MarketingPage'),
+  '/blog': () => import('./pages/BlogPage'),
 };
 
 // Prefetch a route's chunk
@@ -189,6 +191,7 @@ const prefetchMap: Record<string, string[]> = {
   '/clone': ['/your-voices', '/my-audios'],
   '/pricing': ['/', '/my-audios'],
   '/marketing': ['/', '/admin'],
+  '/blog': ['/', '/admin', '/marketing'],
 };
 
 // Hook to prefetch adjacent routes when a page loads
@@ -292,6 +295,10 @@ export const router = createBrowserRouter([
       {
         path: 'marketing',
         element: <MarketingPage />,
+      },
+      {
+        path: 'blog',
+        element: <BlogPage />,
       },
       {
         path: 'auth/reset-password',

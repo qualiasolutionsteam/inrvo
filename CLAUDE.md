@@ -100,12 +100,15 @@ Legacy providers (`fish-audio`, `chatterbox`) are marked for re-cloning to Eleve
 | `gemini-chat` | Conversational AI for script generation |
 | `gemini-script` | Direct script generation |
 | `gemini-live-token` | Token for Gemini Live API |
-| `generate-speech` | ElevenLabs TTS synthesis (main) |
+| `generate-speech` | ElevenLabs TTS synthesis (main, streaming) |
 | `elevenlabs-tts` | ElevenLabs TTS (alternative endpoint) |
 | `elevenlabs-clone` | Voice cloning via ElevenLabs |
 | `health` | Health check endpoint |
 | `delete-user-data` | GDPR data deletion |
 | `export-user-data` | GDPR data export |
+| `auth-emails` | Custom auth email templates |
+| `import-elevenlabs-history` | Import voice history from ElevenLabs |
+| `rag-service` | RAG-based knowledge retrieval |
 
 Shared utilities in `supabase/functions/_shared/`:
 - `circuitBreaker.ts` - Prevents cascading failures (configurable per provider)
@@ -113,6 +116,10 @@ Shared utilities in `supabase/functions/_shared/`:
 - `sanitization.ts` - Input sanitization
 - `securityHeaders.ts` - CORS and security headers
 - `elevenlabsConfig.ts` - ElevenLabs API configuration
+- `textPreprocessing.ts` - Text preparation for TTS (audio tag conversion)
+- `textChunking.ts` - Splits long text for streaming TTS
+- `voiceProfileCache.ts` - Caches voice profile lookups
+- `tracing.ts` - Distributed tracing utilities
 
 ### Resilience Patterns
 
@@ -151,6 +158,8 @@ Core tables (all RLS-protected):
 - `audio_generations` - TTS generation records
 - `templates` / `template_categories` - Meditation templates
 - `audio_tag_presets` - Available audio tags (pauses, breaths, etc.)
+- `tts_response_cache` - Caches TTS responses for repeated requests
+- `audit_log` - Security audit trail
 
 Marketing Portal tables (admin-only):
 - `marketing_deliverables`, `marketing_content_calendar`, `marketing_influencers`
@@ -160,6 +169,9 @@ Marketing Portal tables (admin-only):
 Key RPC functions:
 - `toggle_meditation_favorite` - Atomic favorite toggle
 - `check_user_credits` - Credit balance check
+- `perform_credit_operation` - Atomic credit deduction
+- `get_template_stats` - Template usage analytics
+- `get_user_activity_summary` - Admin analytics
 
 Storage buckets:
 - `voice-samples` - Voice clone audio samples
@@ -219,3 +231,15 @@ Configured in `vite.config.ts`:
 - `onAuthStateChange` is single source of truth (fires `INITIAL_SESSION` on mount)
 - `isSessionReady` flag indicates when access token is available (safe for DB requests)
 - Token cached in `edgeFunctions.ts` to avoid session fetch per API call
+
+## Edge Function Deployment
+
+```bash
+# Deploy single function
+npm run deploy:fn -- generate-speech
+
+# Deploy all functions
+npm run deploy:fn:all
+```
+
+Edge Functions use Deno runtime. Each function imports from `_shared/` for common utilities.

@@ -1400,3 +1400,205 @@ export const onAuthStateChange = (callback: (user: { id: string; email?: string 
     callback(session?.user || null);
   });
 };
+
+// ============================================================================
+// Blog Posts
+// ============================================================================
+
+export interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  content: string;
+  featured_image_url: string | null;
+  category: 'wellness' | 'meditation' | 'mindfulness' | 'sleep' | 'stress' | 'guides' | 'news';
+  tags: string[];
+  status: 'draft' | 'published' | 'archived';
+  author_id: string | null;
+  published_at: string | null;
+  meta_title: string | null;
+  meta_description: string | null;
+  reading_time_minutes: number;
+  view_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BlogCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  color: string;
+  display_order: number;
+  created_at: string;
+}
+
+export interface CreateBlogPostInput {
+  title: string;
+  slug?: string;
+  excerpt?: string;
+  content: string;
+  featured_image_url?: string;
+  category?: BlogPost['category'];
+  tags?: string[];
+  status?: BlogPost['status'];
+  meta_title?: string;
+  meta_description?: string;
+  reading_time_minutes?: number;
+}
+
+export interface UpdateBlogPostInput extends Partial<CreateBlogPostInput> {
+  published_at?: string | null;
+}
+
+// Get all blog posts (admin - includes drafts)
+export const getBlogPosts = async (includeAll = false): Promise<BlogPost[]> => {
+  if (!supabase) return [];
+
+  let query = supabase
+    .from('blog_posts')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (!includeAll) {
+    query = query.eq('status', 'published');
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error('[supabase] Failed to fetch blog posts:', error);
+    throw error;
+  }
+  return data || [];
+};
+
+// Get a single blog post by ID or slug
+export const getBlogPost = async (idOrSlug: string): Promise<BlogPost | null> => {
+  if (!supabase) return null;
+
+  // Try by ID first (UUID format)
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+
+  const { data, error } = await supabase
+    .from('blog_posts')
+    .select('*')
+    .eq(isUUID ? 'id' : 'slug', idOrSlug)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') return null; // Not found
+    console.error('[supabase] Failed to fetch blog post:', error);
+    throw error;
+  }
+  return data;
+};
+
+// Create a new blog post
+export const createBlogPost = async (input: CreateBlogPostInput): Promise<BlogPost> => {
+  if (!supabase) throw new Error('Supabase not initialized');
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  // Generate slug if not provided
+  const slug = input.slug || generateSlug(input.title);
+
+  // Calculate reading time if not provided (avg 200 words/min)
+  const wordCount = input.content.split(/\s+/).length;
+  const readingTime = input.reading_time_minutes || Math.max(1, Math.ceil(wordCount / 200));
+
+  const { data, error } = await supabase
+    .from('blog_posts')
+    .insert({
+      ...input,
+      slug,
+      reading_time_minutes: readingTime,
+      author_id: user.id,
+      published_at: input.status === 'published' ? new Date().toISOString() : null,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[supabase] Failed to create blog post:', error);
+    throw error;
+  }
+  return data;
+};
+
+// Update a blog post
+export const updateBlogPost = async (id: string, input: UpdateBlogPostInput): Promise<BlogPost> => {
+  if (!supabase) throw new Error('Supabase not initialized');
+
+  // If publishing for first time, set published_at
+  const updates: UpdateBlogPostInput & { published_at?: string } = { ...input };
+  if (input.status === 'published' && !input.published_at) {
+    // Check if already published
+    const existing = await getBlogPost(id);
+    if (existing && !existing.published_at) {
+      updates.published_at = new Date().toISOString();
+    }
+  }
+
+  // Recalculate reading time if content changed
+  if (input.content) {
+    const wordCount = input.content.split(/\s+/).length;
+    updates.reading_time_minutes = Math.max(1, Math.ceil(wordCount / 200));
+  }
+
+  const { data, error } = await supabase
+    .from('blog_posts')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[supabase] Failed to update blog post:', error);
+    throw error;
+  }
+  return data;
+};
+
+// Delete a blog post
+export const deleteBlogPost = async (id: string): Promise<void> => {
+  if (!supabase) throw new Error('Supabase not initialized');
+
+  const { error } = await supabase
+    .from('blog_posts')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('[supabase] Failed to delete blog post:', error);
+    throw error;
+  }
+};
+
+// Get blog categories
+export const getBlogCategories = async (): Promise<BlogCategory[]> => {
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from('blog_categories')
+    .select('*')
+    .order('display_order', { ascending: true });
+
+  if (error) {
+    console.error('[supabase] Failed to fetch blog categories:', error);
+    throw error;
+  }
+  return data || [];
+};
+
+// Helper to generate slug from title
+function generateSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+}
