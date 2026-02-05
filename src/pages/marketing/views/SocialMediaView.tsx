@@ -16,21 +16,14 @@ const platformIcons: Record<Platform, React.ElementType> = {
 };
 
 const platformColors: Record<Platform, { bg: string; text: string; border: string }> = {
-  instagram: { bg: 'bg-gradient-to-r from-pink-500 to-purple-500', text: 'text-white', border: 'border-pink-300' },
-  facebook: { bg: 'bg-blue-500', text: 'text-white', border: 'border-blue-300' },
-  tiktok: { bg: 'bg-slate-800', text: 'text-white', border: 'border-slate-400' },
-  twitter: { bg: 'bg-slate-700', text: 'text-white', border: 'border-slate-400' },
-  linkedin: { bg: 'bg-blue-600', text: 'text-white', border: 'border-blue-400' },
-  youtube: { bg: 'bg-red-500', text: 'text-white', border: 'border-red-300' },
-  multiple: { bg: 'bg-violet-500', text: 'text-white', border: 'border-violet-300' },
+  instagram: { bg: 'bg-gradient-to-r from-pink-500 to-purple-500', text: 'text-white', border: 'border-pink-500/30' },
+  facebook: { bg: 'bg-blue-500', text: 'text-white', border: 'border-blue-500/30' },
+  tiktok: { bg: 'bg-slate-700', text: 'text-white', border: 'border-slate-500/30' },
+  twitter: { bg: 'bg-slate-600', text: 'text-white', border: 'border-slate-400/30' },
+  linkedin: { bg: 'bg-blue-600', text: 'text-white', border: 'border-blue-500/30' },
+  youtube: { bg: 'bg-red-500', text: 'text-white', border: 'border-red-500/30' },
+  multiple: { bg: 'bg-violet-500', text: 'text-white', border: 'border-violet-500/30' },
 };
-
-// Card component for bright theme
-const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md transition-shadow ${className}`}>
-    {children}
-  </div>
-);
 
 interface ContentDetailModalProps {
   content: MarketingContentCalendar;
@@ -62,14 +55,14 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <motion.div
         initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 20 }}
-        className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden"
+        className="w-full max-w-lg glass-elevated rounded-2xl overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Header with platform color */}
@@ -102,29 +95,29 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
         <div className="p-6 space-y-4">
           {content.hook && (
             <div>
-              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Hook</label>
-              <p className="text-slate-800 mt-1 font-medium">{content.hook}</p>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Hook</label>
+              <p className="text-white mt-1 font-medium">{content.hook}</p>
             </div>
           )}
 
           {content.caption && (
             <div>
-              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Caption</label>
-              <p className="text-slate-600 mt-1 text-sm whitespace-pre-wrap leading-relaxed">{content.caption}</p>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Caption</label>
+              <p className="text-slate-300 mt-1 text-sm whitespace-pre-wrap leading-relaxed">{content.caption}</p>
             </div>
           )}
 
           {content.visual_concept && (
             <div>
-              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Visual Concept</label>
-              <p className="text-slate-600 mt-1 text-sm">{content.visual_concept}</p>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Visual Concept</label>
+              <p className="text-slate-300 mt-1 text-sm">{content.visual_concept}</p>
             </div>
           )}
 
           <div className="flex items-center gap-2 pt-2">
             <StatusBadge status={content.status} />
             {content.client_approved && (
-              <span className="text-emerald-600 text-xs flex items-center gap-1 bg-emerald-50 px-2 py-1 rounded-full">
+              <span className="text-emerald-400 text-xs flex items-center gap-1 bg-emerald-500/10 px-2 py-1 rounded-full">
                 <Check className="w-3 h-3" /> Client Approved
               </span>
             )}
@@ -140,7 +133,7 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                   value={feedback}
                   onChange={e => setFeedback(e.target.value)}
                   placeholder="Describe the changes needed..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-300 resize-none"
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl p-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500/30 resize-none"
                   rows={3}
                 />
                 <div className="flex gap-3">
@@ -153,7 +146,7 @@ const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                   </button>
                   <button
                     onClick={() => setShowFeedback(false)}
-                    className="px-4 py-2 text-slate-500 hover:text-slate-700 text-sm font-medium"
+                    className="px-4 py-2 text-slate-400 hover:text-white text-sm font-medium"
                   >
                     Cancel
                   </button>
@@ -212,12 +205,10 @@ const SocialMediaView: React.FC = () => {
     const days: (Date | null)[] = [];
     const firstDay = startOfMonth.getDay();
 
-    // Add empty days for alignment
     for (let i = 0; i < firstDay; i++) {
       days.push(null);
     }
 
-    // Add all days of the month
     for (let d = 1; d <= endOfMonth.getDate(); d++) {
       days.push(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), d));
     }
@@ -246,10 +237,10 @@ const SocialMediaView: React.FC = () => {
           animate={{ opacity: 1, scale: 1 }}
           className="flex flex-col items-center gap-4"
         >
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-200">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
             <Calendar className="w-8 h-8 text-white animate-pulse" />
           </div>
-          <p className="text-slate-500 font-medium">Loading content calendar...</p>
+          <p className="text-slate-400 font-medium">Loading content calendar...</p>
           <div className="animate-spin rounded-full h-6 w-6 border-2 border-amber-500 border-t-transparent" />
         </motion.div>
       </div>
@@ -260,25 +251,25 @@ const SocialMediaView: React.FC = () => {
     <div className="space-y-6">
       {/* Social Media Deliverables Summary */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <Card className="p-5">
+        <div className="glass rounded-2xl p-5">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-xl bg-amber-50">
-              <FileText className="w-5 h-5 text-amber-600" />
+            <div className="p-2 rounded-xl bg-amber-500/10">
+              <FileText className="w-5 h-5 text-amber-400" />
             </div>
-            <h3 className="text-lg font-semibold text-slate-800">Social Media Deliverables</h3>
+            <h3 className="text-lg font-semibold text-white">Social Media Deliverables</h3>
           </div>
           <div className="flex flex-wrap gap-2">
             {socialDeliverables.slice(0, 4).map(d => (
               <div
                 key={d.id}
-                className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-xl border border-slate-200"
+                className="flex items-center gap-2 px-3 py-2 bg-white/[0.03] rounded-xl border border-white/[0.06]"
               >
-                <span className="text-sm text-slate-700 truncate max-w-[150px]">{d.title}</span>
+                <span className="text-sm text-slate-300 truncate max-w-[150px]">{d.title}</span>
                 <StatusBadge status={d.status} size="sm" />
               </div>
             ))}
           </div>
-        </Card>
+        </div>
       </motion.div>
 
       {/* Calendar Header */}
@@ -286,20 +277,20 @@ const SocialMediaView: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="flex items-center justify-between"
+        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
       >
         <div className="flex items-center gap-3">
           <div className="w-1 h-8 rounded-full bg-gradient-to-b from-amber-500 to-orange-500" />
-          <h2 className="text-xl font-bold text-slate-800">
+          <h2 className="text-xl font-bold text-white">
             {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </h2>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           {/* Platform Filter */}
           <select
             value={platformFilter}
             onChange={e => setPlatformFilter(e.target.value as Platform | 'all')}
-            className="bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-300"
+            className="flex-1 sm:flex-none bg-white/[0.03] border border-white/10 rounded-xl px-3 sm:px-4 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500/30"
           >
             <option value="all">All Platforms</option>
             <option value="instagram">Instagram</option>
@@ -307,16 +298,16 @@ const SocialMediaView: React.FC = () => {
             <option value="linkedin">LinkedIn</option>
           </select>
           {/* Month Navigation */}
-          <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1">
+          <div className="flex items-center gap-1 glass rounded-xl p-1">
             <button
               onClick={goToPreviousMonth}
-              className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
+              className="p-2 text-slate-400 hover:text-white hover:bg-white/[0.05] rounded-lg transition-colors"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
               onClick={goToNextMonth}
-              className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
+              className="p-2 text-slate-400 hover:text-white hover:bg-white/[0.05] rounded-lg transition-colors"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
@@ -330,12 +321,12 @@ const SocialMediaView: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <Card className="p-4 overflow-x-auto">
+        <div className="glass rounded-2xl p-3 sm:p-4 overflow-x-auto">
           <div className="min-w-[700px]">
             {/* Day Headers */}
             <div className="grid grid-cols-7 gap-1 mb-2">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="text-center text-xs font-semibold text-slate-400 uppercase tracking-wider py-3">
+                <div key={day} className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider py-3">
                   {day}
                 </div>
               ))}
@@ -345,7 +336,7 @@ const SocialMediaView: React.FC = () => {
             <div className="grid grid-cols-7 gap-1">
               {calendarDays.map((date, index) => {
                 if (!date) {
-                  return <div key={`empty-${index}`} className="min-h-[110px] bg-slate-50/50 rounded-xl" />;
+                  return <div key={`empty-${index}`} className="min-h-[100px] sm:min-h-[110px] bg-white/[0.01] rounded-xl" />;
                 }
 
                 const dayItems = getItemsForDate(date);
@@ -355,16 +346,16 @@ const SocialMediaView: React.FC = () => {
                 return (
                   <div
                     key={date.toISOString()}
-                    className={`min-h-[110px] p-2 rounded-xl border transition-all ${
+                    className={`min-h-[100px] sm:min-h-[110px] p-2 rounded-xl border transition-all ${
                       isToday
-                        ? 'bg-violet-50 border-violet-200 ring-2 ring-violet-500/20'
+                        ? 'bg-sky-500/10 border-sky-500/30 ring-1 ring-sky-500/20'
                         : hasContent
-                        ? 'bg-white border-slate-200 hover:shadow-md hover:border-slate-300'
-                        : 'bg-slate-50/50 border-slate-100'
+                        ? 'bg-white/[0.02] border-white/[0.08] hover:border-white/15'
+                        : 'bg-white/[0.01] border-white/[0.04]'
                     }`}
                   >
                     <div className={`text-sm font-semibold mb-2 ${
-                      isToday ? 'text-violet-600' : hasContent ? 'text-slate-700' : 'text-slate-400'
+                      isToday ? 'text-sky-400' : hasContent ? 'text-slate-300' : 'text-slate-600'
                     }`}>
                       {date.getDate()}
                     </div>
@@ -394,7 +385,7 @@ const SocialMediaView: React.FC = () => {
               })}
             </div>
           </div>
-        </Card>
+        </div>
       </motion.div>
 
       {/* Empty state */}
@@ -405,11 +396,11 @@ const SocialMediaView: React.FC = () => {
           className="flex flex-col items-center justify-center py-16"
         >
           <div className="max-w-md text-center">
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center mx-auto mb-6">
-              <Calendar className="w-10 h-10 text-amber-600" />
+            <div className="w-20 h-20 rounded-3xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-6">
+              <Calendar className="w-10 h-10 text-amber-400" />
             </div>
-            <h3 className="text-2xl font-bold text-slate-800 mb-3">No Content Scheduled</h3>
-            <p className="text-slate-500">
+            <h3 className="text-2xl font-bold text-white mb-3">No Content Scheduled</h3>
+            <p className="text-slate-400">
               No content is scheduled for this month yet. Content will appear here once added by the agency.
             </p>
           </div>
@@ -423,13 +414,13 @@ const SocialMediaView: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="p-5">
+          <div className="glass rounded-2xl p-5">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-xl bg-violet-50">
-                <Sparkles className="w-5 h-5 text-violet-600" />
+              <div className="p-2 rounded-xl bg-violet-500/10">
+                <Sparkles className="w-5 h-5 text-violet-400" />
               </div>
-              <h3 className="text-lg font-semibold text-slate-800">Upcoming Posts</h3>
-              <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full">
+              <h3 className="text-lg font-semibold text-white">Upcoming Posts</h3>
+              <span className="text-xs font-medium text-slate-500 bg-white/[0.05] px-2.5 py-1 rounded-full">
                 {filteredItems.length} scheduled
               </span>
             </div>
@@ -441,19 +432,19 @@ const SocialMediaView: React.FC = () => {
                   <button
                     key={item.id}
                     onClick={() => setSelectedContent(item)}
-                    className="w-full text-left p-4 rounded-xl border border-slate-200 hover:border-violet-300 hover:shadow-md transition-all group"
+                    className="w-full text-left p-3 sm:p-4 rounded-xl border border-white/[0.06] hover:border-sky-500/20 bg-white/[0.02] hover:bg-white/[0.04] transition-all group"
                   >
-                    <div className="flex items-start gap-4">
-                      <div className={`p-2.5 rounded-xl ${colors.bg} shadow-sm`}>
+                    <div className="flex items-start gap-3 sm:gap-4">
+                      <div className={`p-2 sm:p-2.5 rounded-xl ${colors.bg} shadow-sm flex-shrink-0`}>
                         <Icon className="w-4 h-4 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-semibold text-slate-800 capitalize">{item.content_type}</span>
+                          <span className="text-sm font-semibold text-white capitalize">{item.content_type}</span>
                           <StatusBadge status={item.status} size="sm" />
                         </div>
-                        <p className="text-sm text-slate-600 line-clamp-2">{item.hook || item.caption}</p>
-                        <p className="text-xs text-slate-400 mt-2">
+                        <p className="text-sm text-slate-400 line-clamp-2">{item.hook || item.caption}</p>
+                        <p className="text-xs text-slate-500 mt-2">
                           {new Date(item.scheduled_date).toLocaleDateString('en-US', {
                             weekday: 'short',
                             month: 'short',
@@ -466,7 +457,7 @@ const SocialMediaView: React.FC = () => {
                 );
               })}
             </div>
-          </Card>
+          </div>
         </motion.div>
       )}
 

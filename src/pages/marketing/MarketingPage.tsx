@@ -88,23 +88,22 @@ const MarketingPage: React.FC = () => {
   const handleRefreshData = useCallback(async () => {
     setIsRefreshing(true);
     setRefreshKey(prev => prev + 1);
-    // Small delay for visual feedback
     setTimeout(() => setIsRefreshing(false), 500);
   }, []);
 
   if (authLoading || isCheckingAdmin) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-sky-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="flex flex-col items-center gap-4"
         >
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-200">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-500 to-violet-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
             <Sparkles className="w-8 h-8 text-white animate-pulse" />
           </div>
-          <div className="animate-spin rounded-full h-6 w-6 border-2 border-violet-500 border-t-transparent" />
-          <p className="text-sm text-slate-500">Verifying access...</p>
+          <div className="animate-spin rounded-full h-6 w-6 border-2 border-sky-500 border-t-transparent" />
+          <p className="text-sm text-slate-400">Verifying access...</p>
         </motion.div>
       </div>
     );
@@ -114,24 +113,23 @@ const MarketingPage: React.FC = () => {
     return null;
   }
 
-  const tabs: Array<{ id: MarketingTab; label: string; icon: React.ElementType; color: string }> = [
-    { id: 'overview', label: 'Overview', icon: LayoutDashboard, color: 'from-violet-500 to-indigo-500' },
-    { id: 'strategy', label: 'Strategy', icon: Target, color: 'from-rose-500 to-pink-500' },
-    { id: 'social', label: 'Social', icon: Calendar, color: 'from-amber-500 to-orange-500' },
-    { id: 'influencers', label: 'Influencers', icon: Users, color: 'from-emerald-500 to-sky-500' },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3, color: 'from-sky-500 to-sky-500' },
-    { id: 'communication', label: 'Messages', icon: MessageSquare, color: 'from-fuchsia-500 to-purple-500' },
+  const tabs: Array<{ id: MarketingTab; label: string; icon: React.ElementType; gradient: string }> = [
+    { id: 'overview', label: 'Overview', icon: LayoutDashboard, gradient: 'from-sky-500 to-cyan-400' },
+    { id: 'strategy', label: 'Strategy', icon: Target, gradient: 'from-rose-500 to-pink-400' },
+    { id: 'social', label: 'Social', icon: Calendar, gradient: 'from-amber-500 to-orange-400' },
+    { id: 'influencers', label: 'Influencers', icon: Users, gradient: 'from-emerald-500 to-teal-400' },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3, gradient: 'from-violet-500 to-purple-400' },
+    { id: 'communication', label: 'Messages', icon: MessageSquare, gradient: 'from-fuchsia-500 to-pink-400' },
   ];
 
   const activeTabData = tabs.find(t => t.id === activeTab);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30">
-      {/* Decorative background elements */}
+    <div className="min-h-screen relative">
+      {/* Subtle background decoration */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-violet-200/40 to-indigo-200/40 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-sky-200/40 to-sky-200/40 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-violet-100/20 to-transparent rounded-full" />
+        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-sky-500/[0.04] rounded-full blur-[120px]" />
+        <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] bg-violet-500/[0.04] rounded-full blur-[120px]" />
       </div>
 
       <div className="relative z-10 container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-7xl">
@@ -145,7 +143,7 @@ const MarketingPage: React.FC = () => {
           <div className="flex items-center justify-between mb-6">
             <button
               onClick={() => navigate('/')}
-              className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-900 hover:bg-white/60 rounded-xl transition-all"
+              className="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-white hover:bg-white/[0.05] rounded-xl transition-all"
             >
               <ArrowLeft className="w-4 h-4" />
               <span className="text-sm font-medium">Back to App</span>
@@ -153,7 +151,7 @@ const MarketingPage: React.FC = () => {
             <button
               onClick={handleRefreshData}
               disabled={isRefreshing}
-              className="flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm text-slate-600 rounded-xl hover:bg-white hover:shadow-md border border-slate-200/60 transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 glass text-slate-400 rounded-xl hover:text-white hover:border-sky-500/20 transition-all disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline text-sm font-medium">Refresh</span>
@@ -167,7 +165,7 @@ const MarketingPage: React.FC = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 }}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-violet-100 to-indigo-100 text-violet-700 text-xs font-semibold uppercase tracking-wider mb-3"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-semibold uppercase tracking-wider mb-3"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 Marketing Hub
@@ -176,7 +174,7 @@ const MarketingPage: React.FC = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.15 }}
-                className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-slate-900 via-violet-900 to-slate-900 bg-clip-text text-transparent"
+                className="text-3xl sm:text-4xl font-bold text-white"
               >
                 Innrvo Marketing Portal
               </motion.h1>
@@ -184,7 +182,7 @@ const MarketingPage: React.FC = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-slate-500 mt-1"
+                className="text-slate-400 mt-1"
               >
                 Q1 2026 Campaign Dashboard
               </motion.p>
@@ -199,15 +197,15 @@ const MarketingPage: React.FC = () => {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3"
+              className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3"
             >
-              <div className="p-2 rounded-xl bg-red-100">
-                <AlertCircle className="w-5 h-5 text-red-600" />
+              <div className="p-2 rounded-xl bg-red-500/10">
+                <AlertCircle className="w-5 h-5 text-red-400" />
               </div>
-              <p className="text-red-700 text-sm flex-1">{error}</p>
+              <p className="text-red-300 text-sm flex-1">{error}</p>
               <button
                 onClick={() => setError(null)}
-                className="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-100 transition-colors"
+                className="p-1.5 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -220,7 +218,7 @@ const MarketingPage: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="flex gap-2 mb-6 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide"
+          className="flex gap-2 mb-6 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar"
         >
           {tabs.map((tab, index) => {
             const Icon = tab.icon;
@@ -235,8 +233,8 @@ const MarketingPage: React.FC = () => {
                 className={`
                   flex items-center gap-2 px-4 sm:px-5 py-3 rounded-xl font-medium transition-all whitespace-nowrap text-sm
                   ${isActive
-                    ? `bg-gradient-to-r ${tab.color} text-white shadow-lg shadow-${tab.color.split('-')[1]}-200/50`
-                    : 'bg-white/80 backdrop-blur-sm text-slate-600 hover:bg-white hover:shadow-md border border-slate-200/60'
+                    ? `bg-gradient-to-r ${tab.gradient} text-white shadow-lg`
+                    : 'glass text-slate-400 hover:text-white hover:border-sky-500/20'
                   }
                 `}
               >
@@ -254,8 +252,8 @@ const MarketingPage: React.FC = () => {
             animate={{ opacity: 1 }}
             className="mb-6 flex items-center gap-3"
           >
-            <div className={`w-1 h-8 rounded-full bg-gradient-to-b ${activeTabData.color}`} />
-            <h2 className="text-xl font-semibold text-slate-800">{activeTabData.label}</h2>
+            <div className={`w-1 h-8 rounded-full bg-gradient-to-b ${activeTabData.gradient}`} />
+            <h2 className="text-xl font-semibold text-white">{activeTabData.label}</h2>
           </motion.div>
         )}
 
