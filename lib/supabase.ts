@@ -1533,7 +1533,7 @@ export const updateBlogPost = async (id: string, input: UpdateBlogPostInput): Pr
   if (!supabase) throw new Error('Supabase not initialized');
 
   // If publishing for first time, set published_at
-  const updates: UpdateBlogPostInput & { published_at?: string } = { ...input };
+  const updates: UpdateBlogPostInput & { published_at?: string | null } = { ...input };
   if (input.status === 'published' && !input.published_at) {
     // Check if already published
     const existing = await getBlogPost(id);
