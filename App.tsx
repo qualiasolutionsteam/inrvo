@@ -8,6 +8,7 @@ import { TEMPLATE_CATEGORIES, VOICE_PROFILES, ICONS, BACKGROUND_TRACKS, Backgrou
 import { useModals } from './src/contexts/ModalContext';
 import { useAuthModal, type AuthModalMode } from './src/contexts/modals/AuthModalContext';
 import { useAuth } from './src/contexts/AuthContext';
+import { useApp } from './src/contexts/AppContext';
 import { useScript } from './src/contexts/ScriptContext';
 import { useLibrary } from './src/contexts/LibraryContext';
 import { useAudioTags } from './src/contexts/AudioTagsContext';
@@ -143,10 +144,8 @@ const App: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Use domain-specific contexts for shared state
-  const {
-    user, checkUser, savedVoices, setSavedVoices, currentClonedVoice, setCurrentClonedVoice,
-    loadUserVoices, isLoadingVoices, isSessionReady
-  } = useAuth();
+  const { user, checkUser, isSessionReady } = useAuth();
+  const { savedVoices, setSavedVoices, loadUserVoices } = useApp();
 
   const {
     script, setScript, enhancedScript, setEnhancedScript, editableScript, setEditableScript,
