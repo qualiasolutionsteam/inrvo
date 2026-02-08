@@ -61,11 +61,11 @@ if (SENTRY_DSN && import.meta.env.PROD) {
           }),
         ],
 
-        // Performance monitoring
-        tracesSampleRate: 0.1,
+        // Performance monitoring (5% of sessions)
+        tracesSampleRate: 0.05,
 
-        // Session replay for debugging (sample 10% of sessions, 100% of errors)
-        replaysSessionSampleRate: 0.1,
+        // Session replay only on errors (saves runtime overhead for normal sessions)
+        replaysSessionSampleRate: 0,
         replaysOnErrorSampleRate: 1.0,
 
         // Only enable in production

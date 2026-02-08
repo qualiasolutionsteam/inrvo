@@ -1,9 +1,10 @@
-import React, { ReactNode } from 'react';
+import React, { lazy, Suspense, ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import Starfield from '../../components/Starfield';
-import AuthModal from '../../components/AuthModal';
 import { useAuthModal } from '../contexts/modals/AuthModalContext';
+
+const AuthModal = lazy(() => import('../../components/AuthModal'));
 
 interface MarketingLayoutProps {
   children: ReactNode;
@@ -20,13 +21,17 @@ const MarketingLayout: React.FC<MarketingLayoutProps> = ({ children, className =
         <Starfield />
       </div>
 
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={closeAuthModal}
-        onSuccess={closeAuthModal}
-        initialMode={authModalMode}
-      />
+      {/* Auth Modal - lazy loaded, only fetched when opened */}
+      {showAuthModal && (
+        <Suspense fallback={null}>
+          <AuthModal
+            isOpen={showAuthModal}
+            onClose={closeAuthModal}
+            onSuccess={closeAuthModal}
+            initialMode={authModalMode}
+          />
+        </Suspense>
+      )}
 
       {/* Navigation */}
       <motion.div

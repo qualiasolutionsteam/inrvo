@@ -11,9 +11,6 @@ interface Star {
   duration: string;
   delay: string;
   color: string;
-  glowColor: string;
-  glowRadius: string;
-  glowSpread: string;
   animClass: string;
   baseOpacity: number;
 }
@@ -29,16 +26,9 @@ const Star = memo<{ star: Star }>(({ star }) => (
       height: star.size,
       backgroundColor: star.color,
       '--duration': star.duration,
-      '--glow-color': star.glowColor,
-      '--glow-radius': star.glowRadius,
-      '--glow-spread': star.glowSpread,
       '--base-opacity': star.baseOpacity,
       animationDelay: star.delay,
       opacity: star.baseOpacity,
-      // Only use will-change for special stars, reduces GPU memory
-      willChange: star.type !== 'normal' ? 'transform, opacity' : 'auto',
-      // Use transform3d for GPU acceleration
-      transform: 'translateZ(0)',
     } as React.CSSProperties}
   />
 ));
@@ -51,8 +41,8 @@ const Starfield: React.FC = () => {
     typeof window !== 'undefined' && window.innerWidth < 768,
   []);
 
-  // Reduce star count significantly on mobile for better performance
-  const starCount = isMobile ? 100 : 200;
+  // Reduced star counts for better GPU/paint performance
+  const starCount = isMobile ? 30 : 60;
 
   const stars = useMemo(() => {
     return Array.from({ length: starCount }).map((_, i): Star => {
@@ -67,22 +57,17 @@ const Starfield: React.FC = () => {
       // remaining 78% split between normal animations
 
       const isLarge = rand > 0.92;
-      const hasExtraGlow = isLarge && Math.random() > 0.4;
 
       // Color palette
       const colorType = Math.random();
       let color = 'white';
-      let glowColor = 'rgba(255, 255, 255, 0.3)';
 
       if (colorType > 0.85) {
         color = '#bae6fd'; // sky-200 - cyan tint
-        glowColor = 'rgba(186, 230, 253, 0.4)';
       } else if (colorType > 0.7) {
         color = '#c4b5fd'; // violet-300 - purple tint
-        glowColor = 'rgba(196, 181, 253, 0.4)';
       } else if (colorType < 0.1) {
         color = '#f5f3ff'; // violet-50 - light lavender
-        glowColor = 'rgba(245, 243, 255, 0.4)';
       }
 
       // Animation class based on type
@@ -119,9 +104,6 @@ const Starfield: React.FC = () => {
         duration,
         delay: `${Math.random() * 10}s`,
         color,
-        glowColor,
-        glowRadius: hasExtraGlow ? '18px' : '10px',
-        glowSpread: hasExtraGlow ? '5px' : '2px',
         animClass,
         baseOpacity: type === 'pulsar' ? Math.random() * 0.3 + 0.3 : Math.random() * 0.4 + 0.1
       };

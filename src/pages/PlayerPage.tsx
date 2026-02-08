@@ -715,70 +715,55 @@ const PlayerPage: React.FC = () => {
   }, [isPlaying]);
 
   // Setup MediaSession API for lock screen controls (iOS/Android)
+  // Action handlers + metadata (low-frequency, only changes on play/pause/voice change)
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
 
-    // Set metadata for lock screen display
     navigator.mediaSession.metadata = new MediaMetadata({
       title: selectedVoice?.name ? `Meditation with ${selectedVoice.name}` : 'Guided Meditation',
       artist: 'Innrvo',
       album: 'Meditation',
     });
 
-    // Play action
-    navigator.mediaSession.setActionHandler('play', () => {
-      if (!isPlaying) {
-        handleTogglePlayback();
-      }
-    });
+    navigator.mediaSession.setActionHandler('play', () => { if (!isPlaying) handleTogglePlayback(); });
+    navigator.mediaSession.setActionHandler('pause', () => { if (isPlaying) handleTogglePlayback(); });
+    navigator.mediaSession.setActionHandler('stop', () => { handleClose(); });
+    navigator.mediaSession.setActionHandler('seekbackward', () => { handleSkip(-15); });
+    navigator.mediaSession.setActionHandler('seekforward', () => { handleSkip(15); });
 
-    // Pause action
-    navigator.mediaSession.setActionHandler('pause', () => {
-      if (isPlaying) {
-        handleTogglePlayback();
-      }
-    });
-
-    // Stop action
-    navigator.mediaSession.setActionHandler('stop', () => {
-      handleClose();
-    });
-
-    // Seek backward (skip -15s)
-    navigator.mediaSession.setActionHandler('seekbackward', () => {
-      handleSkip(-15);
-    });
-
-    // Seek forward (skip +15s)
-    navigator.mediaSession.setActionHandler('seekforward', () => {
-      handleSkip(15);
-    });
-
-    // Update playback state
     navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
 
-    // Update position state
-    if (duration > 0) {
-      try {
-        navigator.mediaSession.setPositionState({
-          duration: duration,
-          position: currentTime,
-          playbackRate: playbackRate,
-        });
-      } catch {
-        // Some browsers don't support setPositionState
-      }
-    }
-
     return () => {
-      // Clear action handlers on unmount
       navigator.mediaSession.setActionHandler('play', null);
       navigator.mediaSession.setActionHandler('pause', null);
       navigator.mediaSession.setActionHandler('stop', null);
       navigator.mediaSession.setActionHandler('seekbackward', null);
       navigator.mediaSession.setActionHandler('seekforward', null);
     };
-  }, [isPlaying, currentTime, duration, playbackRate, selectedVoice, handleTogglePlayback, handleClose, handleSkip]);
+  }, [isPlaying, selectedVoice, handleTogglePlayback, handleClose, handleSkip]);
+
+  // Ref to read currentTime inside throttled interval without re-creating it
+  const currentTimeRef = useRef(currentTime);
+  currentTimeRef.current = currentTime;
+
+  // MediaSession position state (throttled to every 1s instead of 60fps)
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || duration <= 0 || !isPlaying) return;
+
+    const interval = setInterval(() => {
+      try {
+        navigator.mediaSession.setPositionState({
+          duration,
+          position: currentTimeRef.current,
+          playbackRate,
+        });
+      } catch {
+        // Some browsers don't support setPositionState
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isPlaying, duration, playbackRate]);
 
   // Show loading state while fetching meditation
   if (isLoadingMeditation) {
