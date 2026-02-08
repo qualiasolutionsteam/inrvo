@@ -1,31 +1,21 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef, ReactNode } from 'react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
-import { supabase, getCurrentUser, getUserVoiceProfiles, VoiceProfile } from '../../lib/supabase';
+import { supabase, getCurrentUser } from '../../lib/supabase';
 
 // Only log in development mode
 const DEBUG = import.meta.env.DEV;
 
 /**
- * Authentication context - manages user authentication state and voice profiles
- * Separated from AppContext to reduce re-renders for components
- * that only need auth state.
+ * Authentication context - manages user authentication state.
+ * Voice profiles are managed by AppContext (with caching).
  */
 interface AuthContextValue {
-  // Auth state
   user: SupabaseUser | null;
   setUser: (user: SupabaseUser | null) => void;
   checkUser: () => Promise<void>;
   isLoading: boolean;
   isAuthenticated: boolean;
-  isSessionReady: boolean; // True when session has valid access token (safe to make DB requests)
-
-  // Voice profiles
-  savedVoices: VoiceProfile[];
-  setSavedVoices: (voices: VoiceProfile[]) => void;
-  currentClonedVoice: VoiceProfile | null;
-  setCurrentClonedVoice: (voice: VoiceProfile | null) => void;
-  loadUserVoices: () => Promise<void>;
-  isLoadingVoices: boolean;
+  isSessionReady: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -33,12 +23,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSessionReady, setIsSessionReady] = useState(false); // Only true when access token is available
-
-  // Voice profile state
-  const [savedVoices, setSavedVoices] = useState<VoiceProfile[]>([]);
-  const [currentClonedVoice, setCurrentClonedVoice] = useState<VoiceProfile | null>(null);
-  const [isLoadingVoices, setIsLoadingVoices] = useState(false);
+  const [isSessionReady, setIsSessionReady] = useState(false);
 
   // Check user auth status
   const checkUser = useCallback(async () => {
@@ -56,24 +41,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsLoading(false);
     }
   }, []);
-
-  // Load user's voice profiles
-  const loadUserVoices = useCallback(async () => {
-    if (!user) {
-      setSavedVoices([]);
-      return;
-    }
-
-    setIsLoadingVoices(true);
-    try {
-      const voices = await getUserVoiceProfiles();
-      setSavedVoices(voices);
-    } catch (error) {
-      console.error('Failed to load voice profiles:', error);
-    } finally {
-      setIsLoadingVoices(false);
-    }
-  }, [user]);
 
   // Track if auth has been initialized (to skip fallback)
   const authInitializedRef = useRef(false);
@@ -146,12 +113,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // No user - session not ready
         setIsSessionReady(false);
       }
-
-      // Clear voice profiles on logout
-      if (!session?.user) {
-        setSavedVoices([]);
-        setCurrentClonedVoice(null);
-      }
     });
 
     // Fallback timeout in case onAuthStateChange doesn't fire
@@ -178,13 +139,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, [checkUser]);
 
-  // Load voice profiles when user changes
-  useEffect(() => {
-    if (user) {
-      loadUserVoices();
-    }
-  }, [user, loadUserVoices]);
-
   // Memoize to prevent unnecessary re-renders
   const value = useMemo<AuthContextValue>(() => ({
     user,
@@ -193,13 +147,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isLoading,
     isAuthenticated: !!user,
     isSessionReady,
-    savedVoices,
-    setSavedVoices,
-    currentClonedVoice,
-    setCurrentClonedVoice,
-    loadUserVoices,
-    isLoadingVoices,
-  }), [user, checkUser, isLoading, isSessionReady, savedVoices, currentClonedVoice, loadUserVoices, isLoadingVoices]);
+  }), [user, checkUser, isLoading, isSessionReady]);
 
   return (
     <AuthContext.Provider value={value}>

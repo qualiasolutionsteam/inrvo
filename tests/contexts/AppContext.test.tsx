@@ -5,21 +5,16 @@ import { ReactNode } from 'react';
 // Store mock functions to configure per-test
 let mockGetCurrentUser = vi.fn();
 let mockGetUserVoiceProfiles = vi.fn();
-let mockGetMeditationHistoryPaginated = vi.fn();
-let mockGetAudioTagPreferences = vi.fn();
-let mockOnAuthStateChange = vi.fn();
-let mockUnsubscribe = vi.fn();
 
 // Mock supabase module
 vi.mock('../../lib/supabase', () => ({
   supabase: {
     auth: {
       onAuthStateChange: (callback: any) => {
-        mockOnAuthStateChange(callback);
         return {
           data: {
             subscription: {
-              unsubscribe: mockUnsubscribe,
+              unsubscribe: vi.fn(),
             },
           },
         };
@@ -28,29 +23,19 @@ vi.mock('../../lib/supabase', () => ({
   },
   getCurrentUser: () => mockGetCurrentUser(),
   getUserVoiceProfiles: () => mockGetUserVoiceProfiles(),
-  getMeditationHistoryPaginated: (page: number, limit: number) =>
-    mockGetMeditationHistoryPaginated(page, limit),
-  getAudioTagPreferences: () => mockGetAudioTagPreferences(),
 }));
 
 // Mock AuthContext - AppContext depends on useAuth
-// Create configurable mock that can be changed per-test
 let mockAuthUser: any = null;
-let mockIsAuthenticated = false;
 
 vi.mock('../../src/contexts/AuthContext', () => ({
   useAuth: () => ({
     user: mockAuthUser,
     isSessionReady: true,
-    savedVoices: [],
-    setSavedVoices: vi.fn(),
-    currentClonedVoice: null,
-    setCurrentClonedVoice: vi.fn(),
-    loadUserVoices: vi.fn(),
-    isLoadingVoices: false,
     isLoading: false,
-    isAuthenticated: mockIsAuthenticated,
+    isAuthenticated: !!mockAuthUser,
     checkUser: vi.fn(),
+    setUser: vi.fn(),
   }),
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
@@ -91,14 +76,10 @@ vi.mock('../../constants', () => ({
   ],
 }));
 
-// Mock voice profile cache - return null so tests hit the DB mock
+// Mock voice profile cache
 vi.mock('../../src/lib/voiceProfileCache', () => ({
   getCachedVoiceProfiles: vi.fn(() => null),
   setCachedVoiceProfiles: vi.fn(),
-  clearVoiceProfileCache: vi.fn(),
-  addToCachedVoiceProfiles: vi.fn(),
-  updateCachedVoiceProfile: vi.fn(),
-  removeFromCachedVoiceProfiles: vi.fn(),
 }));
 
 // Import after mocking
@@ -114,16 +95,9 @@ function createWrapper() {
 describe('AppContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-
-    // Reset auth mock state
     mockAuthUser = null;
-    mockIsAuthenticated = false;
-
-    // Default mock implementations
     mockGetCurrentUser.mockResolvedValue(null);
     mockGetUserVoiceProfiles.mockResolvedValue([]);
-    mockGetMeditationHistoryPaginated.mockResolvedValue({ data: [], hasMore: false });
-    mockGetAudioTagPreferences.mockResolvedValue({ enabled: false, favorite_tags: [] });
   });
 
   afterEach(() => {
@@ -132,13 +106,10 @@ describe('AppContext', () => {
 
   describe('useApp hook', () => {
     it('should throw error when used outside AppProvider', () => {
-      // Suppress console.error for this test
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
       expect(() => {
         renderHook(() => useApp());
       }).toThrow('useApp must be used within an AppProvider');
-
       consoleSpy.mockRestore();
     });
 
@@ -146,7 +117,6 @@ describe('AppContext', () => {
       const { result } = renderHook(() => useApp(), {
         wrapper: createWrapper(),
       });
-
       expect(result.current).toBeDefined();
       expect(result.current.user).toBeNull();
     });
@@ -157,7 +127,6 @@ describe('AppContext', () => {
       const { result } = renderHook(() => useApp(), {
         wrapper: createWrapper(),
       });
-
       expect(result.current.user).toBeNull();
     });
 
@@ -165,7 +134,6 @@ describe('AppContext', () => {
       const { result } = renderHook(() => useApp(), {
         wrapper: createWrapper(),
       });
-
       expect(result.current.availableVoices).toHaveLength(1);
       expect(result.current.availableVoices[0].name).toBe('Default Voice');
       expect(result.current.selectedVoice).toBeNull();
@@ -176,9 +144,7 @@ describe('AppContext', () => {
       const { result } = renderHook(() => useApp(), {
         wrapper: createWrapper(),
       });
-
       expect(result.current.cloningStatus).toEqual({ state: 'idle' });
-      // Credits are disabled, so unlimited access is the default
       expect(result.current.creditInfo).toEqual({
         canClone: true,
         creditsRemaining: 999999999,
@@ -191,92 +157,24 @@ describe('AppContext', () => {
       const { result } = renderHook(() => useApp(), {
         wrapper: createWrapper(),
       });
-
       expect(result.current.selectedBackgroundTrack.id).toBe('none');
-      // Note: backgroundVolume, voiceVolume, playbackRate moved to AudioPlaybackContext
     });
-
-    it('should have correct script initial state', () => {
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(result.current.script).toBe('');
-      expect(result.current.enhancedScript).toBe('');
-      expect(result.current.editableScript).toBe('');
-    });
-
-    it('should have correct audio tags initial state', () => {
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(result.current.selectedAudioTags).toEqual([]);
-      expect(result.current.audioTagsEnabled).toBe(false);
-      expect(result.current.favoriteAudioTags).toEqual([]);
-    });
-
-    it('should have correct library initial state', () => {
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(result.current.meditationHistory).toEqual([]);
-      expect(result.current.isLoadingHistory).toBe(false);
-      expect(result.current.hasMoreHistory).toBe(false);
-    });
-
-    // Note: Playback state (isPlaying, currentTime, duration, etc.) moved to AudioPlaybackContext
-
-    it('should have correct generation initial state', () => {
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(result.current.isGenerating).toBe(false);
-      expect(result.current.generationStage).toBe('idle');
-    });
-
-    it('should have correct chat initial state', () => {
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(result.current.chatStarted).toBe(false);
-      expect(result.current.restoredScript).toBeNull();
-    });
-
-    it('should have correct error initial state', () => {
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(result.current.micError).toBeNull();
-    });
-
-    // Note: Audio refs (audioContextRef, etc.) moved to AudioPlaybackContext
   });
 
   describe('state setters', () => {
-    // Note: setUser is now in AuthContext, not AppContext
-    // user state comes from useAuth hook
-
     it('should update selectedVoice state', () => {
       const { result } = renderHook(() => useApp(), {
         wrapper: createWrapper(),
       });
-
       const mockVoice = {
         id: 'voice-1',
         name: 'Test Voice',
         provider: 'fish-audio' as const,
         isCloned: true,
       };
-
       act(() => {
         result.current.setSelectedVoice(mockVoice as any);
       });
-
       expect(result.current.selectedVoice).toEqual(mockVoice);
     });
 
@@ -284,113 +182,28 @@ describe('AppContext', () => {
       const { result } = renderHook(() => useApp(), {
         wrapper: createWrapper(),
       });
-
       act(() => {
-        result.current.setCloningStatus({ state: 'cloning', progress: 50 });
+        result.current.setCloningStatus({ state: 'processing_audio' });
       });
-
-      expect(result.current.cloningStatus).toEqual({ state: 'cloning', progress: 50 });
+      expect(result.current.cloningStatus).toEqual({ state: 'processing_audio' });
     });
 
     it('should update creditInfo state', () => {
       const { result } = renderHook(() => useApp(), {
         wrapper: createWrapper(),
       });
-
       const newCreditInfo = {
         canClone: true,
         creditsRemaining: 10000,
         clonesRemaining: 2,
         cloneCost: 5000,
       };
-
       act(() => {
         result.current.setCreditInfo(newCreditInfo);
       });
-
       expect(result.current.creditInfo).toEqual(newCreditInfo);
     });
-
-    // Note: Audio settings (setBackgroundVolume, etc.) moved to AudioPlaybackContext
-
-    it('should update script state', () => {
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      act(() => {
-        result.current.setScript('Original script');
-        result.current.setEnhancedScript('Enhanced script');
-        result.current.setEditableScript('Editable script');
-      });
-
-      expect(result.current.script).toBe('Original script');
-      expect(result.current.enhancedScript).toBe('Enhanced script');
-      expect(result.current.editableScript).toBe('Editable script');
-    });
-
-    it('should update audio tags state', () => {
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      act(() => {
-        result.current.setSelectedAudioTags(['pause', 'breathe']);
-        result.current.setAudioTagsEnabled(true);
-        result.current.setFavoriteAudioTags(['pause']);
-      });
-
-      expect(result.current.selectedAudioTags).toEqual(['pause', 'breathe']);
-      expect(result.current.audioTagsEnabled).toBe(true);
-      expect(result.current.favoriteAudioTags).toEqual(['pause']);
-    });
-
-    // Note: Playback state setters (setIsPlaying, etc.) moved to AudioPlaybackContext
-
-    it('should update generation state', () => {
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      act(() => {
-        result.current.setIsGenerating(true);
-        result.current.setGenerationStage('script');
-      });
-
-      expect(result.current.isGenerating).toBe(true);
-      expect(result.current.generationStage).toBe('script');
-    });
-
-    it('should update chat state', () => {
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      act(() => {
-        result.current.setChatStarted(true);
-        result.current.setRestoredScript('Restored meditation script');
-      });
-
-      expect(result.current.chatStarted).toBe(true);
-      expect(result.current.restoredScript).toBe('Restored meditation script');
-    });
-
-    it('should update mic error state', () => {
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      act(() => {
-        result.current.setMicError('Microphone access denied');
-      });
-
-      expect(result.current.micError).toBe('Microphone access denied');
-    });
   });
-
-  // Note: checkUser is now in AuthContext, not AppContext
-  // User authentication state is managed by useAuth hook
-  // AppContext gets user from useAuth mock
 
   describe('loadUserVoices', () => {
     it('should merge cloned voices with preset voices', async () => {
@@ -416,9 +229,7 @@ describe('AppContext', () => {
         await result.current.loadUserVoices();
       });
 
-      // Should have preset (1) + cloned (2) voices
       expect(result.current.availableVoices.length).toBe(3);
-
       const fishVoice = result.current.availableVoices.find(v => v.id === 'cloned-voice-1');
       expect(fishVoice?.provider).toBe('fish-audio');
       expect(fishVoice?.isCloned).toBe(true);
@@ -466,129 +277,6 @@ describe('AppContext', () => {
     });
   });
 
-  describe('refreshHistory', () => {
-    it('should not load history when user is not authenticated', async () => {
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      await act(async () => {
-        await result.current.refreshHistory();
-      });
-
-      expect(mockGetMeditationHistoryPaginated).not.toHaveBeenCalled();
-    });
-
-    it('should load history when user is authenticated', async () => {
-      // Set user via mock before rendering
-      mockAuthUser = { id: 'user-123', email: 'test@test.com' };
-      mockIsAuthenticated = true;
-
-      mockGetMeditationHistoryPaginated.mockResolvedValue({
-        data: [
-          { id: 'med-1', title: 'Meditation 1', created_at: new Date().toISOString() },
-          { id: 'med-2', title: 'Meditation 2', created_at: new Date().toISOString() },
-        ],
-        hasMore: true,
-      });
-
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      await act(async () => {
-        await result.current.refreshHistory();
-      });
-
-      expect(mockGetMeditationHistoryPaginated).toHaveBeenCalledWith(0, 20);
-      expect(result.current.meditationHistory).toHaveLength(2);
-      expect(result.current.hasMoreHistory).toBe(true);
-    });
-
-    it('should handle error when loading history', async () => {
-      // Set user via mock before rendering
-      mockAuthUser = { id: 'user-123', email: 'test@test.com' };
-      mockIsAuthenticated = true;
-
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockGetMeditationHistoryPaginated.mockRejectedValue(new Error('Failed to load'));
-
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      await act(async () => {
-        await result.current.refreshHistory();
-      });
-
-      expect(consoleSpy).toHaveBeenCalled();
-      consoleSpy.mockRestore();
-    });
-  });
-
-  describe('loadMoreHistory', () => {
-    it('should not load more when already loading', async () => {
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      // Manually trigger isLoadingMore state by calling loadMoreHistory twice in rapid succession
-      // This is hard to test without access to internal state, so we skip this edge case
-      expect(result.current.hasMoreHistory).toBe(false);
-    });
-
-    it('should not load more when hasMoreHistory is false', async () => {
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      await act(async () => {
-        await result.current.loadMoreHistory();
-      });
-
-      expect(mockGetMeditationHistoryPaginated).not.toHaveBeenCalled();
-    });
-
-    it('should append history when loading more', async () => {
-      // Set user via mock before rendering
-      mockAuthUser = { id: 'user-123', email: 'test@test.com' };
-      mockIsAuthenticated = true;
-
-      // First page
-      mockGetMeditationHistoryPaginated.mockResolvedValueOnce({
-        data: [{ id: 'med-1', title: 'Meditation 1' }],
-        hasMore: true,
-      });
-      // Second page
-      mockGetMeditationHistoryPaginated.mockResolvedValueOnce({
-        data: [{ id: 'med-2', title: 'Meditation 2' }],
-        hasMore: false,
-      });
-
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      await act(async () => {
-        await result.current.refreshHistory();
-      });
-
-      expect(result.current.meditationHistory).toHaveLength(1);
-      expect(result.current.hasMoreHistory).toBe(true);
-
-      // Load more
-      await act(async () => {
-        await result.current.loadMoreHistory();
-      });
-
-      expect(result.current.meditationHistory).toHaveLength(2);
-      expect(result.current.hasMoreHistory).toBe(false);
-    });
-  });
-
-  // Note: Auth listener tests removed - auth state is now managed by AuthContext
-  // AppContext consumes user state from useAuth hook, not its own listener
-
   describe('background track selection', () => {
     it('should update selected background track', () => {
       const { result } = renderHook(() => useApp(), {
@@ -607,26 +295,6 @@ describe('AppContext', () => {
       });
 
       expect(result.current.selectedBackgroundTrack).toEqual(rainTrack);
-    });
-  });
-
-  // Note: Timing map (setTimingMap) moved to AudioPlaybackContext
-
-  describe('meditation history management', () => {
-    it('should set meditation history directly', () => {
-      const { result } = renderHook(() => useApp(), {
-        wrapper: createWrapper(),
-      });
-
-      const mockHistory = [
-        { id: 'med-1', title: 'Test Meditation', created_at: new Date().toISOString() },
-      ];
-
-      act(() => {
-        result.current.setMeditationHistory(mockHistory as any);
-      });
-
-      expect(result.current.meditationHistory).toEqual(mockHistory);
     });
   });
 });

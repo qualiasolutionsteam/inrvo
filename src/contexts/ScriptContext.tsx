@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo, ReactNode, Dispatch, SetStateAction } from 'react';
+import React, { createContext, useContext, useState, useMemo, useCallback, ReactNode, Dispatch, SetStateAction } from 'react';
 
 /**
  * Script context - manages meditation script generation state
@@ -46,14 +46,14 @@ export const ScriptProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [chatStarted, setChatStarted] = useState(false);
   const [restoredScript, setRestoredScript] = useState<string | null>(null);
 
-  // Reset helper
-  const resetScript = () => {
+  // Reset helper - memoized to prevent unnecessary re-renders
+  const resetScript = useCallback(() => {
     setScript('');
     setEnhancedScript('');
     setEditableScript('');
     setIsGenerating(false);
     setGenerationStage('idle');
-  };
+  }, []);
 
   // Memoize to prevent unnecessary re-renders
   const value = useMemo<ScriptContextValue>(() => ({
@@ -80,6 +80,7 @@ export const ScriptProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     generationStage,
     chatStarted,
     restoredScript,
+    resetScript,
   ]);
 
   return (

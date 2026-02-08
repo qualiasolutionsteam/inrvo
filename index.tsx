@@ -7,7 +7,7 @@ import './index.css';
 import { AppRouter } from './src/router';
 import { ModalProvider } from './src/contexts/ModalContext';
 import { AuthModalProvider } from './src/contexts/modals/AuthModalContext';
-import { AudioProvider } from './src/contexts/AudioContext';
+
 import { AppProvider } from './src/contexts/AppContext';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { ScriptProvider } from './src/contexts/ScriptContext';
@@ -113,38 +113,36 @@ root.render(
       <AuthProvider>
         <AuthModalProvider>
           <ModalProvider>
-            <AudioProvider>
-              <StreamingGenerationProvider>
-                <ScriptProvider>
-                  <LibraryProvider>
-                    <AudioTagsProvider>
-                      <ChatHistoryProvider>
-                        <AppProvider>
-                          <OnboardingProvider>
-                            <AppRouter />
-                            <Toaster
-                              position="top-center"
-                              richColors
-                              closeButton
-                              duration={4000}
-                              toastOptions={{
-                                style: {
-                                  background: 'rgba(15, 23, 42, 0.95)',
-                                  border: '1px solid rgba(56, 189, 248, 0.2)',
-                                  backdropFilter: 'blur(12px)',
-                                  color: '#e2e8f0',
-                                },
-                              }}
-                            />
-                            <Analytics />
-                          </OnboardingProvider>
-                        </AppProvider>
-                      </ChatHistoryProvider>
-                    </AudioTagsProvider>
-                  </LibraryProvider>
-                </ScriptProvider>
-              </StreamingGenerationProvider>
-            </AudioProvider>
+            <StreamingGenerationProvider>
+              <ScriptProvider>
+                <LibraryProvider>
+                  <AudioTagsProvider>
+                    <ChatHistoryProvider>
+                      <AppProvider>
+                        <OnboardingProvider>
+                          <AppRouter />
+                          <Toaster
+                            position="top-center"
+                            richColors
+                            closeButton
+                            duration={4000}
+                            toastOptions={{
+                              style: {
+                                background: 'rgba(15, 23, 42, 0.95)',
+                                border: '1px solid rgba(56, 189, 248, 0.2)',
+                                backdropFilter: 'blur(12px)',
+                                color: '#e2e8f0',
+                              },
+                            }}
+                          />
+                          <Analytics />
+                        </OnboardingProvider>
+                      </AppProvider>
+                    </ChatHistoryProvider>
+                  </AudioTagsProvider>
+                </LibraryProvider>
+              </ScriptProvider>
+            </StreamingGenerationProvider>
           </ModalProvider>
         </AuthModalProvider>
       </AuthProvider>

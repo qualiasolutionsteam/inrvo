@@ -21,6 +21,5 @@ export {
 } from './StreamingGenerationContext';
 
 // Existing contexts
-export { AudioProvider, useAudio } from './AudioContext';
 export { ModalProvider, useModal } from './ModalContext';
 export { AppProvider, useApp } from './AppContext';

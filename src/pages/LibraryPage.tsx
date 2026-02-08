@@ -5,6 +5,7 @@ import { Play, Trash2, Music, Clock, Mic, RotateCcw, Pencil, Check, X } from 'lu
 import { useAuth } from '../contexts/AuthContext';
 import { useModals } from '../contexts/ModalContext';
 import { useApp } from '../contexts/AppContext';
+import { useScript } from '../contexts/ScriptContext';
 import AppLayout from '../layouts/AppLayout';
 import GlassCard from '../../components/GlassCard';
 import { getMeditationHistoryPaginated, deleteMeditationHistory, updateMeditationTitle, MeditationHistory } from '../../lib/supabase';
@@ -272,7 +273,8 @@ const LibraryPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, isSessionReady } = useAuth();
   const { setShowAuthModal } = useModals();
-  const { setScript, setEnhancedScript, setRestoredScript, savedVoices, setSelectedVoice } = useApp();
+  const { savedVoices, setSelectedVoice } = useApp();
+  const { setScript, setEnhancedScript, setRestoredScript } = useScript();
 
   const [meditations, setMeditations] = useState<MeditationHistory[]>([]);
   const [loading, setLoading] = useState(true);

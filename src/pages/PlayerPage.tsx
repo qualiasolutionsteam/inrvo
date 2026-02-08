@@ -1,7 +1,7 @@
 import React, { lazy, Suspense, useRef, useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
-import { useAudioPlayback } from '../contexts/AudioPlaybackContext';
+import { useAudioPlayback, usePlaybackTime } from '../contexts/AudioPlaybackContext';
 import { trackAudio } from '../lib/tracking';
 import { getMeditationById, getMeditationAudioSignedUrl, MeditationHistory, saveMeditationHistory } from '../../lib/supabase';
 import { BACKGROUND_TRACKS, NATURE_SOUNDS } from '../../constants';
@@ -17,12 +17,10 @@ const PlayerPage: React.FC = () => {
   // App state (low-frequency updates)
   const { user, selectedVoice, selectedBackgroundTrack, setSelectedBackgroundTrack, selectedNatureSound, setSelectedNatureSound } = useApp();
 
-  // Audio playback state (high-frequency updates during playback)
+  // Audio playback state (low-frequency - stable during playback)
   const {
     isPlaying,
     setIsPlaying,
-    currentTime,
-    setCurrentTime,
     duration,
     setDuration,
     backgroundVolume,
@@ -44,6 +42,9 @@ const PlayerPage: React.FC = () => {
     pendingMeditation,
     clearPendingMeditation,
   } = useAudioPlayback();
+
+  // High-frequency time state (updates at 60fps during playback)
+  const { currentTime, setCurrentTime } = usePlaybackTime();
 
   // Nature sound volume state (separate from background music)
   const [natureSoundVolume, setNatureSoundVolume] = useState(0.4);

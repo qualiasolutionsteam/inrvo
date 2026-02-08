@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Users, FileText, BarChart3, Tag, Trash2, Plus, X, Check, AlertCircle, Activity, ScrollText, LayoutTemplate, Edit2, ChevronDown, ChevronRight, RefreshCw, Play } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useApp } from '../contexts/AppContext';
+import { useScript } from '../contexts/ScriptContext';
 import AppLayout from '../layouts/AppLayout';
 import GlassCard from '../../components/GlassCard';
 import { ChronosLoader } from '@/components/ui/chronos-engine';
@@ -63,7 +63,7 @@ interface VoiceProfileWithUser extends VoiceProfile {
 
 const AdminPage: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
-  const { setScript, setRestoredScript } = useApp();
+  const { setScript, setRestoredScript } = useScript();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<AdminTab>('analytics');
   const [isLoading, setIsLoading] = useState(true);

@@ -7,12 +7,10 @@ const {
   mockOnAuthStateChange,
   mockGetSession,
   mockGetUser,
-  mockGetUserVoiceProfiles,
 } = vi.hoisted(() => ({
   mockOnAuthStateChange: vi.fn(),
   mockGetSession: vi.fn(),
   mockGetUser: vi.fn(),
-  mockGetUserVoiceProfiles: vi.fn(),
 }));
 
 vi.mock('../../lib/supabase', () => ({
@@ -24,7 +22,6 @@ vi.mock('../../lib/supabase', () => ({
     },
   },
   getCurrentUser: vi.fn().mockResolvedValue(null),
-  getUserVoiceProfiles: mockGetUserVoiceProfiles,
 }));
 
 // Import after mocking
@@ -65,7 +62,6 @@ describe('AuthContext', () => {
     // Default mock implementation - captures the callback
     mockOnAuthStateChange.mockImplementation((callback) => {
       authCallback = callback;
-      // Return subscription object
       return {
         data: {
           subscription: {
@@ -77,7 +73,6 @@ describe('AuthContext', () => {
 
     mockGetSession.mockResolvedValue({ data: { session: null } });
     mockGetUser.mockResolvedValue({ data: { user: null } });
-    mockGetUserVoiceProfiles.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -87,11 +82,9 @@ describe('AuthContext', () => {
   describe('hooks outside provider', () => {
     it('useAuth should throw error when used outside AuthProvider', () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
       expect(() => {
         renderHook(() => useAuth());
       }).toThrow('useAuth must be used within an AuthProvider');
-
       consoleSpy.mockRestore();
     });
   });
@@ -101,42 +94,24 @@ describe('AuthContext', () => {
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
       });
-
-      // Wait for initial setup
       await waitFor(() => {
         expect(mockOnAuthStateChange).toHaveBeenCalled();
       });
-
       expect(result.current.user).toBe(null);
       expect(result.current.isAuthenticated).toBe(false);
     });
 
-    it('should have empty saved voices initially', async () => {
+    it('should start loading', () => {
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
       });
-
-      await waitFor(() => {
-        expect(mockOnAuthStateChange).toHaveBeenCalled();
-      });
-
-      expect(result.current.savedVoices).toEqual([]);
-    });
-
-    it('should start loading', async () => {
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: createWrapper(),
-      });
-
-      // Initially loading
       expect(result.current.isLoading).toBe(true);
     });
 
-    it('should not be session ready initially', async () => {
+    it('should not be session ready initially', () => {
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
       });
-
       expect(result.current.isSessionReady).toBe(false);
     });
   });
@@ -146,13 +121,10 @@ describe('AuthContext', () => {
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
       });
-
-      // Wait for listener to be set up
       await waitFor(() => {
         expect(authCallback).not.toBeNull();
       });
 
-      // Simulate INITIAL_SESSION event with session
       act(() => {
         authCallback!('INITIAL_SESSION', mockSession);
       });
@@ -168,12 +140,10 @@ describe('AuthContext', () => {
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
       });
-
       await waitFor(() => {
         expect(authCallback).not.toBeNull();
       });
 
-      // Simulate INITIAL_SESSION without session
       act(() => {
         authCallback!('INITIAL_SESSION', null);
       });
@@ -191,12 +161,10 @@ describe('AuthContext', () => {
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
       });
-
       await waitFor(() => {
         expect(authCallback).not.toBeNull();
       });
 
-      // Simulate sign in
       act(() => {
         authCallback!('SIGNED_IN', mockSession);
       });
@@ -211,7 +179,6 @@ describe('AuthContext', () => {
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
       });
-
       await waitFor(() => {
         expect(authCallback).not.toBeNull();
       });
@@ -231,7 +198,6 @@ describe('AuthContext', () => {
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
       });
-
       await waitFor(() => {
         expect(authCallback).not.toBeNull();
       });
@@ -240,7 +206,6 @@ describe('AuthContext', () => {
       act(() => {
         authCallback!('SIGNED_IN', mockSession);
       });
-
       await waitFor(() => {
         expect(result.current.user).toEqual(mockUser);
       });
@@ -249,81 +214,9 @@ describe('AuthContext', () => {
       act(() => {
         authCallback!('SIGNED_OUT', null);
       });
-
       await waitFor(() => {
         expect(result.current.user).toBe(null);
         expect(result.current.isAuthenticated).toBe(false);
-      });
-    });
-
-    it('should clear saved voices on SIGNED_OUT', async () => {
-      mockGetUserVoiceProfiles.mockResolvedValue([
-        { id: 'voice-1', name: 'Test Voice' },
-      ]);
-
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: createWrapper(),
-      });
-
-      await waitFor(() => {
-        expect(authCallback).not.toBeNull();
-      });
-
-      // Sign in and load voices
-      act(() => {
-        authCallback!('SIGNED_IN', mockSession);
-      });
-
-      await waitFor(() => {
-        expect(result.current.user).toEqual(mockUser);
-      });
-
-      // Sign out
-      act(() => {
-        authCallback!('SIGNED_OUT', null);
-      });
-
-      await waitFor(() => {
-        expect(result.current.savedVoices).toEqual([]);
-      });
-    });
-
-    it('should clear current cloned voice on SIGNED_OUT', async () => {
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: createWrapper(),
-      });
-
-      await waitFor(() => {
-        expect(authCallback).not.toBeNull();
-      });
-
-      // Sign in
-      act(() => {
-        authCallback!('SIGNED_IN', mockSession);
-      });
-
-      // Set a cloned voice
-      act(() => {
-        result.current.setCurrentClonedVoice({
-          id: 'voice-1',
-          user_id: 'user-123',
-          name: 'My Voice',
-          language: 'en',
-          status: 'READY',
-          created_at: '2024-01-01',
-          updated_at: '2024-01-01',
-        });
-      });
-
-      expect(result.current.currentClonedVoice).not.toBeNull();
-
-      // Sign out
-      act(() => {
-        authCallback!('SIGNED_OUT', null);
-      });
-
-      await waitFor(() => {
-        expect(result.current.currentClonedVoice).toBe(null);
       });
     });
   });
@@ -333,12 +226,10 @@ describe('AuthContext', () => {
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
       });
-
       await waitFor(() => {
         expect(authCallback).not.toBeNull();
       });
 
-      // Simulate token refresh
       act(() => {
         authCallback!('TOKEN_REFRESHED', mockSession);
       });
@@ -349,162 +240,15 @@ describe('AuthContext', () => {
     });
   });
 
-  describe('voice profile management', () => {
-    it('should load user voices when user changes', async () => {
-      const mockVoices = [
-        { id: 'voice-1', name: 'Voice 1', user_id: 'user-123', language: 'en', status: 'READY', created_at: '2024-01-01', updated_at: '2024-01-01' },
-        { id: 'voice-2', name: 'Voice 2', user_id: 'user-123', language: 'en', status: 'READY', created_at: '2024-01-01', updated_at: '2024-01-01' },
-      ];
-      mockGetUserVoiceProfiles.mockResolvedValue(mockVoices);
-
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: createWrapper(),
-      });
-
-      await waitFor(() => {
-        expect(authCallback).not.toBeNull();
-      });
-
-      // Sign in
-      act(() => {
-        authCallback!('SIGNED_IN', mockSession);
-      });
-
-      await waitFor(() => {
-        expect(mockGetUserVoiceProfiles).toHaveBeenCalled();
-        expect(result.current.savedVoices).toEqual(mockVoices);
-      });
-    });
-
-    it('should update saved voices via setSavedVoices', async () => {
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: createWrapper(),
-      });
-
-      await waitFor(() => {
-        expect(authCallback).not.toBeNull();
-      });
-
-      const newVoices = [
-        { id: 'new-voice', name: 'New Voice', user_id: 'user-123', language: 'en', status: 'READY', created_at: '2024-01-01', updated_at: '2024-01-01' },
-      ];
-
-      act(() => {
-        result.current.setSavedVoices(newVoices);
-      });
-
-      expect(result.current.savedVoices).toEqual(newVoices);
-    });
-
-    it('should set current cloned voice', async () => {
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: createWrapper(),
-      });
-
-      await waitFor(() => {
-        expect(authCallback).not.toBeNull();
-      });
-
-      const voice = {
-        id: 'voice-1',
-        user_id: 'user-123',
-        name: 'My Cloned Voice',
-        language: 'en',
-        status: 'READY' as const,
-        created_at: '2024-01-01',
-        updated_at: '2024-01-01',
-      };
-
-      act(() => {
-        result.current.setCurrentClonedVoice(voice);
-      });
-
-      expect(result.current.currentClonedVoice).toEqual(voice);
-    });
-
-    it('should clear current cloned voice when set to null', async () => {
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: createWrapper(),
-      });
-
-      await waitFor(() => {
-        expect(authCallback).not.toBeNull();
-      });
-
-      // Set a voice first
-      act(() => {
-        result.current.setCurrentClonedVoice({
-          id: 'voice-1',
-          user_id: 'user-123',
-          name: 'Voice',
-          language: 'en',
-          status: 'READY',
-          created_at: '2024-01-01',
-          updated_at: '2024-01-01',
-        });
-      });
-
-      expect(result.current.currentClonedVoice).not.toBeNull();
-
-      // Clear it
-      act(() => {
-        result.current.setCurrentClonedVoice(null);
-      });
-
-      expect(result.current.currentClonedVoice).toBe(null);
-    });
-  });
-
   describe('checkUser', () => {
     it('should be available as a function', async () => {
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
       });
-
       await waitFor(() => {
         expect(authCallback).not.toBeNull();
       });
-
       expect(typeof result.current.checkUser).toBe('function');
-    });
-  });
-
-  describe('loadUserVoices', () => {
-    it('should be available as a function', async () => {
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: createWrapper(),
-      });
-
-      await waitFor(() => {
-        expect(authCallback).not.toBeNull();
-      });
-
-      expect(typeof result.current.loadUserVoices).toBe('function');
-    });
-
-    it('should clear voices when user is null', async () => {
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: createWrapper(),
-      });
-
-      await waitFor(() => {
-        expect(authCallback).not.toBeNull();
-      });
-
-      // Set some voices first
-      act(() => {
-        result.current.setSavedVoices([
-          { id: 'voice-1', user_id: 'user-123', name: 'Voice', language: 'en', status: 'READY', created_at: '2024-01-01', updated_at: '2024-01-01' },
-        ]);
-      });
-
-      // Manually call loadUserVoices with no user
-      await act(async () => {
-        await result.current.loadUserVoices();
-      });
-
-      // Should clear voices since user is null
-      expect(result.current.savedVoices).toEqual([]);
     });
   });
 
@@ -513,82 +257,13 @@ describe('AuthContext', () => {
       const { result, rerender } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
       });
-
       await waitFor(() => {
         expect(authCallback).not.toBeNull();
       });
 
       const firstCheckUser = result.current.checkUser;
-      const firstLoadUserVoices = result.current.loadUserVoices;
-
       rerender();
-
-      // Functions should be stable (same reference)
       expect(result.current.checkUser).toBe(firstCheckUser);
-      // loadUserVoices depends on user, so it may change
-    });
-  });
-
-  describe('error handling', () => {
-    it('should handle voice profile loading errors gracefully', async () => {
-      mockGetUserVoiceProfiles.mockRejectedValue(new Error('Failed to load voices'));
-
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: createWrapper(),
-      });
-
-      await waitFor(() => {
-        expect(authCallback).not.toBeNull();
-      });
-
-      // Sign in - should attempt to load voices and fail gracefully
-      act(() => {
-        authCallback!('SIGNED_IN', mockSession);
-      });
-
-      await waitFor(() => {
-        expect(mockGetUserVoiceProfiles).toHaveBeenCalled();
-      });
-
-      // Should not crash, voices should remain empty
-      expect(result.current.savedVoices).toEqual([]);
-    });
-  });
-
-  describe('isLoadingVoices', () => {
-    it('should track voice loading state', async () => {
-      let resolveVoices: (value: any[]) => void;
-      mockGetUserVoiceProfiles.mockImplementation(() => new Promise(resolve => {
-        resolveVoices = resolve;
-      }));
-
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: createWrapper(),
-      });
-
-      await waitFor(() => {
-        expect(authCallback).not.toBeNull();
-      });
-
-      // Sign in - should start loading voices
-      act(() => {
-        authCallback!('SIGNED_IN', mockSession);
-      });
-
-      // Should be loading
-      await waitFor(() => {
-        expect(result.current.isLoadingVoices).toBe(true);
-      });
-
-      // Resolve the voices
-      await act(async () => {
-        resolveVoices!([]);
-      });
-
-      // Should stop loading
-      await waitFor(() => {
-        expect(result.current.isLoadingVoices).toBe(false);
-      });
     });
   });
 });
