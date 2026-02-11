@@ -43,6 +43,18 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://innrvo.com/blog</loc>
+    <lastmod>2026-02-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://innrvo.com/blog/meditation-for-anxiety-ai-adapts</loc>
+    <lastmod>2026-02-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://innrvo.com/terms</loc>
     <lastmod>2026-01-03</lastmod>
     <changefreq>yearly</changefreq>
