@@ -46,7 +46,7 @@ export function updateCachedVoiceProfile(userId: string, profileId: string, upda
 
   const index = cached.data.findIndex(p => p.id === profileId);
   if (index !== -1) {
-    cached.data[index] = { ...cached.data[index], ...updates };
+    cached.data[index] = { ...cached.data[index]!, ...updates };
   }
 }
 

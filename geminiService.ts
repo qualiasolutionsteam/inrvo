@@ -228,7 +228,7 @@ export function decodeAudioBufferSync(base64: string, ctx: AudioContext): AudioB
   const buffer = ctx.createBuffer(1, frameCount, 24000);
   const channelData = buffer.getChannelData(0);
   for (let i = 0; i < frameCount; i++) {
-    channelData[i] = dataInt16[i] / 32768.0;
+    channelData[i] = dataInt16[i]! / 32768.0;
   }
   return buffer;
 }
@@ -241,7 +241,7 @@ export const blobToBase64 = (blob: Blob): Promise<string> => {
     const reader = new FileReader();
     reader.onloadend = () => {
       if (typeof reader.result === 'string') {
-        const base64String = reader.result.split(',')[1];
+        const base64String = reader.result.split(',')[1] ?? '';
         resolve(base64String);
       } else {
         reject(new Error("Failed to convert blob to base64"));

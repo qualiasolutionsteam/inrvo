@@ -163,7 +163,7 @@ const AnalyticsReports: React.FC = () => {
             {setupChecklist.map((item, index) => {
               // Check if this item's deliverable is complete
               const isComplete = completedSetup.some(d =>
-                d.includes(item.label.toLowerCase().split(' ')[0])
+                d.includes(item.label.toLowerCase().split(' ')[0]!)
               );
 
               return (

@@ -202,7 +202,7 @@ export const VOICE_ACCENTS: Record<string, { value: string; label: string }[]> =
 
 // Get accents for a language code
 export function getAccentsForLanguage(langCode: string): { value: string; label: string }[] {
-  return VOICE_ACCENTS[langCode] || VOICE_ACCENTS.default;
+  return VOICE_ACCENTS[langCode] ?? VOICE_ACCENTS.default!;
 }
 
 // Default voice metadata

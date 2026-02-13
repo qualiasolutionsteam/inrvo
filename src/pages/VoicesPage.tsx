@@ -440,7 +440,8 @@ const VoicesPage: React.FC = () => {
     }
   }, [voices, selectedVoice, setSelectedVoice, setSavedVoices]);
 
-  const handleClone = () => navigate('/clone');
+  const handleClone = useCallback(() => navigate('/clone'), [navigate]);
+  const navigateHome = useCallback(() => navigate('/'), [navigate]);
 
   return (
     <AppLayout showBackButton backTo="/" className="flex flex-col">
@@ -576,7 +577,7 @@ const VoicesPage: React.FC = () => {
                 Using: <span className="text-sky-500 font-medium">{selectedVoice.name}</span>
               </span>
               <button
-                onClick={() => navigate('/')}
+                onClick={navigateHome}
                 className="ml-2 px-3 py-1 rounded-lg bg-sky-500/20 text-sky-500 text-xs font-medium hover:bg-sky-500/30 transition-colors"
               >
                 Create Meditation

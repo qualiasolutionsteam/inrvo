@@ -145,7 +145,7 @@ export const AIEditPanel = memo<AIEditPanelProps>(
           recognition.lang = 'en-US';
 
           recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
+            const transcript = event.results[0]?.[0]?.transcript ?? '';
             setInput(prev => prev + (prev ? ' ' : '') + transcript);
             setIsRecording(false);
           };
@@ -185,7 +185,7 @@ export const AIEditPanel = memo<AIEditPanelProps>(
     // Parse AI response for script content
     const parseScriptFromResponse = useCallback((response: string): string | null => {
       const scriptMatch = response.match(/<script>([\s\S]*?)<\/script>/);
-      if (scriptMatch) {
+      if (scriptMatch?.[1]) {
         return scriptMatch[1].trim();
       }
       return null;

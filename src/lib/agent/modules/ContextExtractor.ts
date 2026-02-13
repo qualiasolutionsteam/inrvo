@@ -157,7 +157,7 @@ export class ContextExtractor {
     if (!duration) return null;
     const match = duration.match(/(\d+)/);
     if (match) {
-      return parseInt(match[1]);
+      return parseInt(match[1]!);
     }
     return null;
   }

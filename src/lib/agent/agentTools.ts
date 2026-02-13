@@ -144,7 +144,7 @@ export async function generateMeditationScript(
     if (options?.tradition) {
       const traditionTeachers = WISDOM_TEACHERS.filter(t => t.tradition === options.tradition);
       if (traditionTeachers.length > 0) {
-        const teacher = traditionTeachers[0];
+        const teacher = traditionTeachers[0]!;
         enhancedPrompt += ` Draw from the wisdom of ${options.tradition.replace('_', ' ')} tradition. `;
         enhancedPrompt += `Core teaching to embody: "${teacher.coreTeaching}"`;
       }
@@ -221,7 +221,8 @@ export async function extendMeditationScript(
 export async function synthesizeAudio(
   script: string,
   voice: VoiceProfile,
-  audioContext?: AudioContext
+  audioContext?: AudioContext,
+  userId?: string
 ): Promise<ToolResult<SynthesizedAudio>> {
   try {
     // Check if voice is ready (cloned voices need a voice sample URL or provider voice ID)
@@ -231,9 +232,9 @@ export async function synthesizeAudio(
 
     // Check credits
     const estimatedCost = voiceService.getEstimatedCost(script);
-    const user = await getCurrentUser();
-    if (user) {
-      const credits = await creditService.getCredits(user.id);
+    const resolvedUserId = userId || (await getCurrentUser())?.id;
+    if (resolvedUserId) {
+      const credits = await creditService.getCredits(resolvedUserId);
       if (credits < estimatedCost) {
         return {
           success: false,
@@ -255,8 +256,8 @@ export async function synthesizeAudio(
     }
 
     // Deduct credits
-    if (user) {
-      await creditService.deductCredits(estimatedCost, 'TTS_GENERATE', undefined, user.id, script.length);
+    if (resolvedUserId) {
+      await creditService.deductCredits(estimatedCost, 'TTS_GENERATE', undefined, resolvedUserId, script.length);
     }
 
     if (!audioBuffer) {
@@ -494,7 +495,7 @@ export function analyzeUserRequest(input: string): {
   // Detect duration mentions
   const durationMatch = lowered.match(/(\d+)\s*(minute|min|m\b)/);
   if (durationMatch) {
-    result.mentionedDuration = parseInt(durationMatch[1], 10);
+    result.mentionedDuration = parseInt(durationMatch[1]!, 10);
   }
 
   // Detect short/medium/long mentions

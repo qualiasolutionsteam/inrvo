@@ -344,7 +344,7 @@ function extractContext(input: string): ExtractedContext {
   // Age group extraction for stories
   const ageMatch = input.match(/(\d+)[-\s]?(?:year[-\s]?old|yo)/i);
   if (ageMatch) {
-    const age = parseInt(ageMatch[1]);
+    const age = parseInt(ageMatch[1]!);
     if (age >= 2 && age <= 4) {
       context.ageGroup = 'toddler';
     } else if (age >= 5 && age <= 8) {
@@ -450,7 +450,7 @@ export class ContentDetector {
   private checkAmbiguousPatterns(input: string): ContentDetectionResult | null {
     for (const ambiguous of AMBIGUOUS_PHRASES) {
       if (ambiguous.pattern.test(input)) {
-        const first = ambiguous.possibleCategories[0];
+        const first = ambiguous.possibleCategories[0]!;
         return {
           category: first.category,
           subType: first.subType,
@@ -685,14 +685,14 @@ export class ContentDetector {
     // Check for numeric selection (1, 2, 3, etc.)
     const numMatch = lowered.match(/^(\d)$/);
     if (numMatch && previousResult.alternativeInterpretations) {
-      const index = parseInt(numMatch[1]) - 1;
+      const index = parseInt(numMatch[1]!) - 1;
       const allOptions = [
         { category: previousResult.category, subType: previousResult.subType },
         ...previousResult.alternativeInterpretations,
       ];
 
       if (index >= 0 && index < allOptions.length) {
-        const selected = allOptions[index];
+        const selected = allOptions[index]!;
         return {
           ...previousResult,
           category: selected.category,
@@ -710,7 +710,7 @@ export class ContentDetector {
         return {
           ...previousResult,
           category: cat.id,
-          subType: cat.subTypes[0],
+          subType: cat.subTypes[0]!,
           confidence: 90,
           needsDisambiguation: false,
           disambiguationQuestion: undefined,

@@ -64,7 +64,7 @@ export function useAudioPlayback(
     onEnded,
     onError,
     defaultBackgroundVolume = 0.3,
-    defaultBackgroundTrack = BACKGROUND_TRACKS[0],
+    defaultBackgroundTrack = BACKGROUND_TRACKS[0]!,
     defaultPlaybackRate = 1.0,  // Normal playback speed
     defaultVoiceVolume = 0.7    // Lower than music by default for better balance
   } = options;

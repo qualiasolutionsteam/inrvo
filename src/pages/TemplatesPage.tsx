@@ -94,7 +94,7 @@ const TemplatesPage: React.FC = () => {
 
   // Get color config for current category
   const currentColors = useMemo(() =>
-    currentCategory ? CATEGORY_COLORS[currentCategory.color || 'cyan'] || CATEGORY_COLORS.cyan : null,
+    currentCategory ? (CATEGORY_COLORS[currentCategory.color || 'cyan'] ?? CATEGORY_COLORS.cyan)! : null,
     [currentCategory]
   );
 
@@ -176,7 +176,7 @@ const TemplatesPage: React.FC = () => {
               </div>
             ) : (
               dbCategories.map(category => {
-                const colors = CATEGORY_COLORS[category.color || 'cyan'] || CATEGORY_COLORS.cyan;
+                const colors = (CATEGORY_COLORS[category.color || 'cyan'] ?? CATEGORY_COLORS.cyan)!;
                 const templateCount = category.subgroups.reduce((sum, sub) => sum + sub.templates.length, 0);
 
                 return (
@@ -206,7 +206,7 @@ const TemplatesPage: React.FC = () => {
         {selectedCategory && !selectedSubgroup && currentCategory && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {currentCategory.subgroups.map(subgroup => {
-              const colors = CATEGORY_COLORS[currentCategory.color || 'cyan'] || CATEGORY_COLORS.cyan;
+              const colors = (CATEGORY_COLORS[currentCategory.color || 'cyan'] ?? CATEGORY_COLORS.cyan)!;
 
               return (
                 <GlassCard
@@ -251,7 +251,7 @@ const TemplatesPage: React.FC = () => {
         {!selectedCategory && !isLoading && (
           <div className="flex justify-center gap-8 pt-4 text-center">
             {dbCategories.map(cat => {
-              const colors = CATEGORY_COLORS[cat.color || 'cyan'] || CATEGORY_COLORS.cyan;
+              const colors = (CATEGORY_COLORS[cat.color || 'cyan'] ?? CATEGORY_COLORS.cyan)!;
               const templateCount = cat.subgroups.reduce((sum, sub) => sum + sub.templates.length, 0);
               return (
                 <div key={cat.id} className="text-xs">

@@ -175,7 +175,7 @@ export class ConversationStore {
    * Start a new conversation
    * Creates a new conversation in memory and immediately syncs to DB (without debounce)
    */
-  async startNewConversation(): Promise<StoredConversation> {
+  async startNewConversation(userId?: string): Promise<StoredConversation> {
     // Save previous conversation immediately if exists (flush)
     if (this.saveDebounceTimer) {
       clearTimeout(this.saveDebounceTimer);
@@ -184,12 +184,12 @@ export class ConversationStore {
       }
     }
 
-    const user = await getCurrentUser();
+    const resolvedUserId = userId || (await getCurrentUser())?.id;
     const now = new Date();
 
     this.currentConversation = {
       id: `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      userId: user?.id || 'anonymous',
+      userId: resolvedUserId || 'anonymous',
       messages: [],
       preferences: await this.loadPreferences(), // Load prefs from DB/memory
       sessionState: {
@@ -382,19 +382,19 @@ export class ConversationStore {
   /**
    * Load a specific conversation by ID
    */
-  async loadConversation(conversationId: string): Promise<StoredConversation | null> {
+  async loadConversation(conversationId: string, userId?: string): Promise<StoredConversation | null> {
     if (!supabase) return null;
 
     try {
-      const user = await getCurrentUser();
-      if (!user) return null;
+      const resolvedUserId = userId || (await getCurrentUser())?.id;
+      if (!resolvedUserId) return null;
 
       const data = await withRetry(async () => {
         const { data, error } = await supabase!
           .from('agent_conversations')
           .select('*')
           .eq('id', conversationId)
-          .eq('user_id', user.id)
+          .eq('user_id', resolvedUserId)
           .single();
 
         if (error) throw error;
@@ -429,19 +429,19 @@ export class ConversationStore {
   /**
    * Delete a conversation
    */
-  async deleteConversation(conversationId: string): Promise<boolean> {
+  async deleteConversation(conversationId: string, userId?: string): Promise<boolean> {
     if (!supabase) return false;
 
     try {
-      const user = await getCurrentUser();
-      if (!user) return false;
+      const resolvedUserId = userId || (await getCurrentUser())?.id;
+      if (!resolvedUserId) return false;
 
       await withRetry(async () => {
         const { error } = await supabase!
           .from('agent_conversations')
           .delete()
           .eq('id', conversationId)
-          .eq('user_id', user.id);
+          .eq('user_id', resolvedUserId);
 
         if (error) throw error;
       });
@@ -469,7 +469,7 @@ export class ConversationStore {
     if (userMessages.length === 0) return 'Empty conversation';
 
     // Use the first user message as the main topic
-    const firstMessage = userMessages[0].slice(0, 100);
+    const firstMessage = userMessages[0]!.slice(0, 100);
     const mood = conversation.sessionState.currentMood;
 
     let summary = firstMessage;
@@ -477,7 +477,7 @@ export class ConversationStore {
       summary = `[${mood}] ${summary}`;
     }
 
-    return summary + (firstMessage.length < userMessages[0].length ? '...' : '');
+    return summary + (firstMessage.length < userMessages[0]!.length ? '...' : '');
   }
 
   /**

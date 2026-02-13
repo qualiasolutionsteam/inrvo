@@ -897,7 +897,7 @@ export const NATURE_SOUND_CATEGORIES: Record<string, { label: string; color: str
 export const NATURE_SOUNDS_BY_CATEGORY: Record<string, NatureSound[]> = NATURE_SOUNDS.reduce((acc, sound) => {
   if (sound.id === 'none') return acc; // Skip 'none' from categories
   if (!acc[sound.category]) acc[sound.category] = [];
-  acc[sound.category].push(sound);
+  acc[sound.category]!.push(sound);
   return acc;
 }, {} as Record<string, NatureSound[]>);
 
@@ -1026,7 +1026,7 @@ export const MUSIC_CATEGORY_CONFIG: Record<string, { label: string; color: strin
  */
 export const TRACKS_BY_CATEGORY: Record<string, BackgroundTrack[]> = BACKGROUND_TRACKS.reduce((acc, track) => {
   if (!acc[track.category]) acc[track.category] = [];
-  acc[track.category].push(track);
+  acc[track.category]!.push(track);
   return acc;
 }, {} as Record<string, BackgroundTrack[]>);
 

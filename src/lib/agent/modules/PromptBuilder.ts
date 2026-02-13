@@ -151,7 +151,7 @@ Guide:`;
     // Add teacher influence for authenticity
     const recommendation = mood ? getMeditationRecommendation(mood) : null;
     if (recommendation && recommendation.teachers.length > 0) {
-      const teacher = recommendation.teachers[0];
+      const teacher = recommendation.teachers[0]!;
       prompt += `\nWISDOM INFLUENCE: Draw subtly from ${teacher.name}'s approach - "${teacher.coreTeaching}"\n`;
     }
 

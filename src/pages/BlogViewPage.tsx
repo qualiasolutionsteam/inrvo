@@ -110,7 +110,7 @@ const processInlineFormatting = (text: string, keyPrefix: string = ''): React.Re
       );
     } else if (match[2] !== undefined) {
       // Link [text](url)
-      const url = match[3];
+      const url = match[3] ?? '';
       const isInternal = url.startsWith('/') || url.includes('innrvo.com');
       parts.push(
         <a
@@ -672,7 +672,7 @@ const BlogViewPage: React.FC = () => {
                       All
                     </button>
                     {categories.map(category => {
-                      const styles = CATEGORY_STYLES[category.slug] || CATEGORY_STYLES.wellness;
+                      const styles = CATEGORY_STYLES[category.slug] ?? CATEGORY_STYLES.wellness!;
                       const isSelected = selectedCategory === category.slug;
                       return (
                         <button
@@ -680,7 +680,7 @@ const BlogViewPage: React.FC = () => {
                           onClick={() => setSelectedCategory(category.slug)}
                           className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all border ${
                             isSelected
-                              ? `${styles.bg} ${styles.text} ${styles.border.split(' ')[0]}`
+                              ? `${styles.bg} ${styles.text} ${styles.border.split(' ')[0] ?? ''}`
                               : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-white'
                           }`}
                         >
@@ -711,7 +711,7 @@ const BlogViewPage: React.FC = () => {
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                       {filteredPosts.map((post, index) => {
-                        const styles = CATEGORY_STYLES[post.category] || CATEGORY_STYLES.wellness;
+                        const styles = CATEGORY_STYLES[post.category] ?? CATEGORY_STYLES.wellness!;
                         return (
                           <motion.article
                             key={post.id}
@@ -738,7 +738,7 @@ const BlogViewPage: React.FC = () => {
                               )}
                               {/* Category badge overlay */}
                               <div className="absolute top-3 left-3">
-                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${styles.bg} ${styles.text} backdrop-blur-sm border ${styles.border.split(' ')[0]}`}>
+                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${styles.bg} ${styles.text} backdrop-blur-sm border ${styles.border.split(' ')[0] ?? ''}`}>
                                   {CATEGORY_ICONS[post.category]}
                                   {post.category}
                                 </span>

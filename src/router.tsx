@@ -244,82 +244,102 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <HomePage />,
+        errorElement: <RouteErrorBoundary />,
       },
       {
         path: 'play/:id?',
         element: <PlayerPage />,
+        errorElement: <RouteErrorBoundary />,
       },
       {
         path: 'my-audios',
         element: <LibraryPage />,
+        errorElement: <RouteErrorBoundary />,
       },
       {
         path: 'templates',
         element: <TemplatesPage />,
+        errorElement: <RouteErrorBoundary />,
       },
       {
         path: 'your-voices',
         element: <VoicesPage />,
+        errorElement: <RouteErrorBoundary />,
       },
       {
         path: 'clone',
         element: <ClonePage />,
+        errorElement: <RouteErrorBoundary />,
       },
       {
         path: 'how-it-works',
         element: <HowItWorksPage />,
+        errorElement: <RouteErrorBoundary />,
       },
       {
         path: 'about',
         element: <AboutPage />,
+        errorElement: <RouteErrorBoundary />,
       },
       {
         path: 'terms',
         element: <TermsPage />,
+        errorElement: <RouteErrorBoundary />,
       },
       {
         path: 'privacy',
         element: <PrivacyPage />,
+        errorElement: <RouteErrorBoundary />,
       },
       {
         path: 'voice-ethics',
         element: <VoiceEthicsPage />,
+        errorElement: <RouteErrorBoundary />,
       },
       {
         path: 'pricing',
         element: <PricingPage />,
+        errorElement: <RouteErrorBoundary />,
       },
       {
         path: 'admin',
         element: <AdminPage />,
+        errorElement: <RouteErrorBoundary />,
       },
       {
         path: 'marketing',
         element: <MarketingPage />,
+        errorElement: <RouteErrorBoundary />,
       },
       {
         path: 'blog',
         element: <BlogViewPage />,
+        errorElement: <RouteErrorBoundary />,
       },
       {
         path: 'blog/:slug',
         element: <BlogViewPage />,
+        errorElement: <RouteErrorBoundary />,
       },
       {
         path: 'blog-admin',
         element: <BlogPage />,
+        errorElement: <RouteErrorBoundary />,
       },
       {
         path: 'auth/reset-password',
         element: <ResetPasswordPage />,
+        errorElement: <RouteErrorBoundary />,
       },
       {
         path: 'auth/verified',
         element: <EmailVerifiedPage />,
+        errorElement: <RouteErrorBoundary />,
       },
       {
         path: 'error',
         element: <ErrorPage />,
+        errorElement: <RouteErrorBoundary />,
       },
       {
         path: '*',

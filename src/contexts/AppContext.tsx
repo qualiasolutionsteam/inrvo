@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, ReactNode } from 'react';
 import { VoiceProfile, CloningStatus, CreditInfo } from '../../types';
 import { VOICE_PROFILES, BACKGROUND_TRACKS, BackgroundTrack, NATURE_SOUNDS, NatureSound } from '../../constants';
-import { getCurrentUser, getUserVoiceProfiles, VoiceProfile as DBVoiceProfile } from '../../lib/supabase';
+import { getUserVoiceProfiles, VoiceProfile as DBVoiceProfile } from '../../lib/supabase';
 import {
   getCachedVoiceProfiles,
   setCachedVoiceProfiles,
@@ -81,8 +81,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   });
 
   // Audio track selection (playback state moved to AudioPlaybackContext)
-  const [selectedBackgroundTrack, setSelectedBackgroundTrack] = useState<BackgroundTrack>(BACKGROUND_TRACKS[0]);
-  const [selectedNatureSound, setSelectedNatureSound] = useState<NatureSound>(NATURE_SOUNDS[0]);
+  const [selectedBackgroundTrack, setSelectedBackgroundTrack] = useState<BackgroundTrack>(BACKGROUND_TRACKS[0]!);
+  const [selectedNatureSound, setSelectedNatureSound] = useState<NatureSound>(NATURE_SOUNDS[0]!);
 
   // Helper to transform DB voice profiles to UI voice profiles
   const transformVoicesToUI = useCallback((voices: DBVoiceProfile[]) => {
@@ -111,12 +111,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   // Load user voices (with cache support)
   const loadUserVoices = useCallback(async (forceRefresh = false) => {
     try {
-      const currentUser = await getCurrentUser();
-      const userId = currentUser?.id;
+      const authUserId = user?.id;
 
       // Try cache first (unless force refresh)
-      if (!forceRefresh && userId) {
-        const cached = getCachedVoiceProfiles(userId);
+      if (!forceRefresh && authUserId) {
+        const cached = getCachedVoiceProfiles(authUserId);
         if (cached) {
           setSavedVoices(cached as DBVoiceProfile[]);
           setAvailableVoices(transformVoicesToUI(cached as DBVoiceProfile[]));
@@ -124,19 +123,19 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         }
       }
 
-      // Cache miss or force refresh - fetch from DB
-      const voices = await getUserVoiceProfiles();
+      // Cache miss or force refresh - fetch from DB (pass userId to skip session fetch)
+      const voices = await getUserVoiceProfiles(authUserId);
       setSavedVoices(voices);
       setAvailableVoices(transformVoicesToUI(voices));
 
       // Update cache
-      if (userId) {
-        setCachedVoiceProfiles(userId, voices);
+      if (authUserId) {
+        setCachedVoiceProfiles(authUserId, voices);
       }
     } catch (err) {
       console.error('Failed to load user voices:', err);
     }
-  }, [transformVoicesToUI]);
+  }, [user?.id, transformVoicesToUI]);
 
   // Load voices when session is ready
   useEffect(() => {

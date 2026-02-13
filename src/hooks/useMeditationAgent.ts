@@ -147,10 +147,10 @@ function getCreationMessage(meditationType?: string, emotionalState?: string): s
 
   // Default fallback
   if (!messages) {
-    messages = CREATION_MESSAGES.default;
+    messages = CREATION_MESSAGES.default!;
   }
 
-  return messages[Math.floor(Math.random() * messages.length)];
+  return messages[Math.floor(Math.random() * messages.length)]!;
 }
 
 // ============================================================================

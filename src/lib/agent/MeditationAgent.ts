@@ -372,10 +372,10 @@ export class MeditationAgent {
     if (mood) {
       const recommendation = getMeditationRecommendation(mood);
       if (recommendation.teachers.length > 0) {
-        const teacher = recommendation.teachers[Math.floor(Math.random() * recommendation.teachers.length)];
+        const teacher = recommendation.teachers[Math.floor(Math.random() * recommendation.teachers.length)]!;
         if (teacher.quotes.length > 0) {
           return {
-            quote: teacher.quotes[Math.floor(Math.random() * teacher.quotes.length)],
+            quote: teacher.quotes[Math.floor(Math.random() * teacher.quotes.length)]!,
             teacher: teacher.name,
           };
         }

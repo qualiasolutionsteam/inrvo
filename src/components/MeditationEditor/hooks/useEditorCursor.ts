@@ -66,7 +66,7 @@ export function useEditorCursor(
         } else {
           const children = node.childNodes;
           for (let i = children.length - 1; i >= 0; i--) {
-            nodeStack.push(children[i]);
+            nodeStack.push(children[i]!);
           }
         }
       }

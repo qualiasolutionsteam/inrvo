@@ -1,4 +1,4 @@
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Starfield from '../../components/Starfield';
@@ -77,11 +77,50 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const [isNavOpen, setIsNavOpen] = useState(false);
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const handleNavigation = (path: string) => {
+  const handleNavigation = useCallback((path: string) => {
     setIsNavOpen(false);
     navigate(path);
-  };
+  }, [navigate]);
+
+  // Focus trap: keep Tab within the drawer when open
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setIsNavOpen(false);
+      triggerRef.current?.focus();
+      return;
+    }
+    if (e.key !== 'Tab' || !drawerRef.current) return;
+    const focusable = drawerRef.current.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isNavOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      // Focus the first focusable element in the drawer
+      requestAnimationFrame(() => {
+        const first = drawerRef.current?.querySelector<HTMLElement>('button, [href]');
+        first?.focus();
+      });
+    } else {
+      document.removeEventListener('keydown', handleKeyDown);
+    }
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isNavOpen, handleKeyDown]);
 
   return (
     <div className={`min-h-screen bg-[#020617] ${className}`}>
@@ -90,6 +129,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       {/* Hamburger Menu Button - hidden when sidebar is open */}
       {!isNavOpen && (
         <button
+          ref={triggerRef}
           onClick={() => setIsNavOpen(true)}
           className="fixed top-6 left-6 md:top-8 md:left-8 z-[100] w-12 h-12 min-w-[44px] min-h-[44px] rounded-full border border-white/[0.06] bg-white/[0.02] flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/[0.08] hover:border-sky-500/20 transition-all"
           aria-label="Open navigation"
@@ -126,9 +166,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 
             {/* Sidebar Panel */}
             <motion.aside
+              ref={drawerRef}
               initial={{ x: '-100%' }}
               animate={{ x: 0, transition: { type: 'spring', damping: 30, stiffness: 300 } }}
               exit={{ x: '-100%', transition: { type: 'spring', damping: 30, stiffness: 300 } }}
+              role="dialog"
+              aria-label="Navigation menu"
               className="fixed top-0 left-0 h-full w-[280px] z-[95] flex flex-col bg-[#0a0f1a] border-r border-white/[0.04]"
             >
               {/* Header */}

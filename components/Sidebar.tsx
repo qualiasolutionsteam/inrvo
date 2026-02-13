@@ -1,4 +1,4 @@
-import React, { memo, useState } from 'react';
+import React, { memo, useState, useCallback } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
@@ -288,19 +288,19 @@ export const Sidebar = memo(({
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
-  const handleNavigation = (path: string) => {
+  const handleNavigation = useCallback((path: string) => {
     onClose();
     setShowUserMenu(false);
     navigate(path);
-  };
+  }, [onClose, navigate]);
 
-  const handleNewChat = async () => {
+  const handleNewChat = useCallback(async () => {
     await onStartNewConversation();
     onConversationSelected(null);
     onClose();
-  };
+  }, [onStartNewConversation, onConversationSelected, onClose]);
 
-  const handleLoadChat = async (id: string) => {
+  const handleLoadChat = useCallback(async (id: string) => {
     const conversation = await onLoadConversation(id);
     if (conversation) {
       // Check if this conversation has a meditation script
@@ -314,7 +314,29 @@ export const Sidebar = memo(({
       }
       onClose();
     }
-  };
+  }, [onLoadConversation, onMeditationRestore, onConversationSelected, onClose]);
+
+  const handleDeleteChat = useCallback((e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this conversation?')) {
+      onDeleteConversation?.(id);
+    }
+  }, [onDeleteConversation]);
+
+  const handleSignOutClick = useCallback(() => {
+    setShowUserMenu(false);
+    onClose();
+    onSignOut();
+  }, [onClose, onSignOut]);
+
+  const handleSignInClick = useCallback(() => {
+    onClose();
+    onSignIn();
+  }, [onClose, onSignIn]);
+
+  const handleLogoClick = useCallback(() => {
+    handleNavigation('/');
+  }, [handleNavigation]);
 
   return (
     <AnimatePresence mode="wait">
@@ -341,7 +363,7 @@ export const Sidebar = memo(({
             {/* Header - expanded for logo */}
             <div className="flex items-center h-32 md:h-36 px-3 md:px-4 border-b border-white/[0.04]">
               <button
-                onClick={() => { handleNavigation('/'); }}
+                onClick={handleLogoClick}
                 className="flex-1 h-full flex items-center justify-center py-2 hover:opacity-80 transition-opacity"
               >
                 <Logo className="h-24 md:h-[108px] w-auto" />
@@ -432,12 +454,7 @@ export const Sidebar = memo(({
                         item={item}
                         index={index}
                         onClick={() => handleLoadChat(item.id)}
-                        onDelete={onDeleteConversation ? ((e) => {
-                          e.stopPropagation();
-                          if (window.confirm('Are you sure you want to delete this conversation?')) {
-                            onDeleteConversation(item.id);
-                          }
-                        }) : undefined}
+                        onDelete={onDeleteConversation ? ((e) => handleDeleteChat(e, item.id)) : undefined}
                       />
                     ))
                   ) : (
@@ -453,7 +470,7 @@ export const Sidebar = memo(({
                     </div>
                     <p className="text-[13px] text-slate-400 mb-3">Sign in to save your history</p>
                     <button
-                      onClick={() => { onClose(); onSignIn(); }}
+                      onClick={handleSignInClick}
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-500 text-[12px] font-medium hover:bg-sky-500/20 transition-all"
                     >
                       <Icons.SignIn />
@@ -486,7 +503,7 @@ export const Sidebar = memo(({
                         <MenuItem
                           icon={Icons.SignOut}
                           label="Sign out"
-                          onClick={() => { setShowUserMenu(false); onClose(); onSignOut(); }}
+                          onClick={handleSignOutClick}
                           variant="danger"
                         />
                       </m.div>

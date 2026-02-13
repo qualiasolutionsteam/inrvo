@@ -24,7 +24,7 @@ const PLACEHOLDERS = [
 // Get a placeholder based on the current session (changes daily)
 const getSessionPlaceholder = (): string => {
   const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
-  return PLACEHOLDERS[dayOfYear % PLACEHOLDERS.length];
+  return PLACEHOLDERS[dayOfYear % PLACEHOLDERS.length]!;
 };
 
 // Lazy load MeditationEditor and VoiceAgent for bundle optimization
@@ -356,8 +356,8 @@ const AgentChatComponent: React.FC<AgentChatProps> = ({
       // Build transcript from ALL results (not just new ones)
       // The results array contains the complete history
       for (let i = 0; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
+        const transcript = event.results[i]![0]!.transcript;
+        if (event.results[i]!.isFinal) {
           finalTranscript += transcript + ' ';
         } else {
           interimTranscript += transcript + ' ';

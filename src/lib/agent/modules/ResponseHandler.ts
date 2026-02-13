@@ -122,11 +122,11 @@ export class ResponseHandler {
     if (emotionalState) {
       const responses = STATE_RESPONSES[emotionalState];
       if (responses) {
-        return responses[Math.floor(Math.random() * responses.length)];
+        return responses[Math.floor(Math.random() * responses.length)]!;
       }
     }
 
-    return DEFAULT_FALLBACKS[Math.floor(Math.random() * DEFAULT_FALLBACKS.length)];
+    return DEFAULT_FALLBACKS[Math.floor(Math.random() * DEFAULT_FALLBACKS.length)]!;
   }
 
   /**
@@ -217,10 +217,10 @@ export class ResponseHandler {
     if (Math.random() < 0.05 && emotionalState && messageCount > 3) {
       const recommendation = getMeditationRecommendation(emotionalState);
       if (recommendation.teachers.length > 0) {
-        const teacher = recommendation.teachers[0];
+        const teacher = recommendation.teachers[0]!;
         if (teacher.quotes.length > 0) {
           response.quote = {
-            quote: teacher.quotes[Math.floor(Math.random() * teacher.quotes.length)],
+            quote: teacher.quotes[Math.floor(Math.random() * teacher.quotes.length)]!,
             teacher: teacher.name,
           };
         }

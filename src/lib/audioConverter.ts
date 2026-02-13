@@ -67,8 +67,8 @@ export async function convertToWAV(blob: Blob): Promise<Blob> {
     // Validate the WAV blob has correct header
     const wavArrayBuffer = await wavBlob.arrayBuffer();
     const wavBytes = new Uint8Array(wavArrayBuffer);
-    const riff = String.fromCharCode(wavBytes[0], wavBytes[1], wavBytes[2], wavBytes[3]);
-    const wave = String.fromCharCode(wavBytes[8], wavBytes[9], wavBytes[10], wavBytes[11]);
+    const riff = String.fromCharCode(wavBytes[0]!, wavBytes[1]!, wavBytes[2]!, wavBytes[3]!);
+    const wave = String.fromCharCode(wavBytes[8]!, wavBytes[9]!, wavBytes[10]!, wavBytes[11]!);
 
     if (riff !== 'RIFF' || wave !== 'WAVE') {
       console.error('[convertToWAV] Invalid WAV headers:', { riff, wave });
@@ -98,7 +98,7 @@ function mergeChannels(audioBuffer: AudioBuffer): Float32Array {
   for (let i = 0; i < length; i++) {
     let sum = 0;
     for (let channel = 0; channel < numberOfChannels; channel++) {
-      sum += audioBuffer.getChannelData(channel)[i];
+      sum += audioBuffer.getChannelData(channel)[i]!;
     }
     merged[i] = sum / numberOfChannels;
   }
@@ -152,8 +152,8 @@ function normalizeToElevenLabsSpecs(
   let sumSquares = 0;
   let currentPeak = 0;
   for (let i = 0; i < samples.length; i++) {
-    const abs = Math.abs(samples[i]);
-    sumSquares += samples[i] * samples[i];
+    const abs = Math.abs(samples[i]!);
+    sumSquares += samples[i]! * samples[i]!;
     if (abs > currentPeak) currentPeak = abs;
   }
   const currentRms = Math.sqrt(sumSquares / samples.length);
@@ -183,7 +183,7 @@ function normalizeToElevenLabsSpecs(
   let compressedSamples = 0;
 
   for (let i = 0; i < samples.length; i++) {
-    let sample = samples[i] * gain;
+    let sample = samples[i]! * gain;
     const abs = Math.abs(sample);
 
     // Soft-knee compression for samples approaching peak limit
@@ -211,8 +211,8 @@ function normalizeToElevenLabsSpecs(
   let finalSumSquares = 0;
   let finalPeak = 0;
   for (let i = 0; i < normalized.length; i++) {
-    finalSumSquares += normalized[i] * normalized[i];
-    const abs = Math.abs(normalized[i]);
+    finalSumSquares += normalized[i]! * normalized[i]!;
+    const abs = Math.abs(normalized[i]!);
     if (abs > finalPeak) finalPeak = abs;
   }
   const finalRms = Math.sqrt(finalSumSquares / normalized.length);
@@ -254,11 +254,11 @@ function applyHighPassFilter(
   const alpha = rc / (rc + dt);
 
   const filtered = new Float32Array(samples.length);
-  filtered[0] = samples[0];
+  filtered[0] = samples[0]!;
 
   // Apply first-order high-pass filter
   for (let i = 1; i < samples.length; i++) {
-    filtered[i] = alpha * (filtered[i - 1] + samples[i] - samples[i - 1]);
+    filtered[i] = alpha * (filtered[i - 1]! + samples[i]! - samples[i - 1]!);
   }
 
   if (DEBUG) {
@@ -291,7 +291,7 @@ function trimSilence(
 
   // Find first non-silent sample
   for (let i = 0; i < samples.length; i++) {
-    if (Math.abs(samples[i]) > threshold) {
+    if (Math.abs(samples[i]!) > threshold) {
       start = Math.max(0, i - bufferSamples);
       break;
     }
@@ -299,7 +299,7 @@ function trimSilence(
 
   // Find last non-silent sample
   for (let i = samples.length - 1; i >= 0; i--) {
-    if (Math.abs(samples[i]) > threshold) {
+    if (Math.abs(samples[i]!) > threshold) {
       end = Math.min(samples.length - 1, i + bufferSamples);
       break;
     }
@@ -381,7 +381,7 @@ function writeString(view: DataView, offset: number, string: string): void {
 function floatTo16BitPCM(view: DataView, offset: number, input: Float32Array): void {
   for (let i = 0; i < input.length; i++, offset += 2) {
     // Clamp to [-1, 1] range and convert to 16-bit integer
-    const s = Math.max(-1, Math.min(1, input[i]));
+    const s = Math.max(-1, Math.min(1, input[i]!));
     view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
   }
 }

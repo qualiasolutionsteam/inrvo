@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, ReactNode, Dispatch, SetStateAction } from 'react';
-import { getMeditationHistoryPaginated, MeditationHistory, getCurrentUser } from '../../lib/supabase';
+import { getMeditationHistoryPaginated, MeditationHistory } from '../../lib/supabase';
 import { useAuth } from './AuthContext';
 import {
   getCachedHistory,
@@ -75,7 +75,7 @@ export const LibraryProvider: React.FC<{ children: ReactNode }> = ({ children })
     setHistoryPage(0);
     try {
       DEBUG && console.log('[LibraryContext] Loading history for user:', userId);
-      const result = await getMeditationHistoryPaginated(0, 20);
+      const result = await getMeditationHistoryPaginated(0, 20, userId);
       DEBUG && console.log('[LibraryContext] Loaded:', result.data.length, 'items, hasMore:', result.hasMore);
       setMeditationHistory(result.data);
       setHasMoreHistory(result.hasMore);
@@ -97,7 +97,7 @@ export const LibraryProvider: React.FC<{ children: ReactNode }> = ({ children })
     setIsLoadingMore(true);
     try {
       const nextPage = historyPage + 1;
-      const result = await getMeditationHistoryPaginated(nextPage, 20);
+      const result = await getMeditationHistoryPaginated(nextPage, 20, user?.id);
       setMeditationHistory(prev => [...prev, ...result.data]);
       setHistoryPage(nextPage);
       setHasMoreHistory(result.hasMore);
@@ -106,7 +106,7 @@ export const LibraryProvider: React.FC<{ children: ReactNode }> = ({ children })
     } finally {
       setIsLoadingMore(false);
     }
-  }, [historyPage, hasMoreHistory, isLoadingMore]);
+  }, [historyPage, hasMoreHistory, isLoadingMore, user?.id]);
 
   // Cache management functions - use user from context
   const invalidateCache = useCallback(() => {

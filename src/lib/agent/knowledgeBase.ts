@@ -1061,14 +1061,14 @@ export function getRandomQuote(teacherName?: string): { quote: string; teacher: 
   if (teacherName) {
     const teacher = getTeacher(teacherName);
     if (teacher && teacher.quotes.length > 0) {
-      const quote = teacher.quotes[Math.floor(Math.random() * teacher.quotes.length)];
+      const quote = teacher.quotes[Math.floor(Math.random() * teacher.quotes.length)]!;
       return { quote, teacher: teacher.name };
     }
   }
 
   // Random teacher, random quote
-  const teacher = WISDOM_TEACHERS[Math.floor(Math.random() * WISDOM_TEACHERS.length)];
-  const quote = teacher.quotes[Math.floor(Math.random() * teacher.quotes.length)];
+  const teacher = WISDOM_TEACHERS[Math.floor(Math.random() * WISDOM_TEACHERS.length)]!;
+  const quote = teacher.quotes[Math.floor(Math.random() * teacher.quotes.length)]!;
   return { quote, teacher: teacher.name };
 }
 

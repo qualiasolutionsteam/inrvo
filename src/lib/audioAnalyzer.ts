@@ -107,7 +107,7 @@ export function calculateRMS(samples: Float32Array): number {
 
   let sumSquares = 0;
   for (let i = 0; i < samples.length; i++) {
-    sumSquares += samples[i] * samples[i];
+    sumSquares += samples[i]! * samples[i]!;
   }
   return Math.sqrt(sumSquares / samples.length);
 }
@@ -122,7 +122,7 @@ export function calculatePeak(samples: Float32Array): number {
 
   let peak = 0;
   for (let i = 0; i < samples.length; i++) {
-    const abs = Math.abs(samples[i]);
+    const abs = Math.abs(samples[i]!);
     if (abs > peak) peak = abs;
   }
   return peak;
@@ -583,7 +583,7 @@ export async function validateAudioQuality(blob: Blob): Promise<AudioQualityRepo
 
     let clippedSamples = 0;
     for (let i = 0; i < samples.length; i++) {
-      if (Math.abs(samples[i]) > 0.99) clippedSamples++;
+      if (Math.abs(samples[i]!) > 0.99) clippedSamples++;
     }
     const clippingPercent = (clippedSamples / samples.length) * 100;
 
@@ -603,7 +603,7 @@ export async function validateAudioQuality(blob: Blob): Promise<AudioQualityRepo
     // ========================================================================
     let silentSamples = 0;
     for (let i = 0; i < samples.length; i++) {
-      if (Math.abs(samples[i]) < 0.001) silentSamples++;
+      if (Math.abs(samples[i]!) < 0.001) silentSamples++;
     }
     const silencePercent = (silentSamples / samples.length) * 100;
 

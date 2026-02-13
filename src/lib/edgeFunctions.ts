@@ -68,7 +68,7 @@ function getJwtExpiry(token: string): number {
     if (parts.length !== 3) return 0;
 
     // Decode base64url payload (handle URL-safe characters)
-    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const base64 = parts[1]!.replace(/-/g, '+').replace(/_/g, '/');
     const payload = JSON.parse(atob(base64));
 
     if (typeof payload.exp === 'number') {
@@ -730,8 +730,8 @@ async function blobToBase64(blob: Blob): Promise<string> {
     throw new Error('Audio data too small to be valid WAV');
   }
 
-  const riff = String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3]);
-  const wave = String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11]);
+  const riff = String.fromCharCode(bytes[0]!, bytes[1]!, bytes[2]!, bytes[3]!);
+  const wave = String.fromCharCode(bytes[8]!, bytes[9]!, bytes[10]!, bytes[11]!);
 
   if (riff !== 'RIFF' || wave !== 'WAVE') {
     console.error('[blobToBase64] Invalid WAV format detected:', { riff, wave, blobType: blob.type, size: bytes.length });

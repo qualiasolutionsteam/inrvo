@@ -69,6 +69,7 @@ const AdminPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
+
   // Data state
   const [users, setUsers] = useState<User[]>([]);
   const [usersTotal, setUsersTotal] = useState(0);
@@ -119,6 +120,35 @@ const AdminPage: React.FC = () => {
     is_active: true,
     legacy_id: null as string | null,
   });
+
+  // Stable callback factories for items rendered inside .map() loops
+  const handleDeleteUserConfirm = useCallback((u: User) => {
+    setDeleteConfirm({ type: 'user', id: u.id, name: u.email });
+  }, []);
+
+  const handleDeleteMeditationConfirm = useCallback((m: MeditationWithUser) => {
+    setDeleteConfirm({
+      type: 'meditation',
+      id: m.id,
+      name: m.prompt.slice(0, 50) + (m.prompt.length > 50 ? '...' : '')
+    });
+  }, []);
+
+  const handleDeleteVoiceConfirm = useCallback((v: VoiceProfileWithUser) => {
+    setDeleteConfirm({ type: 'voice', id: v.id, name: v.name });
+  }, []);
+
+  const handleDeleteTagConfirm = useCallback((tag: AudioTagPreset) => {
+    setDeleteConfirm({ type: 'tag', id: tag.id, name: tag.tag_label });
+  }, []);
+
+  const handleDeleteTemplateConfirm = useCallback((template: TemplateWithDetails) => {
+    setDeleteConfirm({
+      type: 'template',
+      id: template.id,
+      name: template.title
+    });
+  }, []);
 
   // Check admin access on mount
   useEffect(() => {
@@ -762,7 +792,7 @@ const AdminPage: React.FC = () => {
                           </td>
                           <td className="py-3 text-right">
                             <button
-                              onClick={() => setDeleteConfirm({ type: 'user', id: u.id, name: u.email })}
+                              onClick={() => handleDeleteUserConfirm(u)}
                               className="text-slate-500 hover:text-red-400 p-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                               disabled={u.role === 'ADMIN'}
                               title={u.role === 'ADMIN' ? 'Cannot delete admin users' : 'Delete user'}
@@ -801,7 +831,7 @@ const AdminPage: React.FC = () => {
                           </div>
                         </div>
                         <button
-                          onClick={() => setDeleteConfirm({ type: 'user', id: u.id, name: u.email })}
+                          onClick={() => handleDeleteUserConfirm(u)}
                           className="text-slate-500 hover:text-red-400 p-1.5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
                           disabled={u.role === 'ADMIN'}
                         >
@@ -866,11 +896,7 @@ const AdminPage: React.FC = () => {
                         </div>
                       </div>
                       <button
-                        onClick={() => setDeleteConfirm({
-                          type: 'meditation',
-                          id: m.id,
-                          name: m.prompt.slice(0, 50) + (m.prompt.length > 50 ? '...' : '')
-                        })}
+                        onClick={() => handleDeleteMeditationConfirm(m)}
                         className="text-slate-500 hover:text-red-400 p-1.5 sm:p-2 flex-shrink-0 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -912,7 +938,7 @@ const AdminPage: React.FC = () => {
                         )}
                       </div>
                       <button
-                        onClick={() => setDeleteConfirm({ type: 'voice', id: v.id, name: v.name })}
+                        onClick={() => handleDeleteVoiceConfirm(v)}
                         className="text-slate-500 hover:text-red-400 p-1.5 sm:p-2 flex-shrink-0 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -1060,7 +1086,7 @@ const AdminPage: React.FC = () => {
                             <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           </button>
                           <button
-                            onClick={() => setDeleteConfirm({ type: 'tag', id: tag.id, name: tag.tag_label })}
+                            onClick={() => handleDeleteTagConfirm(tag)}
                             className="text-slate-500 hover:text-red-400 p-1.5 sm:p-2 transition-colors"
                           >
                             <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -1340,11 +1366,7 @@ const AdminPage: React.FC = () => {
                                 <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                               </button>
                               <button
-                                onClick={() => setDeleteConfirm({
-                                  type: 'template',
-                                  id: template.id,
-                                  name: template.title
-                                })}
+                                onClick={() => handleDeleteTemplateConfirm(template)}
                                 className="text-slate-500 hover:text-red-400 p-1.5 sm:p-2 transition-colors"
                                 title="Delete template"
                               >

@@ -27,7 +27,6 @@ const AuthModal = lazy(() => import('./components/AuthModal'));
 const SimpleVoiceClone = lazy(() => import('./components/SimpleVoiceClone').then(m => ({ default: m.SimpleVoiceClone })));
 const MeditationEditor = lazy(() => import('./src/components/MeditationEditor'));
 const MeditationPlayer = lazy(() => import('./components/V0MeditationPlayer'));
-// InlinePlayer removed - using only V0MeditationPlayer now
 // AgentChat lazy-loaded to reduce initial bundle (~15KB savings)
 const AgentChat = lazy(() => import('./components/AgentChat').then(m => ({ default: m.AgentChat })));
 // Onboarding lazy-loaded to not impact initial bundle
@@ -225,7 +224,7 @@ const App: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubgroup, setSelectedSubgroup] = useState<string | null>(null);
-  const [selectedBackgroundTrack, setSelectedBackgroundTrack] = useState<BackgroundTrack>(BACKGROUND_TRACKS[0]);
+  const [selectedBackgroundTrack, setSelectedBackgroundTrack] = useState<BackgroundTrack>(BACKGROUND_TRACKS[0]!);
 
   // Music preview state
   const [previewingTrackId, setPreviewingTrackId] = useState<string | null>(null);
@@ -285,7 +284,7 @@ const App: React.FC = () => {
   const [musicError, setMusicError] = useState<string | null>(null);
 
   // Nature/ambient sound state (natureSoundAudioRef comes from AudioPlaybackContext)
-  const [selectedNatureSound, setSelectedNatureSound] = useState<NatureSound>(NATURE_SOUNDS[0]); // 'none' by default
+  const [selectedNatureSound, setSelectedNatureSound] = useState<NatureSound>(NATURE_SOUNDS[0]!); // 'none' by default
   const [natureSoundVolume, setNatureSoundVolume] = useState(0.4); // 40% default
   const [showNatureSoundModal, setShowNatureSoundModal] = useState(false);
   const [previewingNatureSoundId, setPreviewingNatureSoundId] = useState<string | null>(null);
@@ -860,7 +859,7 @@ const App: React.FC = () => {
 
     // Auto-select first cloned voice if none selected
     if (!selectedVoice && clonedVoiceProfiles.length > 0) {
-      setSelectedVoice(clonedVoiceProfiles[0]);
+      setSelectedVoice(clonedVoiceProfiles[0]!);
     }
   }, [savedVoices, selectedVoice]);
 
@@ -2492,6 +2491,85 @@ const App: React.FC = () => {
     }
   };
 
+  // Stable modal close/open callbacks to avoid re-creating on every render
+  const handleCloseCloneModal = useCallback(() => {
+    setShowCloneModal(false);
+    setCloningStatus({ state: 'idle' });
+  }, [setShowCloneModal]);
+
+  const handleCloseTemplatesModal = useCallback(() => {
+    setShowTemplatesModal(false);
+    setSelectedCategory(null);
+    setSelectedSubgroup(null);
+  }, [setShowTemplatesModal]);
+
+  const handleCloseMusicModal = useCallback(() => setShowMusicModal(false), [setShowMusicModal]);
+  const handleCloseNatureSoundModal = useCallback(() => setShowNatureSoundModal(false), [setShowNatureSoundModal]);
+  const handleCloseAudioTagsModal = useCallback(() => setShowAudioTagsModal(false), [setShowAudioTagsModal]);
+  const handleCloseAuthModal = useCallback(() => setShowAuthModal(false), [setShowAuthModal]);
+  const handleCloseBurgerMenu = useCallback(() => setShowBurgerMenu(false), [setShowBurgerMenu]);
+
+  const handleAuthSuccess = useCallback(() => {
+    setShowAuthModal(false);
+    checkUser();
+  }, [setShowAuthModal, checkUser]);
+
+  const handleStartNewConversation = useCallback(async () => {
+    setShowScriptPreview(false);
+    await startNewConversation();
+  }, [startNewConversation]);
+
+  const handleMeditationRestore = useCallback((restoredScriptArg: string) => {
+    setRestoredScript(restoredScriptArg);
+  }, [setRestoredScript]);
+
+  const handleSidebarSignIn = useCallback(() => setShowAuthModal(true), [setShowAuthModal]);
+
+  const handleCloseScriptPreview = useCallback(() => {
+    if (!(isGenerating || isExtending)) setShowScriptPreview(false);
+  }, [isGenerating, isExtending]);
+
+  // Stable callbacks for library meditation items (used inside .map())
+  const handleLibraryPlayToggle = useCallback((meditation: MeditationHistory) => {
+    if (libraryPlayingId === meditation.id) {
+      stopLibraryPlayback();
+    } else {
+      playLibraryMeditation(meditation);
+    }
+  }, [libraryPlayingId, stopLibraryPlayback, playLibraryMeditation]);
+
+  const handleRestoreMeditation = useCallback((meditation: MeditationHistory) => {
+    const scriptToRestore = meditation.enhanced_script || meditation.prompt;
+    setScript(meditation.prompt);
+    setEnhancedScript(scriptToRestore);
+    setRestoredScript(scriptToRestore);
+    setShowLibrary(false);
+  }, [setScript, setEnhancedScript, setRestoredScript, setShowLibrary]);
+
+  const handleMusicSelect = useCallback((track: BackgroundTrack) => {
+    setSelectedBackgroundTrack(track);
+    startBackgroundMusic(track);
+  }, [startBackgroundMusic]);
+
+  const handleNatureSoundSelect = useCallback((sound: NatureSound) => {
+    setSelectedNatureSound(sound);
+  }, []);
+
+  const handleTagToggle = useCallback((tagId: string) => {
+    setSelectedAudioTags(prev =>
+      prev.includes(tagId) ? prev.filter(t => t !== tagId) : [...prev, tagId]
+    );
+  }, [setSelectedAudioTags]);
+
+  const handleEditorGenerate = useCallback((updatedScript: string) => {
+    setEditableScript(updatedScript);
+    throttledPlayEditedScript(updatedScript);
+  }, [setEditableScript, throttledPlayEditedScript]);
+
+  const handleEditorMusicSelect = useCallback((track: BackgroundTrack) => {
+    setSelectedBackgroundTrack(track);
+  }, []);
+
   return (
     <LazyMotion features={domAnimation} strict>
       <OfflineIndicator />
@@ -2786,10 +2864,7 @@ const App: React.FC = () => {
         {showCloneModal && (
           <Suspense fallback={<div className="fixed inset-0 z-[90] bg-slate-950/90 flex items-center justify-center"><div className="w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" /></div>}>
             <SimpleVoiceClone
-              onClose={() => {
-                setShowCloneModal(false);
-                setCloningStatus({ state: 'idle' });
-              }}
+              onClose={handleCloseCloneModal}
               onRecordingComplete={handleCloneRecordingComplete}
               cloningStatus={cloningStatus}
               creditInfo={creditInfo}
@@ -2803,11 +2878,7 @@ const App: React.FC = () => {
 
             {/* Back Button */}
             <button
-              onClick={() => {
-                setShowTemplatesModal(false);
-                setSelectedCategory(null);
-                setSelectedSubgroup(null);
-              }}
+              onClick={handleCloseTemplatesModal}
               className="fixed top-6 left-6 md:top-8 md:left-8 text-slate-600 hover:text-white transition-all flex items-center gap-3 group btn-press focus-ring rounded-full z-[100]"
             >
               <div className="w-12 h-12 min-w-[44px] min-h-[44px] rounded-full border border-white/5 flex items-center justify-center group-hover:bg-white/10 group-hover:scale-110 transition-all">
@@ -2944,12 +3015,9 @@ const App: React.FC = () => {
         {/* MODAL: Music Selector (extracted component) */}
         <MusicSelectorModal
           isOpen={showMusicModal}
-          onClose={() => setShowMusicModal(false)}
+          onClose={handleCloseMusicModal}
           selectedTrack={selectedBackgroundTrack}
-          onSelectTrack={(track) => {
-            setSelectedBackgroundTrack(track);
-            startBackgroundMusic(track);
-          }}
+          onSelectTrack={handleMusicSelect}
           previewingTrackId={previewingTrackId}
           onTogglePreview={togglePreviewTrack}
           onStopPreview={stopPreview}
@@ -2958,11 +3026,9 @@ const App: React.FC = () => {
         {/* MODAL: Nature Sound Selector */}
         <NatureSoundSelectorModal
           isOpen={showNatureSoundModal}
-          onClose={() => setShowNatureSoundModal(false)}
+          onClose={handleCloseNatureSoundModal}
           selectedSound={selectedNatureSound}
-          onSelectSound={(sound) => {
-            setSelectedNatureSound(sound);
-          }}
+          onSelectSound={handleNatureSoundSelect}
           previewingSoundId={previewingNatureSoundId}
           onTogglePreview={togglePreviewNatureSound}
           onStopPreview={stopNatureSoundPreview}
@@ -2971,7 +3037,7 @@ const App: React.FC = () => {
         {/* MODAL: Audio Tags Selector (extracted component) */}
         <AudioTagsModal
           isOpen={showAudioTagsModal}
-          onClose={() => setShowAudioTagsModal(false)}
+          onClose={handleCloseAudioTagsModal}
           selectedTags={selectedAudioTags}
           onSelectTags={setSelectedAudioTags}
           audioTagsEnabled={audioTagsEnabled}
@@ -3006,17 +3072,10 @@ const App: React.FC = () => {
                 availableMusic={BACKGROUND_TRACKS}
                 availableTags={AUDIO_TAG_CATEGORIES}
                 onVoiceSelect={() => navigate('/your-voices')}
-                onMusicSelect={(track) => setSelectedBackgroundTrack(track)}
-                onTagToggle={(tagId) => {
-                  setSelectedAudioTags(prev =>
-                    prev.includes(tagId) ? prev.filter(t => t !== tagId) : [...prev, tagId]
-                  );
-                }}
-                onGenerate={(updatedScript) => {
-                  setEditableScript(updatedScript);
-                  throttledPlayEditedScript(updatedScript);
-                }}
-                onClose={() => !(isGenerating || isExtending) && setShowScriptPreview(false)}
+                onMusicSelect={handleEditorMusicSelect}
+                onTagToggle={handleTagToggle}
+                onGenerate={handleEditorGenerate}
+                onClose={handleCloseScriptPreview}
                 isGenerating={isGenerating || isExtending}
                 source="direct"
               />
@@ -3029,12 +3088,9 @@ const App: React.FC = () => {
           <Suspense fallback={null}>
             <AuthModal
               isOpen={showAuthModal}
-              onClose={() => setShowAuthModal(false)}
+              onClose={handleCloseAuthModal}
               initialMode={authModalMode}
-              onSuccess={() => {
-                setShowAuthModal(false);
-                checkUser();
-              }}
+              onSuccess={handleAuthSuccess}
             />
           </Suspense>
         </ErrorBoundary>
@@ -3042,21 +3098,17 @@ const App: React.FC = () => {
         {/* ChatGPT-style Sidebar */}
         <Sidebar
           isOpen={showBurgerMenu}
-          onClose={() => setShowBurgerMenu(false)}
+          onClose={handleCloseBurgerMenu}
           user={user}
           chatHistory={chatHistory}
           isLoadingChatHistory={isLoadingChatHistory}
           onLoadConversation={loadConversation}
-          onStartNewConversation={async () => {
-            // Close any open modals when starting a new conversation
-            setShowScriptPreview(false);
-            await startNewConversation();
-          }}
+          onStartNewConversation={handleStartNewConversation}
           onConversationSelected={setResumeConversationId}
           onDeleteConversation={deleteConversation}
-          onMeditationRestore={(script) => setRestoredScript(script)}
+          onMeditationRestore={handleMeditationRestore}
           onSignOut={handleSignOut}
-          onSignIn={() => setShowAuthModal(true)}
+          onSignIn={handleSidebarSignIn}
           Logo={ICONS.Logo}
           isAdmin={isAdmin}
         />
@@ -3245,13 +3297,7 @@ const App: React.FC = () => {
                                     <div className="flex items-start gap-4">
                                       {/* Play/Stop Button */}
                                       <button
-                                        onClick={() => {
-                                          if (libraryPlayingId === meditation.id) {
-                                            stopLibraryPlayback();
-                                          } else {
-                                            playLibraryMeditation(meditation);
-                                          }
-                                        }}
+                                        onClick={() => handleLibraryPlayToggle(meditation)}
                                         className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${libraryPlayingId === meditation.id
                                           ? 'bg-emerald-500 text-white animate-pulse'
                                           : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
@@ -3335,14 +3381,7 @@ const App: React.FC = () => {
                                         <p className="text-xs text-slate-600 mt-1">{new Date(meditation.created_at).toLocaleDateString()}</p>
                                       </div>
                                       <button
-                                        onClick={() => {
-                                          // Restore meditation to editor
-                                          const scriptToRestore = meditation.enhanced_script || meditation.prompt;
-                                          setScript(meditation.prompt);
-                                          setEnhancedScript(scriptToRestore);
-                                          setRestoredScript(scriptToRestore);
-                                          setShowLibrary(false);
-                                        }}
+                                        onClick={() => handleRestoreMeditation(meditation)}
                                         className="px-3 py-1.5 rounded-lg bg-sky-500/20 text-sky-500 text-xs hover:bg-sky-500/30 transition-colors"
                                       >
                                         Restore

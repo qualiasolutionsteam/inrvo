@@ -418,14 +418,14 @@ export const getCurrentUser = async () => {
   }
 };
 
-export const getCurrentUserProfile = async (): Promise<User | null> => {
-  const user = await getCurrentUser();
-  if (!user || !supabase) return null;
+export const getCurrentUserProfile = async (userId?: string): Promise<User | null> => {
+  const resolvedUserId = userId || (await getCurrentUser())?.id;
+  if (!resolvedUserId || !supabase) return null;
 
   const { data, error } = await supabase
     .from('users')
     .select('*')
-    .eq('id', user.id)
+    .eq('id', resolvedUserId)
     .single();
 
   if (error) {
@@ -486,8 +486,7 @@ export const markOnboardingCompleted = async (userId?: string): Promise<void> =>
     // Clear local storage if it was used as a bridge
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('inrvo_onboarding');
-      const user = await getCurrentUser();
-      if (user) localStorage.removeItem(`inrvo_onboarding_${user.id}`);
+      localStorage.removeItem(`inrvo_onboarding_${targetUserId}`);
     }
   }
 };
@@ -584,13 +583,14 @@ export const createVoiceProfile = async (
   description?: string,
   language: string = 'en-US',
   geminiVoice?: string, // Gemini voice name (optional for cloned voices)
-  providerVoiceId?: string // Provider voice ID (for cloned voices via Chatterbox)
+  providerVoiceId?: string, // Provider voice ID (for cloned voices via Chatterbox)
+  userId?: string
 ): Promise<VoiceProfile | null> => {
-  const user = await getCurrentUser();
-  if (!user || !supabase) throw new Error('User not authenticated or Supabase not configured');
+  const resolvedUserId = userId || (await getCurrentUser())?.id;
+  if (!resolvedUserId || !supabase) throw new Error('User not authenticated or Supabase not configured');
 
   const profileData: Record<string, string | null> = {
-    user_id: user.id,
+    user_id: resolvedUserId,
     name,
     description: description ?? null,
     language,
@@ -638,17 +638,17 @@ export const createVoiceProfile = async (
 // Fields needed for voice profile display and TTS
 const VOICE_PROFILE_FIELDS = 'id, user_id, name, description, language, provider, provider_voice_id, voice_sample_url, fish_audio_model_id, elevenlabs_voice_id, status, cloning_status, created_at, updated_at' as const;
 
-export const getUserVoiceProfiles = async (): Promise<VoiceProfile[]> => {
-  const user = await getCurrentUser();
-  if (!user || !supabase) return [];
+export const getUserVoiceProfiles = async (userId?: string): Promise<VoiceProfile[]> => {
+  const resolvedUserId = userId || (await getCurrentUser())?.id;
+  if (!resolvedUserId || !supabase) return [];
 
   // Use deduplication to prevent concurrent identical requests
-  return deduplicatedQuery(`voice_profiles:${user.id}`, () =>
+  return deduplicatedQuery(`voice_profiles:${resolvedUserId}`, () =>
     withRetry(async () => {
       const { data, error } = await supabase
         .from('voice_profiles')
         .select(VOICE_PROFILE_FIELDS)
-        .eq('user_id', user.id)
+        .eq('user_id', resolvedUserId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -657,16 +657,16 @@ export const getUserVoiceProfiles = async (): Promise<VoiceProfile[]> => {
   );
 };
 
-export const getVoiceProfileById = async (id: string): Promise<VoiceProfile | null> => {
-  const user = await getCurrentUser();
-  if (!user || !supabase) return null;
+export const getVoiceProfileById = async (id: string, userId?: string): Promise<VoiceProfile | null> => {
+  const resolvedUserId = userId || (await getCurrentUser())?.id;
+  if (!resolvedUserId || !supabase) return null;
 
   // Use VOICE_PROFILE_FIELDS for consistent, optimized column selection
   const { data, error } = await supabase
     .from('voice_profiles')
     .select(VOICE_PROFILE_FIELDS)
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', resolvedUserId)
     .single();
 
   if (error) {
@@ -678,16 +678,17 @@ export const getVoiceProfileById = async (id: string): Promise<VoiceProfile | nu
 
 export const updateVoiceProfile = async (
   id: string,
-  updates: Partial<VoiceProfile>
+  updates: Partial<VoiceProfile>,
+  userId?: string
 ): Promise<VoiceProfile | null> => {
-  const user = await getCurrentUser();
-  if (!user || !supabase) throw new Error('User not authenticated or Supabase not configured');
+  const resolvedUserId = userId || (await getCurrentUser())?.id;
+  if (!resolvedUserId || !supabase) throw new Error('User not authenticated or Supabase not configured');
 
   const { data, error } = await supabase
     .from('voice_profiles')
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', resolvedUserId)
     .select()
     .single();
 
@@ -736,16 +737,16 @@ async function deleteFishAudioModel(modelId: string): Promise<boolean> {
  * - Deletes voice sample files from Supabase Storage
  * - Deletes the database record
  */
-export const deleteVoiceProfile = async (id: string): Promise<void> => {
-  const user = await getCurrentUser();
-  if (!user || !supabase) throw new Error('User not authenticated or Supabase not configured');
+export const deleteVoiceProfile = async (id: string, userId?: string): Promise<void> => {
+  const resolvedUserId = userId || (await getCurrentUser())?.id;
+  if (!resolvedUserId || !supabase) throw new Error('User not authenticated or Supabase not configured');
 
   // First, fetch the voice profile to get associated resources
   const { data: profile, error: fetchError } = await supabase
     .from('voice_profiles')
     .select('voice_sample_url, fish_audio_model_id')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', resolvedUserId)
     .single();
 
   if (fetchError) {
@@ -767,7 +768,7 @@ export const deleteVoiceProfile = async (id: string): Promise<void> => {
       // URL format: https://xxx.supabase.co/storage/v1/object/public/voice-samples/userId/filename.wav
       const url = new URL(profile.voice_sample_url);
       const pathMatch = url.pathname.match(/\/voice-samples\/(.+)$/);
-      if (pathMatch) {
+      if (pathMatch?.[1]) {
         const storagePath = pathMatch[1];
         const { error: storageError } = await supabase.storage
           .from('voice-samples')
@@ -786,7 +787,7 @@ export const deleteVoiceProfile = async (id: string): Promise<void> => {
     .from('voice_profiles')
     .delete()
     .eq('id', id)
-    .eq('user_id', user.id);
+    .eq('user_id', resolvedUserId);
 
   if (error) throw error;
 };
@@ -797,17 +798,18 @@ export const saveAudioGeneration = async (
   modelId: string,
   text: string,
   audioUrl?: string,
-  duration?: number
+  duration?: number,
+  userId?: string
 ): Promise<AudioGeneration | null> => {
-  const user = await getCurrentUser();
-  if (!user || !supabase) throw new Error('User not authenticated or Supabase not configured');
+  const resolvedUserId = userId || (await getCurrentUser())?.id;
+  if (!resolvedUserId || !supabase) throw new Error('User not authenticated or Supabase not configured');
 
   const { data, error } = await supabase
     .from('audio_generations')
     .insert({
       profile_id: profileId,
       model_id: modelId,
-      user_id: user.id,
+      user_id: resolvedUserId,
       text,
       text_hash: btoa(text).slice(0, 64), // Simple hash for caching
       audio_url: audioUrl,
@@ -824,14 +826,14 @@ export const saveAudioGeneration = async (
 // Fields needed for audio generation display (excludes large 'text' field)
 const AUDIO_GENERATION_FIELDS = 'id, profile_id, model_id, user_id, audio_url, duration, status, created_at' as const;
 
-export const getUserAudioGenerations = async (limit = 20): Promise<AudioGeneration[]> => {
-  const user = await getCurrentUser();
-  if (!user || !supabase) return [];
+export const getUserAudioGenerations = async (limit = 20, userId?: string): Promise<AudioGeneration[]> => {
+  const resolvedUserId = userId || (await getCurrentUser())?.id;
+  if (!resolvedUserId || !supabase) return [];
 
   const { data, error } = await supabase
     .from('audio_generations')
     .select(AUDIO_GENERATION_FIELDS)
-    .eq('user_id', user.id)
+    .eq('user_id', resolvedUserId)
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -857,10 +859,11 @@ export const createVoiceClone = async (
   name: string,
   audioData: string, // Base64 encoded audio
   description?: string,
-  voiceCharacteristics?: Record<string, any>
+  voiceCharacteristics?: Record<string, any>,
+  userId?: string
 ): Promise<VoiceClone | null> => {
-  const user = await getCurrentUser();
-  if (!user || !supabase) throw new Error('User not authenticated or Supabase not configured');
+  const resolvedUserId = userId || (await getCurrentUser())?.id;
+  if (!resolvedUserId || !supabase) throw new Error('User not authenticated or Supabase not configured');
 
   // Check if audio data is too large (Supabase text field limit is ~1GB, but let's be safe)
   // Base64 encoding increases size by ~33%, so limit to ~10MB raw audio
@@ -872,7 +875,7 @@ export const createVoiceClone = async (
     const { data, error } = await supabase
       .from('voice_clones')
       .insert({
-        user_id: user.id,
+        user_id: resolvedUserId,
         name,
         description,
         audio_data: audioData,
@@ -914,15 +917,15 @@ export const createVoiceClone = async (
 // Fields needed for voice clone display (excludes large 'audio_data' field - 15MB+ per record)
 const VOICE_CLONE_FIELDS = 'id, user_id, name, description, voice_characteristics, is_active, is_default, created_at, updated_at' as const;
 
-export const getUserVoiceClones = async (): Promise<VoiceClone[]> => {
-  const user = await getCurrentUser();
-  if (!user || !supabase) return [];
+export const getUserVoiceClones = async (userId?: string): Promise<VoiceClone[]> => {
+  const resolvedUserId = userId || (await getCurrentUser())?.id;
+  if (!resolvedUserId || !supabase) return [];
 
   return withRetry(async () => {
     const { data, error } = await supabase
       .from('voice_clones')
       .select(VOICE_CLONE_FIELDS)
-      .eq('user_id', user.id)
+      .eq('user_id', resolvedUserId)
       .eq('is_active', true)
       .order('created_at', { ascending: false });
 
@@ -938,7 +941,7 @@ export const getUserVoiceClones = async (): Promise<VoiceClone[]> => {
  */
 function base64ToBlob(base64: string, mimeType: string = 'audio/wav'): Blob {
   // Remove data URL prefix if present
-  const base64Data = base64.includes(',') ? base64.split(',')[1] : base64;
+  const base64Data = base64.includes(',') ? base64.split(',')[1]! : base64;
   const byteCharacters = atob(base64Data);
   const byteNumbers = new Array(byteCharacters.length);
   for (let i = 0; i < byteCharacters.length; i++) {
@@ -955,10 +958,11 @@ function base64ToBlob(base64: string, mimeType: string = 'audio/wav'): Blob {
  */
 export const uploadMeditationAudio = async (
   audioBase64: string,
-  identifier?: string
+  identifier?: string,
+  userId?: string
 ): Promise<string | null> => {
-  const user = await getCurrentUser();
-  if (!user || !supabase) return null;
+  const resolvedUserId = userId || (await getCurrentUser())?.id;
+  if (!resolvedUserId || !supabase) return null;
 
   try {
     // Convert base64 to blob
@@ -967,8 +971,8 @@ export const uploadMeditationAudio = async (
     // Create unique filename: userId/identifier_timestamp.wav (or just userId/timestamp.wav)
     const timestamp = Date.now();
     const fileName = identifier
-      ? `${user.id}/${identifier}_${timestamp}.wav`
-      : `${user.id}/${timestamp}.wav`;
+      ? `${resolvedUserId}/${identifier}_${timestamp}.wav`
+      : `${resolvedUserId}/${timestamp}.wav`;
 
     // Upload to Supabase Storage
     const { data, error } = await supabase.storage
@@ -1043,10 +1047,11 @@ export const saveMeditationHistory = async (
   audioBase64?: string,
   title?: string,
   natureSoundId?: string,
-  natureSoundName?: string
+  natureSoundName?: string,
+  userId?: string
 ): Promise<MeditationHistory | null> => {
-  const user = await getCurrentUser();
-  if (!user || !supabase) return null;
+  const resolvedUserId = userId || (await getCurrentUser())?.id;
+  if (!resolvedUserId || !supabase) return null;
 
   // Generate title from prompt if not provided (first 50 chars)
   const meditationTitle = title || prompt.slice(0, 50) + (prompt.length > 50 ? '...' : '');
@@ -1064,7 +1069,7 @@ export const saveMeditationHistory = async (
   const { data, error } = await supabase
     .from('meditation_history')
     .insert({
-      user_id: user.id,
+      user_id: resolvedUserId,
       prompt,
       title: meditationTitle,
       enhanced_script: enhancedScript,
@@ -1092,15 +1097,15 @@ export const saveMeditationHistory = async (
 // Fields needed for meditation history display
 const MEDITATION_HISTORY_FIELDS = 'id, user_id, prompt, title, enhanced_script, voice_id, voice_name, voice_profile_id, background_track_id, background_track_name, nature_sound_id, nature_sound_name, duration_seconds, audio_duration, audio_url, is_favorite, content_category, content_sub_type, meditation_type, created_at, updated_at' as const;
 
-export const getMeditationHistory = async (limit = 50): Promise<MeditationHistory[]> => {
-  const user = await getCurrentUser();
-  if (!user || !supabase) return [];
+export const getMeditationHistory = async (limit = 50, userId?: string): Promise<MeditationHistory[]> => {
+  const resolvedUserId = userId || (await getCurrentUser())?.id;
+  if (!resolvedUserId || !supabase) return [];
 
   return withRetry(async () => {
     const { data, error } = await supabase
       .from('meditation_history')
       .select(MEDITATION_HISTORY_FIELDS)
-      .eq('user_id', user.id)
+      .eq('user_id', resolvedUserId)
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -1116,15 +1121,15 @@ export const getMeditationHistory = async (limit = 50): Promise<MeditationHistor
  * Get a single meditation by ID
  * Used for loading saved meditations into the player
  */
-export const getMeditationById = async (id: string): Promise<MeditationHistory | null> => {
-  const user = await getCurrentUser();
-  if (!user || !supabase) return null;
+export const getMeditationById = async (id: string, userId?: string): Promise<MeditationHistory | null> => {
+  const resolvedUserId = userId || (await getCurrentUser())?.id;
+  if (!resolvedUserId || !supabase) return null;
 
   const { data, error } = await supabase
     .from('meditation_history')
     .select(MEDITATION_HISTORY_FIELDS)
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', resolvedUserId)
     .single();
 
   if (error) {
@@ -1146,15 +1151,16 @@ export interface PaginatedHistoryResult {
 
 export const getMeditationHistoryPaginated = async (
   page = 0,
-  pageSize = 20
+  pageSize = 20,
+  userId?: string
 ): Promise<PaginatedHistoryResult> => {
-  const user = await getCurrentUser();
-  if (!user || !supabase) {
+  const resolvedUserId = userId || (await getCurrentUser())?.id;
+  if (!resolvedUserId || !supabase) {
     return { data: [], hasMore: false, totalCount: 0 };
   }
 
   // Deduplicate concurrent requests for the same page
-  return deduplicatedQuery(`meditation_history:${user.id}:${page}:${pageSize}`, () =>
+  return deduplicatedQuery(`meditation_history:${resolvedUserId}:${page}:${pageSize}`, () =>
     withRetry(async () => {
       const from = page * pageSize;
       const to = from + pageSize - 1;
@@ -1164,7 +1170,7 @@ export const getMeditationHistoryPaginated = async (
       const { data, error, count } = await supabase
         .from('meditation_history')
         .select(MEDITATION_HISTORY_FIELDS, { count: 'estimated' })
-        .eq('user_id', user.id)
+        .eq('user_id', resolvedUserId)
         .order('created_at', { ascending: false })
         .range(from, to);
 
@@ -1185,16 +1191,16 @@ export const getMeditationHistoryPaginated = async (
   );
 };
 
-export const deleteMeditationHistory = async (id: string): Promise<boolean> => {
-  const user = await getCurrentUser();
-  if (!user || !supabase) return false;
+export const deleteMeditationHistory = async (id: string, userId?: string): Promise<boolean> => {
+  const resolvedUserId = userId || (await getCurrentUser())?.id;
+  if (!resolvedUserId || !supabase) return false;
 
   // First, get the record to find the audio URL
   const { data: record } = await supabase
     .from('meditation_history')
     .select('audio_url')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', resolvedUserId)
     .single();
 
   // Delete audio file from storage if it exists
@@ -1209,7 +1215,7 @@ export const deleteMeditationHistory = async (id: string): Promise<boolean> => {
     .from('meditation_history')
     .delete()
     .eq('id', id)
-    .eq('user_id', user.id);
+    .eq('user_id', resolvedUserId);
 
   if (error) {
     console.error('Error deleting meditation history:', error);
@@ -1222,9 +1228,9 @@ export const deleteMeditationHistory = async (id: string): Promise<boolean> => {
  * Toggle favorite status for a meditation
  * Uses atomic database function to reduce 2 queries to 1
  */
-export const toggleMeditationFavorite = async (id: string): Promise<boolean> => {
-  const user = await getCurrentUser();
-  if (!user || !supabase) return false;
+export const toggleMeditationFavorite = async (id: string, userId?: string): Promise<boolean> => {
+  const resolvedUserId = userId || (await getCurrentUser())?.id;
+  if (!resolvedUserId || !supabase) return false;
 
   try {
     // Use atomic RPC function for single-query toggle
@@ -1236,7 +1242,7 @@ export const toggleMeditationFavorite = async (id: string): Promise<boolean> => 
       // Fallback to manual toggle if function doesn't exist yet
       if (error.message?.includes('function') || error.code === '42883') {
         console.warn('Atomic toggle not available, using fallback');
-        return toggleMeditationFavoriteFallback(id, user.id);
+        return toggleMeditationFavoriteFallback(id, resolvedUserId);
       }
       console.error('Error toggling meditation favorite:', error);
       return false;
@@ -1278,15 +1284,15 @@ async function toggleMeditationFavoriteFallback(id: string, userId: string): Pro
 /**
  * Update meditation title
  */
-export const updateMeditationTitle = async (id: string, title: string): Promise<boolean> => {
-  const user = await getCurrentUser();
-  if (!user || !supabase) return false;
+export const updateMeditationTitle = async (id: string, title: string, userId?: string): Promise<boolean> => {
+  const resolvedUserId = userId || (await getCurrentUser())?.id;
+  if (!resolvedUserId || !supabase) return false;
 
   const { error } = await supabase
     .from('meditation_history')
     .update({ title, updated_at: new Date().toISOString() })
     .eq('id', id)
-    .eq('user_id', user.id);
+    .eq('user_id', resolvedUserId);
 
   if (error) {
     console.error('Error updating meditation title:', error);
@@ -1298,15 +1304,15 @@ export const updateMeditationTitle = async (id: string, title: string): Promise<
 /**
  * Get favorite meditations
  */
-export const getFavoriteMeditations = async (): Promise<MeditationHistory[]> => {
-  const user = await getCurrentUser();
-  if (!user || !supabase) return [];
+export const getFavoriteMeditations = async (userId?: string): Promise<MeditationHistory[]> => {
+  const resolvedUserId = userId || (await getCurrentUser())?.id;
+  if (!resolvedUserId || !supabase) return [];
 
   return withRetry(async () => {
     const { data, error } = await supabase
       .from('meditation_history')
       .select(MEDITATION_HISTORY_FIELDS)
-      .eq('user_id', user.id)
+      .eq('user_id', resolvedUserId)
       .eq('is_favorite', true)
       .order('created_at', { ascending: false });
 
@@ -1319,15 +1325,15 @@ export const getFavoriteMeditations = async (): Promise<MeditationHistory[]> => 
 };
 
 // Audio Tag Preference operations
-export const getAudioTagPreferences = async (): Promise<AudioTagPreference> => {
-  const user = await getCurrentUser();
-  if (!user || !supabase) return { enabled: false, favorite_tags: [] };
+export const getAudioTagPreferences = async (userId?: string): Promise<AudioTagPreference> => {
+  const resolvedUserId = userId || (await getCurrentUser())?.id;
+  if (!resolvedUserId || !supabase) return { enabled: false, favorite_tags: [] };
 
   // Only select the field we need instead of the entire user row
   const { data, error } = await supabase
     .from('users')
     .select('audio_tag_preferences')
-    .eq('id', user.id)
+    .eq('id', resolvedUserId)
     .maybeSingle();
 
   if (error || !data?.audio_tag_preferences) {
@@ -1338,13 +1344,14 @@ export const getAudioTagPreferences = async (): Promise<AudioTagPreference> => {
 
 export const updateAudioTagPreferences = async (
   preferences: Partial<AudioTagPreference>,
-  currentPreferences?: AudioTagPreference // Optional: pass current to avoid N+1 query
+  currentPreferences?: AudioTagPreference, // Optional: pass current to avoid N+1 query
+  userId?: string
 ): Promise<void> => {
-  const user = await getCurrentUser();
-  if (!user || !supabase) throw new Error('User not authenticated or Supabase not configured');
+  const resolvedUserId = userId || (await getCurrentUser())?.id;
+  if (!resolvedUserId || !supabase) throw new Error('User not authenticated or Supabase not configured');
 
   // Use provided current preferences or fetch if not provided
-  const current = currentPreferences ?? await getAudioTagPreferences();
+  const current = currentPreferences ?? await getAudioTagPreferences(resolvedUserId);
   const updated = { ...current, ...preferences };
 
   const { error } = await supabase
@@ -1353,13 +1360,13 @@ export const updateAudioTagPreferences = async (
       audio_tag_preferences: updated,
       updated_at: new Date().toISOString()
     })
-    .eq('id', user.id);
+    .eq('id', resolvedUserId);
 
   if (error) throw error;
 };
 
-export const toggleFavoriteAudioTag = async (tagId: string): Promise<string[]> => {
-  const prefs = await getAudioTagPreferences();
+export const toggleFavoriteAudioTag = async (tagId: string, userId?: string): Promise<string[]> => {
+  const prefs = await getAudioTagPreferences(userId);
   const favorites = prefs.favorite_tags || [];
 
   const updated = favorites.includes(tagId)
@@ -1367,7 +1374,7 @@ export const toggleFavoriteAudioTag = async (tagId: string): Promise<string[]> =
     : [...favorites, tagId];
 
   // Pass current prefs to avoid N+1 query
-  await updateAudioTagPreferences({ favorite_tags: updated }, prefs);
+  await updateAudioTagPreferences({ favorite_tags: updated }, prefs, userId);
   return updated;
 };
 

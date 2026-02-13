@@ -196,7 +196,7 @@ export function updateInHistoryCache(userId: string, meditationId: string, updat
         const parsed: CachedHistory = JSON.parse(cached);
         const index = parsed.data.findIndex(m => m.id === meditationId);
         if (index !== -1) {
-          parsed.data[index] = { ...parsed.data[index], ...updates };
+          parsed.data[index] = { ...parsed.data[index]!, ...updates };
           sessionStorage.setItem(key, JSON.stringify(parsed));
         }
       }

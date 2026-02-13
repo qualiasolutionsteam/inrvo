@@ -352,8 +352,8 @@ export const VoiceAgent: React.FC<VoiceAgentProps> = ({ onClose }) => {
       let interimText = '';
 
       for (let i = 0; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
+        const transcript = event.results[i]![0]!.transcript;
+        if (event.results[i]!.isFinal) {
           finalText += transcript + ' ';
         } else {
           interimText += transcript;
