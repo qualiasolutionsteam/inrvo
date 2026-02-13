@@ -225,6 +225,7 @@ export default function ResetPasswordPage() {
                     onBlur={() => setTouched(t => ({ ...t, password: true }))}
                     required
                     minLength={8}
+                    aria-label="New password"
                     className={`w-full px-4 py-3 rounded-xl bg-white/5 border text-white text-sm placeholder:text-white/30 focus:outline-none focus:bg-white/[0.08] transition-all ${
                       touched.password && !isPasswordValid
                         ? 'border-rose-500/50 focus:border-rose-500/50'
@@ -267,6 +268,7 @@ export default function ResetPasswordPage() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     onBlur={() => setTouched(t => ({ ...t, confirm: true }))}
                     required
+                    aria-label="Confirm new password"
                     className={`w-full px-4 py-3 rounded-xl bg-white/5 border text-white text-sm placeholder:text-white/30 focus:outline-none focus:bg-white/[0.08] transition-all ${
                       touched.confirm && !passwordsMatch && confirmPassword
                         ? 'border-rose-500/50 focus:border-rose-500/50'

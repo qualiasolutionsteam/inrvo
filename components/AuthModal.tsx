@@ -220,6 +220,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
                       type="text"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
+                      aria-label="First name"
                       className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm placeholder:text-white/40 focus:outline-none focus:border-sky-500/40 focus:bg-white/[0.06] transition-all"
                       placeholder="First name"
                     />
@@ -227,6 +228,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
                       type="text"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
+                      aria-label="Last name"
                       className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm placeholder:text-white/40 focus:outline-none focus:border-sky-500/40 focus:bg-white/[0.06] transition-all"
                       placeholder="Last name"
                     />
@@ -240,6 +242,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
                     onChange={(e) => setEmail(e.target.value)}
                     onBlur={() => setTouched(t => ({ ...t, email: true }))}
                     required
+                    aria-label="Email address"
                     className={`w-full px-4 py-3 rounded-xl bg-white/[0.04] border text-white text-sm placeholder:text-white/40 focus:outline-none focus:bg-white/[0.06] transition-all ${
                       touched.email && !isEmailValid
                         ? 'border-rose-500/40 focus:border-rose-500/40'
@@ -262,6 +265,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess, initi
                       onBlur={() => setTouched(t => ({ ...t, password: true }))}
                       required
                       minLength={8}
+                      aria-label="Password"
                       className={`w-full px-4 py-3 rounded-xl bg-white/[0.04] border text-white text-sm placeholder:text-white/40 focus:outline-none focus:bg-white/[0.06] transition-all ${
                         touched.password && !isPasswordValid
                           ? 'border-rose-500/40 focus:border-rose-500/40'

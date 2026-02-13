@@ -38,8 +38,8 @@ export async function loadMeditationPreferences(userId: string): Promise<Meditat
 
   try {
     const { data, error } = await supabase
-      .from('user_profiles')
-      .select('meditation_preferences')
+      .from('users')
+      .select('preferences')
       .eq('id', userId)
       .single();
 
@@ -48,7 +48,7 @@ export async function loadMeditationPreferences(userId: string): Promise<Meditat
       return null;
     }
 
-    return data.meditation_preferences as MeditationPreferences;
+    return (data.preferences as Record<string, unknown>)?.meditation as MeditationPreferences ?? null;
   } catch (error) {
     console.error('[PreferencesService] Error loading preferences:', error);
     return null;

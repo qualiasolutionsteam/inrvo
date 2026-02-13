@@ -7,6 +7,28 @@ import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
  * Triggered by Supabase Auth Hook
  */
 
+// --- Security utilities ---
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+const ALLOWED_HOSTS = ['innrvo.com', 'www.innrvo.com', 'localhost'];
+
+function isAllowedRedirect(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return ALLOWED_HOSTS.some(host => parsed.hostname === host || parsed.hostname.endsWith('.' + host));
+  } catch {
+    return false;
+  }
+}
+
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 // Remove v1,whsec_ prefix from the secret as required by standardwebhooks library
 const rawSecret = Deno.env.get('AUTH_WEBHOOK_SECRET');
@@ -121,7 +143,7 @@ function buildVerificationUrl(tokenHash: string, type: string, redirectTo: strin
 }
 
 function getSignupEmail(name: string, verifyUrl: string): { subject: string; html: string } {
-  const firstName = name?.split(' ')[0] || 'there';
+  const firstName = escapeHtml(name?.split(' ')[0] || 'there');
   const content = `
     <div style="text-align: center; margin-bottom: 24px;"><span style="font-size: 48px;">🧘</span></div>
     <h1 style="margin: 0 0 16px 0; font-size: 24px; font-weight: 700; color: ${COLORS.text}; text-align: center;">Welcome to Innrvo</h1>
@@ -137,7 +159,7 @@ function getSignupEmail(name: string, verifyUrl: string): { subject: string; htm
 }
 
 function getPasswordResetEmail(name: string, verifyUrl: string): { subject: string; html: string } {
-  const firstName = name?.split(' ')[0] || 'there';
+  const firstName = escapeHtml(name?.split(' ')[0] || 'there');
   const content = `
     <div style="text-align: center; margin-bottom: 24px;"><span style="font-size: 48px;">🔐</span></div>
     <h1 style="margin: 0 0 16px 0; font-size: 24px; font-weight: 700; color: ${COLORS.text}; text-align: center;">Reset Your Password</h1>
@@ -152,7 +174,7 @@ function getPasswordResetEmail(name: string, verifyUrl: string): { subject: stri
 }
 
 function getMagicLinkEmail(name: string, verifyUrl: string): { subject: string; html: string } {
-  const firstName = name?.split(' ')[0] || 'there';
+  const firstName = escapeHtml(name?.split(' ')[0] || 'there');
   const content = `
     <div style="text-align: center; margin-bottom: 24px;"><span style="font-size: 48px;">✨</span></div>
     <h1 style="margin: 0 0 16px 0; font-size: 24px; font-weight: 700; color: ${COLORS.text}; text-align: center;">Your Magic Link</h1>
@@ -167,7 +189,7 @@ function getMagicLinkEmail(name: string, verifyUrl: string): { subject: string; 
 }
 
 function getInviteEmail(name: string, verifyUrl: string): { subject: string; html: string } {
-  const firstName = name?.split(' ')[0] || 'there';
+  const firstName = escapeHtml(name?.split(' ')[0] || 'there');
   const content = `
     <div style="text-align: center; margin-bottom: 24px;"><span style="font-size: 48px;">🎁</span></div>
     <h1 style="margin: 0 0 16px 0; font-size: 24px; font-weight: 700; color: ${COLORS.text}; text-align: center;">You've Been Invited!</h1>
@@ -181,7 +203,7 @@ function getInviteEmail(name: string, verifyUrl: string): { subject: string; htm
 }
 
 function getEmailChangeEmail(name: string, verifyUrl: string): { subject: string; html: string } {
-  const firstName = name?.split(' ')[0] || 'there';
+  const firstName = escapeHtml(name?.split(' ')[0] || 'there');
   const content = `
     <div style="text-align: center; margin-bottom: 24px;"><span style="font-size: 48px;">📧</span></div>
     <h1 style="margin: 0 0 16px 0; font-size: 24px; font-weight: 700; color: ${COLORS.text}; text-align: center;">Confirm Email Change</h1>
@@ -253,7 +275,8 @@ serve(async (req) => {
 
   try {
     const name = user.user_metadata?.full_name || user.user_metadata?.name || '';
-    const verifyUrl = buildVerificationUrl(token_hash, email_action_type, redirect_to || 'https://innrvo.com');
+    const safeRedirect = redirect_to && isAllowedRedirect(redirect_to) ? redirect_to : 'https://innrvo.com';
+    const verifyUrl = buildVerificationUrl(token_hash, email_action_type, safeRedirect);
 
     let emailContent: { subject: string; html: string };
 

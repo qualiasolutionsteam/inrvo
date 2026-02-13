@@ -48,7 +48,7 @@ import { voiceService } from './src/lib/voiceService';
 // See: voiceService.ts also imports edgeFunctions dynamically
 import { convertToWAV } from './src/lib/audioConverter';
 import { creditService } from './src/lib/credits';
-import { ensureAudioContextResumed } from './src/lib/iosAudioUtils';
+import { ensureAudioContextResumed, getAudioContextClass } from './src/lib/iosAudioUtils';
 
 /**
  * Convert base64 audio to Blob
@@ -459,7 +459,7 @@ const App: React.FC = () => {
 
       // Ensure audio context exists
       if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        audioContextRef.current = new (getAudioContextClass())();
       }
 
       // iOS: Use async IIFE to properly await AudioContext resume before playback
@@ -563,7 +563,7 @@ const App: React.FC = () => {
 
       // Ensure audio context exists
       if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        audioContextRef.current = new (getAudioContextClass())();
       }
 
       // iOS: Use async IIFE to properly await AudioContext resume before playback
@@ -1390,7 +1390,7 @@ const App: React.FC = () => {
       try {
         // Ensure AudioContext exists
         if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
-          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+          audioContextRef.current = new (getAudioContextClass())();
         }
         const ctx = audioContextRef.current;
 
@@ -1612,7 +1612,7 @@ const App: React.FC = () => {
         try {
           // Ensure AudioContext exists
           if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
-            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+            audioContextRef.current = new (getAudioContextClass())();
           }
           const ctx = audioContextRef.current;
 
@@ -2227,7 +2227,7 @@ const App: React.FC = () => {
     try {
       // Initialize audio context
       if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        audioContextRef.current = new (getAudioContextClass())();
       }
 
       // Generate speech with the edited script
@@ -2405,7 +2405,7 @@ const App: React.FC = () => {
 
     try {
       if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        audioContextRef.current = new (getAudioContextClass())();
       }
 
       // Check for credits if this is a cloned voice
@@ -2632,7 +2632,7 @@ const App: React.FC = () => {
                       try {
                         // Initialize audio context (check state to handle closed contexts)
                         if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
-                          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+                          audioContextRef.current = new (getAudioContextClass())();
                         }
 
                         // CRITICAL: Resume suspended AudioContext (required for iOS Safari)
@@ -2799,8 +2799,7 @@ const App: React.FC = () => {
 
         {/* MODAL: Templates */}
         {showTemplatesModal && (
-          <div className="fixed inset-0 z-[80] bg-[#020617]/95 backdrop-blur-3xl flex flex-col p-6 animate-in fade-in zoom-in duration-500 overflow-y-auto">
-            <Starfield />
+          <div className="fixed inset-0 z-[80] bg-[#020617]/95 backdrop-blur-sm flex flex-col p-6 animate-in fade-in zoom-in duration-500 overflow-y-auto">
 
             {/* Back Button */}
             <button
@@ -3064,8 +3063,7 @@ const App: React.FC = () => {
 
         {/* MODAL: How It Works */}
         {showHowItWorks && (
-          <div className="fixed inset-0 z-[80] bg-[#020617]/98 backdrop-blur-3xl flex flex-col p-6 animate-in fade-in zoom-in duration-500 overflow-y-auto">
-            <Starfield />
+          <div className="fixed inset-0 z-[80] bg-[#020617]/98 backdrop-blur-sm flex flex-col p-6 animate-in fade-in zoom-in duration-500 overflow-y-auto">
 
             <button
               onClick={() => setShowHowItWorks(false)}
@@ -3154,7 +3152,6 @@ const App: React.FC = () => {
         {/* MODAL: Library */}
         {showLibrary && (
           <div className="fixed inset-0 z-[80] flex flex-col p-6 animate-in fade-in duration-300 overflow-y-auto">
-            <Starfield />
 
             <button
               onClick={() => setShowLibrary(false)}
@@ -3412,8 +3409,7 @@ const App: React.FC = () => {
 
         {/* MODAL: Pricing */}
         {showPricing && (
-          <div className="fixed inset-0 z-[80] bg-[#020617]/95 backdrop-blur-3xl flex flex-col p-6 animate-in fade-in zoom-in duration-500 overflow-y-auto">
-            <Starfield />
+          <div className="fixed inset-0 z-[80] bg-[#020617]/95 backdrop-blur-sm flex flex-col p-6 animate-in fade-in zoom-in duration-500 overflow-y-auto">
 
             <button
               onClick={() => setShowPricing(false)}
@@ -3528,8 +3524,7 @@ const App: React.FC = () => {
 
         {/* MODAL: About Us */}
         {showAboutUs && (
-          <div className="fixed inset-0 z-[80] bg-[#020617]/95 backdrop-blur-3xl flex flex-col p-6 animate-in fade-in zoom-in duration-500 overflow-y-auto">
-            <Starfield />
+          <div className="fixed inset-0 z-[80] bg-[#020617]/95 backdrop-blur-sm flex flex-col p-6 animate-in fade-in zoom-in duration-500 overflow-y-auto">
 
             <button
               onClick={() => setShowAboutUs(false)}
@@ -3609,9 +3604,8 @@ const App: React.FC = () => {
 
         {/* MODAL: Terms of Service */}
         {showTerms && (
-          <div className="fixed inset-0 z-[80] bg-[#020617]/95 backdrop-blur-3xl flex flex-col p-6 animate-in fade-in zoom-in duration-500 overflow-y-auto">
+          <div className="fixed inset-0 z-[80] bg-[#020617]/95 backdrop-blur-sm flex flex-col p-6 animate-in fade-in zoom-in duration-500 overflow-y-auto">
             <Background />
-            <Starfield />
 
             <button
               onClick={() => setShowTerms(false)}
@@ -3672,9 +3666,8 @@ const App: React.FC = () => {
 
         {/* MODAL: Privacy Policy */}
         {showPrivacy && (
-          <div className="fixed inset-0 z-[80] bg-[#020617]/95 backdrop-blur-3xl flex flex-col p-6 animate-in fade-in zoom-in duration-500 overflow-y-auto">
+          <div className="fixed inset-0 z-[80] bg-[#020617]/95 backdrop-blur-sm flex flex-col p-6 animate-in fade-in zoom-in duration-500 overflow-y-auto">
             <Background />
-            <Starfield />
 
             <button
               onClick={() => setShowPrivacy(false)}

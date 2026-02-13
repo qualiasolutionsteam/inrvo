@@ -20,6 +20,34 @@ interface EdgeFunctionError extends Error {
   needsReclone?: boolean;
 }
 
+/**
+ * Proper Error subclass for Edge Function errors.
+ * Replaces unsafe `new Error(...) as EdgeFunctionError` type assertions.
+ */
+class EdgeError extends Error implements EdgeFunctionError {
+  status?: number;
+  requestId?: string;
+  isNetworkError?: boolean;
+  needsReclone?: boolean;
+
+  constructor(
+    message: string,
+    opts?: {
+      status?: number;
+      requestId?: string;
+      isNetworkError?: boolean;
+      needsReclone?: boolean;
+    }
+  ) {
+    super(message);
+    this.name = 'EdgeError';
+    this.status = opts?.status;
+    this.requestId = opts?.requestId;
+    this.isNetworkError = opts?.isNetworkError;
+    this.needsReclone = opts?.needsReclone;
+  }
+}
+
 // ============================================================================
 // Auth Token Cache - Avoid fetching session on every API call
 // ============================================================================
@@ -119,11 +147,8 @@ const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
  * Check if an error is retryable (network issues, server errors)
  */
 function isRetryableError(error: unknown, status?: number): boolean {
-  // Type guard for EdgeFunctionError
-  const edgeError = error as EdgeFunctionError;
-
   // Network errors are retryable
-  if (edgeError?.isNetworkError) return true;
+  if (error instanceof EdgeError && error.isNetworkError) return true;
   if (error instanceof Error && error.name === 'TypeError' && error.message === 'Failed to fetch') return true;
 
   // Server errors (5xx) are retryable, except 501
@@ -246,10 +271,10 @@ async function callEdgeFunction<T>(
 
   // Fail early for functions that require auth when no token is available
   if (options?.requireAuth && !token) {
-    const authError = new Error('Your session has expired. Please sign in again to continue.') as EdgeFunctionError;
-    authError.requestId = requestId;
-    authError.status = 401;
-    throw authError;
+    throw new EdgeError('Your session has expired. Please sign in again to continue.', {
+      requestId,
+      status: 401,
+    });
   }
 
   const url = `${SUPABASE_URL}/functions/v1/${functionName}`;
@@ -298,10 +323,11 @@ async function callEdgeFunction<T>(
 
       if (!response.ok) {
         const errorMessage = data.error || `Edge function error: ${response.status}`;
-        const error = new Error(errorMessage) as EdgeFunctionError;
-        error.requestId = requestId;
-        error.status = response.status;
-        error.needsReclone = data.needsReclone;
+        const error = new EdgeError(errorMessage, {
+          requestId,
+          status: response.status,
+          needsReclone: data.needsReclone,
+        });
 
         // Special handling for 401 - Force token refresh before retry
         if (response.status === 401 && attempt < retryOpts.maxRetries) {
@@ -336,10 +362,10 @@ async function callEdgeFunction<T>(
             continue;
           } else {
             // No token available after refresh - session has expired
-            const authError = new Error('Your session has expired. Please sign in again to continue.') as EdgeFunctionError;
-            authError.requestId = requestId;
-            authError.status = 401;
-            throw authError;
+            throw new EdgeError('Your session has expired. Please sign in again to continue.', {
+              requestId,
+              status: 401,
+            });
           }
         }
 
@@ -360,8 +386,7 @@ async function callEdgeFunction<T>(
 
       // Handle abort/timeout errors
       if (error instanceof Error && error.name === 'AbortError') {
-        const timeoutError = new Error(`Request timeout after ${timeoutMs}ms`) as EdgeFunctionError;
-        timeoutError.requestId = requestId;
+        const timeoutError = new EdgeError(`Request timeout after ${timeoutMs}ms`, { requestId });
         lastError = timeoutError;
 
         // Retry on timeout
@@ -376,13 +401,12 @@ async function callEdgeFunction<T>(
 
       // Handle network/offline errors with user-friendly message
       if (error instanceof Error && error.name === 'TypeError' && error.message === 'Failed to fetch') {
-        const offlineError = new Error(
+        const offlineError = new EdgeError(
           navigator.onLine
             ? 'Unable to reach the server. Please check your connection and try again.'
-            : 'You appear to be offline. Please check your internet connection.'
-        ) as EdgeFunctionError;
-        offlineError.requestId = requestId;
-        offlineError.isNetworkError = true;
+            : 'You appear to be offline. Please check your internet connection.',
+          { requestId, isNetworkError: true }
+        );
         lastError = offlineError;
 
         // Retry on network errors
@@ -396,9 +420,8 @@ async function callEdgeFunction<T>(
       }
 
       // Preserve request ID on other errors
-      const edgeError = error as EdgeFunctionError;
-      if (!edgeError.requestId) {
-        edgeError.requestId = requestId;
+      if (error instanceof EdgeError && !error.requestId) {
+        error.requestId = requestId;
       }
 
       // Check if we should retry this error
@@ -454,10 +477,10 @@ export async function generateSpeechStreaming(
   const requestId = generateRequestId();
 
   if (!token) {
-    const authError = new Error('Your session has expired. Please sign in again to continue.') as EdgeFunctionError;
-    authError.requestId = requestId;
-    authError.status = 401;
-    throw authError;
+    throw new EdgeError('Your session has expired. Please sign in again to continue.', {
+      requestId,
+      status: 401,
+    });
   }
 
   const url = `${SUPABASE_URL}/functions/v1/generate-speech`;
@@ -489,11 +512,11 @@ export async function generateSpeechStreaming(
     const contentType = response.headers.get('Content-Type') || '';
     if (!response.ok || contentType.includes('application/json')) {
       const data = await response.json();
-      const error = new Error(data.error || `Edge function error: ${response.status}`) as EdgeFunctionError;
-      error.requestId = requestId;
-      error.status = response.status;
-      error.needsReclone = data.needsReclone;
-      throw error;
+      throw new EdgeError(data.error || `Edge function error: ${response.status}`, {
+        requestId,
+        status: response.status,
+        needsReclone: data.needsReclone,
+      });
     }
 
     // Success - return the audio stream as ArrayBuffer
@@ -506,9 +529,7 @@ export async function generateSpeechStreaming(
     clearTimeout(timeoutId);
 
     if (error instanceof Error && error.name === 'AbortError') {
-      const timeoutError = new Error('Request timeout - please try a shorter meditation.') as EdgeFunctionError;
-      timeoutError.requestId = requestId;
-      throw timeoutError;
+      throw new EdgeError('Request timeout - please try a shorter meditation.', { requestId });
     }
 
     throw error;
@@ -535,9 +556,10 @@ export async function generateSpeechWithProgressiveBuffering(
   const requestId = generateRequestId();
 
   if (!token) {
-    const authError = new Error('Your session has expired. Please sign in again to continue.') as EdgeFunctionError;
-    authError.requestId = requestId;
-    authError.status = 401;
+    const authError = new EdgeError('Your session has expired. Please sign in again to continue.', {
+      requestId,
+      status: 401,
+    });
     callbacks.onError(authError);
     throw authError;
   }
@@ -571,10 +593,11 @@ export async function generateSpeechWithProgressiveBuffering(
     const contentType = response.headers.get('Content-Type') || '';
     if (!response.ok || contentType.includes('application/json')) {
       const data = await response.json();
-      const error = new Error(data.error || `Edge function error: ${response.status}`) as EdgeFunctionError;
-      error.requestId = requestId;
-      error.status = response.status;
-      error.needsReclone = data.needsReclone;
+      const error = new EdgeError(data.error || `Edge function error: ${response.status}`, {
+        requestId,
+        status: response.status,
+        needsReclone: data.needsReclone,
+      });
       callbacks.onError(error);
       throw error;
     }
@@ -582,8 +605,7 @@ export async function generateSpeechWithProgressiveBuffering(
     // Read the stream progressively
     const reader = response.body?.getReader();
     if (!reader) {
-      const error = new Error('No response body available for streaming') as EdgeFunctionError;
-      error.requestId = requestId;
+      const error = new EdgeError('No response body available for streaming', { requestId });
       callbacks.onError(error);
       throw error;
     }
@@ -643,8 +665,7 @@ export async function generateSpeechWithProgressiveBuffering(
     clearTimeout(timeoutId);
 
     if (error instanceof Error && error.name === 'AbortError') {
-      const timeoutError = new Error('Request timeout - please try a shorter meditation.') as EdgeFunctionError;
-      timeoutError.requestId = requestId;
+      const timeoutError = new EdgeError('Request timeout - please try a shorter meditation.', { requestId });
       callbacks.onError(timeoutError);
       throw timeoutError;
     }
@@ -690,9 +711,7 @@ export async function generateSpeech(
   });
 
   if (response.needsReclone) {
-    const error = new Error('This voice needs to be re-cloned with ElevenLabs.') as EdgeFunctionError;
-    error.needsReclone = true;
-    throw error;
+    throw new EdgeError('This voice needs to be re-cloned with ElevenLabs.', { needsReclone: true });
   }
 
   return response.audioBase64;
