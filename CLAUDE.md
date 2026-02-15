@@ -33,7 +33,7 @@ import { supabase } from '@/lib/supabase';
 - **Frontend**: React 19 + TypeScript + Vite
 - **Routing**: react-router-dom v7 (lazy-loaded pages in `src/router.tsx`)
 - **Styling**: Tailwind CSS v4 + Framer Motion
-- **State**: React Context pattern (`src/contexts/` — 10 app contexts + 5 modal sub-contexts in `src/contexts/modals/`)
+- **State**: React Context pattern (`src/contexts/` — 10 app contexts + 5 modal sub-contexts in `src/contexts/modals/`). `AudioPlaybackContext` exports granular hooks (`useIsPlaying`, `usePlaybackTime`, `usePlaybackRate`) to avoid re-rendering all consumers on high-frequency playback updates.
 - **Backend**: Supabase (Auth, PostgreSQL, Edge Functions, Storage)
 - **AI/TTS**: Google Gemini (scripts), ElevenLabs (primary TTS), Web Speech API (fallback)
 - **Monitoring**: Sentry + Vercel Analytics
@@ -83,6 +83,7 @@ Key files:
 - `contentDetection.ts` - Detects content type from user input
 - `knowledgeBase.ts` - Wisdom teachers, meditation types, emotional states
 - `conversationStore.ts` - LocalStorage + Supabase conversation persistence
+- `modules/` - Modular pipeline: `ContentRouter.ts` (routes to content category), `ContextExtractor.ts` (extracts session context), `PromptBuilder.ts` (assembles prompts), `ResponseHandler.ts` (processes AI responses)
 
 ### Voice Provider System
 
@@ -149,9 +150,13 @@ Shared utilities in `supabase/functions/_shared/`:
 - Adjacent routes prefetched via `requestIdleCallback`
 - `prefetchMap` defines route adjacency (e.g., `/` prefetches `/my-audios`, `/templates`)
 
+### SEO / Structured Data
+
+Blog posts and the pricing page inject JSON-LD structured data (`application/ld+json`) for search engine rich results. Blog posts use `Article` schema; pricing uses `Product` schema.
+
 ### Blog System
 
-Recent addition — CMS for wellness content:
+CMS for wellness content:
 - **`/blog`** and **`/blog/:slug`** — Public blog views (`BlogViewPage`)
 - **`/blog-admin`** — Admin blog management (`BlogPage`)
 - Database: `blog_posts` table (title, slug, content, category, tags, status: draft/published/archived)
